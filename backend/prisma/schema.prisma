@@ -1,0 +1,41 @@
+ datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+enum UserType {
+  driver
+  owner
+  admin
+}
+
+enum AdminRole {
+  super_admin
+  ops_staff
+}
+
+enum UserStatus {
+  active
+  banned
+  suspended
+}
+
+model User {
+  id             String         @id @default(uuid())
+  phone          String?        @unique
+  email          String?        @unique
+  passwordHash   String?        @map("password_hash")
+  name           String?
+  userType       UserType       @map("user_type")
+  adminRole      AdminRole?     @map("admin_role")
+  status         UserStatus     @default(active)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@map("users")
+}
