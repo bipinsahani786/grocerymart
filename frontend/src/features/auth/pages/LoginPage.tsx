@@ -272,7 +272,7 @@ export default function LoginPage() {
             </h1>
           </div>
 
-          {/* Tab Switcher for Login / Sign Up */}
+          {/* Tab Switcher for Login / Sign Up - Commented out per request 
           <div className="flex justify-center mb-2">
             <div className="relative flex bg-primary-950/60 p-1 rounded-full border-2 border-primary-700/30 shadow-inner">
               <button
@@ -299,10 +299,14 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+          */}
 
+          <LoginForm />
+          {/* 
           {activeTab === "login" && <LoginForm />}
           {activeTab === "signup" && <RegisterForm onOtpRequired={(email) => { setRegistrationEmail(email); setActiveTab("otp"); }} />}
           {activeTab === "otp" && <RegisterOtpForm email={registrationEmail} />}
+          */}
         </div>
       </div>
     </div>
