@@ -2,11 +2,18 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface User {
-  id: number;
+  id: number | string;
   name: string;
   email?: string;
   phone?: string;
   avatar?: string | null;
+  role?: string;
+  userType?: string;
+  store?: {
+    id: string;
+    name: string;
+    address?: string;
+  } | null;
   roles?: { id: number; name: string }[];
   permissions?: string[];
   businesses?: any[];

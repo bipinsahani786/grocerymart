@@ -12,10 +12,9 @@ export class AuthService {
   generateTokens(user) {
     const payload = {
       id: user.id,
-      userType: user.userType,
       email: user.email,
       phone: user.phone,
-      adminRole: user.adminRole,
+      role: user.role?.roleName || "user",
     };
 
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET || "fallback_secret", {
@@ -86,9 +85,8 @@ export class AuthService {
       email,
       phone,
       passwordHash,
-      userType,
-      adminRole: userType === "admin" ? adminRole || "ops_staff" : null,
       status: "active",
+      roleName: "store_manager", // By default, signups are for store managers
     });
 
     await otpService.sendOtp({ phone, email, purpose: "Registration" });
@@ -117,11 +115,16 @@ export class AuthService {
       await this.ensureIdentifierAvailable(existingEmail, "Email");
     }
 
-    const createdUser = await authRepository.createUser(pendingRegistration);
-
-    if (createdUser.userType === "owner") {
-      await authRepository.createOwnerProfile(createdUser.id, "commercial");
-    }
+    const createdUser = await authRepository.createUser(
+      {
+        name: pendingRegistration.name,
+        email: pendingRegistration.email,
+        phone: pendingRegistration.phone,
+        passwordHash: pendingRegistration.passwordHash,
+        status: pendingRegistration.status,
+      },
+      pendingRegistration.roleName
+    );
 
     const activeUser = await authRepository.findUserById(createdUser.id);
     this.pendingRegistrations.delete(identifier);
@@ -135,7 +138,8 @@ export class AuthService {
           name: activeUser.name,
           email: activeUser.email,
           phone: activeUser.phone,
-          userType: activeUser.userType,
+          role: activeUser.role?.roleName || "user",
+          store: activeUser.store || null,
         },
         ...tokens,
       },
@@ -182,7 +186,8 @@ export class AuthService {
           name: user.name,
           email: user.email,
           phone: user.phone,
-          userType: user.userType,
+          role: user.role?.roleName || "user",
+          store: user.store || null,
         },
         ...tokens,
       },
@@ -210,7 +215,8 @@ export class AuthService {
           name: user.name,
           email: user.email,
           phone: user.phone,
-          userType: user.userType,
+          role: user.role?.roleName || "user",
+          store: user.store || null,
         },
         ...tokens,
       },
@@ -276,7 +282,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash("admin123", 10);
     const existing = await authRepository.findUserByEmail("admin@grocerymart.com");
     if (existing) {
-      return { success: true, message: "Super admin already exists" };
+      await authRepository.deleteUser(existing.id);
     }
 
     const created = await authRepository.createUser({
@@ -284,10 +290,8 @@ export class AuthService {
       phone: "1234567890",
       passwordHash,
       name: "Super Admin",
-      userType: "admin",
-      adminRole: "super_admin",
       status: "active",
-    });
+    }, "super_admin");
 
     return {
       success: true,

@@ -1,14 +1,11 @@
-import { useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { useThemeStore } from "@/store/themeStore";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { LoginForm, RegisterForm, RegisterOtpForm } from "../components/AuthForms";
+import { LoginForm } from "../components/AuthForms";
 
 export default function LoginPage() {
   const { appName, appLogo } = useAppStore();
   const { theme } = useThemeStore();
-  const [activeTab, setActiveTab] = useState<"login" | "signup" | "otp">("login");
-  const [registrationEmail, setRegistrationEmail] = useState("");
 
   const isDark = theme === "dark" || theme === "semi-dark";
 
@@ -272,7 +269,7 @@ export default function LoginPage() {
             </h1>
           </div>
 
-          {/* Tab Switcher for Login / Sign Up */}
+          {/* Tab Switcher for Login / Sign Up - Commented out per request 
           <div className="flex justify-center mb-2">
             <div className="relative flex bg-primary-950/60 p-1 rounded-full border-2 border-primary-700/30 shadow-inner">
               <button
@@ -299,10 +296,14 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+          */}
 
+          <LoginForm />
+          {/* 
           {activeTab === "login" && <LoginForm />}
           {activeTab === "signup" && <RegisterForm onOtpRequired={(email) => { setRegistrationEmail(email); setActiveTab("otp"); }} />}
           {activeTab === "otp" && <RegisterOtpForm email={registrationEmail} />}
+          */}
         </div>
       </div>
     </div>
