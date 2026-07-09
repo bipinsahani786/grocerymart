@@ -3,28 +3,21 @@ import React, { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { 
   LayoutDashboard, 
-  FileText, 
-  Activity, 
-  Users, 
-  UserPlus, 
-  Building2, 
-  ClipboardList,
-  Package,
-  Wallet,
-  FileStack
+  Store,
+  UserCog,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAppStore } from "@/store/appStore";
-import { ShieldAlert, Settings, Database, Briefcase, Coins, UserCircle, LogOut, MessageSquare } from "lucide-react";
+import { ShieldAlert, LogOut } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const businessMenuGroups = [
   {
     title: "MAIN",
     items: [
-      { name: "DASHBOARD", href: "/dashboard", icon: LayoutDashboard },
+      { name: "DASHBOARD", href: "/store/dashboard", icon: LayoutDashboard },
     ]
   }
 ];
@@ -34,6 +27,13 @@ const superadminMenuGroups = [
     title: "GLOBAL",
     items: [
       { name: "DASHBOARD", href: "/superadmin/dashboard", icon: ShieldAlert, permission: "view_dashboard" },
+    ]
+  },
+  {
+    title: "STORE",
+    items: [
+      { name: "STORE DASHBOARD", href: "/stores", icon: Store, permission: "view_dashboard" },
+      { name: "STORE MANAGERS", href: "/store-managers", icon: UserCog, permission: "view_dashboard" },
     ]
   }
 ];
@@ -87,7 +87,7 @@ export function Sidebar({ className }: { className?: string }) {
   const { appName, appLogo } = useAppStore();
   const { hasPermission } = usePermissions();
 
-  const isSuperadmin = user?.userType === 'admin';
+  const isSuperadmin = user?.role === 'super_admin' || user?.role === 'admin' || user?.userType === 'admin';
   
   const filteredSuperadminGroups = superadminMenuGroups.map(group => ({
     ...group,
@@ -110,11 +110,11 @@ export function Sidebar({ className }: { className?: string }) {
 
       <div className={cn(
         "fixed lg:static inset-y-0 left-0 h-screen bg-card border-r border-border flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
-        isSidebarCollapsed ? "w-[260px] lg:w-[80px] -translate-x-full lg:translate-x-0" : "w-[260px] translate-x-0",
+        isSidebarCollapsed ? "w-[200px] lg:w-[72px] -translate-x-full lg:translate-x-0" : "w-[200px] translate-x-0",
         className
       )}>
       {/* Brand */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 shrink-0 overflow-hidden">
+      <div className="h-16 flex items-center justify-between px-3 border-b border-slate-100 dark:border-white/5 shrink-0 overflow-hidden">
         <div className="flex items-center">
           {appLogo ? (
             <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 mx-auto flex items-center justify-center bg-transparent">
@@ -126,7 +126,7 @@ export function Sidebar({ className }: { className?: string }) {
             </div>
           )}
           {!isSidebarCollapsed && (
-            <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-white uppercase font-display whitespace-nowrap ml-3">
+            <span className="font-bold text-base tracking-tight text-slate-800 dark:text-white uppercase font-display whitespace-nowrap ml-2.5">
               {appName}
             </span>
           )}
@@ -134,7 +134,7 @@ export function Sidebar({ className }: { className?: string }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-6 space-y-8">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-5 space-y-7">
         {activeMenuGroups.map((group, idx) => (
           <div key={idx} className="px-2">
             {!isSidebarCollapsed && (
@@ -144,14 +144,19 @@ export function Sidebar({ className }: { className?: string }) {
             )}
             <div className="space-y-1.5">
               {group.items.map((item) => {
-                const isActive = location.pathname === item.href || (item.href === '/superadmin/dashboard' && location.pathname === '/superadmin') || (item.href === '/dashboard' && location.pathname === '/');
+                const isActive = location.pathname === item.href
+                  || (item.href === '/superadmin/dashboard' && (location.pathname === '/superadmin' || location.pathname === '/dashboard'))
+                  || (item.href === '/stores' && location.pathname === '/superadmin/stores')
+                  || (item.href === '/store-managers' && location.pathname === '/superadmin/store-managers')
+                  || (item.href === '/store/dashboard' && location.pathname === '/dashboard')
+                  || (item.href === '/dashboard' && location.pathname === '/');
                 return (
                   <PortalTooltip key={item.name} text={item.name} visible={isSidebarCollapsed}>
                     <Link
                       to={item.href}
                       className={cn(
                         "flex items-center text-[12px] font-medium tracking-[0.05em] transition-all duration-300 group relative",
-                        isSidebarCollapsed ? "px-0 justify-center w-11 h-11 mx-auto rounded-sm" : "py-2.5 px-4 rounded-sm mx-2",
+                        isSidebarCollapsed ? "px-0 justify-center w-10 h-10 mx-auto rounded-sm" : "py-2.5 px-3 rounded-sm mx-2",
                         isActive
                           ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500 font-semibold"
                           : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"

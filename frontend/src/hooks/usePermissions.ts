@@ -4,7 +4,7 @@ export function usePermissions() {
   const user = useAuthStore((state) => state.user);
 
   // Superadmins bypass all permission checks globally
-  const isSuperadminRole = user?.userType === 'admin';
+  const isSuperadminRole = user?.userType === 'admin' || user?.role === 'super_admin' || user?.role === 'admin';
 
   const hasPermission = (permission: string): boolean => {
     if (isSuperadminRole) return true;

@@ -39,10 +39,16 @@ export const LoginForm = withSkeleton(() => {
     loginMutation.mutate({ email: data.email, password: data.password }, {
       onSuccess: (res) => {
         setAuth(res.data.user, res.data.accessToken);
-        const isSuperadmin = res.data.user.userType === 'admin';
-        navigate(isSuperadmin ? '/superadmin/dashboard' : '/dashboard');
+        const role = res.data.user.role || res.data.user.userType;
+        const isSuperadmin = role === 'super_admin' || role === 'admin';
+        const isStoreManager = role === 'store_manager';
+
+        navigate(isSuperadmin ? '/dashboard' : isStoreManager ? '/store/dashboard' : '/login', { replace: true });
       },
-      onError: (err: any) => toast.error(err.response?.data?.message || 'Login failed')
+      onError: (err: any) => {
+        const msg = err.response?.data?.message || 'Login failed';
+        toast.error(msg);
+      }
     });
   };
 
@@ -142,8 +148,7 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
     registerMutation.mutate({ 
       name: data.name, 
       email: data.email, 
-      password: data.password, 
-      userType: 'owner' 
+      password: data.password
     }, {
       onSuccess: () => {
         toast.success(`Verification OTP sent to ${data.email}`);
@@ -263,7 +268,7 @@ export const RegisterOtpForm = withSkeleton(({ email }: { email: string }) => {
       onSuccess: (res) => {
         toast.success('Registration successful!');
         setAuth(res.data.user, res.data.accessToken);
-        navigate('/dashboard'); // Store owner always goes to dashboard
+        navigate('/store/dashboard', { replace: true });
       },
       onError: (err: any) => toast.error(err.response?.data?.message || 'Invalid OTP')
     });

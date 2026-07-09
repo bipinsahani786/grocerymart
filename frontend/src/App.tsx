@@ -8,6 +8,9 @@ import { AppLayout } from './components/layout/AppLayout';
 
 const Login = lazy(() => import('@/features/auth/pages/LoginPage'));
 const SuperadminDashboard = lazy(() => import('@/features/superadmin/dashboard/pages/SuperadminDashboardPage'));
+const StoreDashboard = lazy(() => import('@/features/superadmin/stores/pages/StoreDashboardPage'));
+const StoreManagers = lazy(() => import('@/features/superadmin/managers/pages/StoreManagersPage'));
+const StoreManagerDashboard = lazy(() => import('@/features/store/dashboard/pages/StoreManagerDashboardPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -18,8 +21,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function SuperadminRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
-  const isSuperadmin = user?.userType === 'admin';
+  const isSuperadmin = user?.role === 'super_admin' || user?.role === 'admin' || user?.userType === 'admin';
   if (!isSuperadmin) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function StoreManagerRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((state) => state.user);
+  const isStoreManager = user?.role === 'store_manager';
+  if (!isStoreManager) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -106,7 +116,15 @@ function App() {
           }>
             {/* Superadmin Routes (made default for Dashboard) */}
             <Route path="/dashboard" element={<SuperadminRoute><SuperadminDashboard /></SuperadminRoute>} />
+            <Route path="/stores" element={<SuperadminRoute><StoreDashboard /></SuperadminRoute>} />
+            <Route path="/store-managers" element={<SuperadminRoute><StoreManagers /></SuperadminRoute>} />
+            <Route path="/superadmin/profile" element={<SuperadminRoute><ProfilePage /></SuperadminRoute>} />
+            <Route path="/store/dashboard" element={<StoreManagerRoute><StoreManagerDashboard /></StoreManagerRoute>} />
+            <Route path="/store" element={<Navigate to="/store/dashboard" replace />} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/superadmin/dashboard" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/superadmin/stores" element={<Navigate to="/stores" replace />} />
+            <Route path="/superadmin/store-managers" element={<Navigate to="/store-managers" replace />} />
           </Route>
         </Routes>
       </Suspense>

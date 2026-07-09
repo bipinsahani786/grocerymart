@@ -22,7 +22,7 @@ export const verifyToken = (req, res, next) => {
 };
 
 export const verifyAdmin = (req, res, next) => {
-  if (req.user && req.user.userType === "admin") {
+  if (req.user && (req.user.userType === "admin" || req.user.role === "super_admin" || req.user.role === "admin")) {
     next();
   } else {
     return res.status(403).json({ status: "error", message: "Forbidden: Super Admin access required" });

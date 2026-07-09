@@ -1,4 +1,4 @@
- datasource db {
+datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
@@ -8,34 +8,281 @@ generator client {
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
-enum UserType {
-  driver
-  owner
-  admin
-}
-
-enum AdminRole {
-  super_admin
-  ops_staff
-}
-
 enum UserStatus {
   active
   banned
   suspended
 }
 
+enum ProductType {
+  simple
+  weighted
+  variable
+  bundle
+  service
+  perishable
+}
+
+enum OrderType {
+  POS
+  DELIVERY
+  CLICK_COLLECT
+}
+
+enum OrderStatus {
+  HELD
+  PLACED
+  ACCEPTED
+  PACKING
+  PACKED
+  READY_FOR_PICKUP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  COLLECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  SPLIT
+  CREDIT
+  COD
+  ONLINE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
 model User {
-  id             String         @id @default(uuid())
-  phone          String?        @unique
-  email          String?        @unique
-  passwordHash   String?        @map("password_hash")
+  id             String      @id @default(uuid())
+  phone          String?     @unique
+  email          String?     @unique
+  passwordHash   String?     @map("password_hash")
   name           String?
-  userType       UserType       @map("user_type")
-  adminRole      AdminRole?     @map("admin_role")
-  status         UserStatus     @default(active)
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  status         UserStatus  @default(active)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  // Foreign keys
+  storeId        String?     @map("store_id")
+
+  // Relations
+  store          Store?      @relation("StoreUsers", fields: [storeId], references: [id])
+  managedStore   Store?      @relation("StoreManager")
+  role           UserRole?
+  orders         Order[]     @relation("OrderStaff")
+  shifts         StaffShift[]
 
   @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  roleName  String   @map("role_name") // e.g. super_admin, store_manager
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_roles")
+}
+
+model Store {
+  id                  String   @id @default(uuid())
+  name                String
+  address             String
+  lat                 Float
+  long                Float
+  radiusKm            Float    @default(3)
+  phone               String?
+  gstin               String?
+  openingTime         String   @default("08:00")
+  closingTime         String   @default("22:00")
+  isActive            Boolean  @default(true)
+  posEnabled          Boolean  @default(true)
+  deliveryEnabled     Boolean  @default(true)
+  clickCollectEnabled Boolean  @default(true)
+
+  // Manager Relation (1-to-1)
+  managerId           String?  @unique @map("manager_id")
+  manager             User?    @relation("StoreManager", fields: [managerId], references: [id])
+
+  // Users belonging to this store (1-to-many)
+  users               User[]   @relation("StoreUsers")
+  categories          Category[]
+  products            Product[]
+  inventory           StoreInventory[]
+  orders              Order[]
+  bills               Bill[]
+  shifts              StaffShift[]
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("stores")
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  storeId   String    @map("store_id")
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name      String
+  parentId  String?   @map("parent_id")
+  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([storeId, name])
+  @@map("categories")
+}
+
+model Product {
+  id                    String           @id @default(uuid())
+  storeId               String           @map("store_id")
+  store                 Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId            String?          @map("category_id")
+  category              Category?        @relation(fields: [categoryId], references: [id])
+  name                  String
+  sku                   String?
+  barcode               String?
+  brand                 String?
+  description           String?
+  type                  ProductType      @default(simple)
+  mrp                   Float            @default(0)
+  sellingPrice          Float            @default(0) @map("selling_price")
+  costPrice             Float            @default(0) @map("cost_price")
+  taxRate               Float            @default(0) @map("tax_rate")
+  hsnCode               String?          @map("hsn_code")
+  unit                  String           @default("pcs")
+  rackLocation          String?          @map("rack_location")
+  expiryDate            DateTime?        @map("expiry_date")
+  imageUrl              String?          @map("image_url")
+  showOnline            Boolean          @default(true) @map("show_online")
+  showPOS               Boolean          @default(true) @map("show_pos")
+  deliveryEnabled       Boolean          @default(true) @map("delivery_enabled")
+  clickCollectEnabled   Boolean          @default(true) @map("click_collect_enabled")
+  isActive              Boolean          @default(true) @map("is_active")
+  salesCount            Int              @default(0) @map("sales_count")
+  inventory             StoreInventory?
+  orderItems            OrderItem[]
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  @@unique([storeId, sku])
+  @@unique([storeId, barcode])
+  @@map("products")
+}
+
+model StoreInventory {
+  id              String   @id @default(uuid())
+  storeId         String   @map("store_id")
+  productId       String   @unique @map("product_id")
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity        Float    @default(0)
+  lowStockAlert   Float    @default(5) @map("low_stock_alert")
+  lastUpdated     DateTime @updatedAt @map("last_updated")
+
+  @@map("store_inventory")
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  orderNumber     String        @unique @map("order_number")
+  storeId         String        @map("store_id")
+  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  staffId         String?       @map("staff_id")
+  staff           User?         @relation("OrderStaff", fields: [staffId], references: [id])
+  type            OrderType
+  status          OrderStatus   @default(PLACED)
+  customerName    String?       @map("customer_name")
+  customerPhone   String?       @map("customer_phone")
+  pickupPin       String?       @map("pickup_pin")
+  pickupTime      DateTime?     @map("pickup_time")
+  subtotal        Float         @default(0)
+  discount        Float         @default(0)
+  taxAmount       Float         @default(0) @map("tax_amount")
+  totalAmount     Float         @default(0) @map("total_amount")
+  notes           String?
+  items           OrderItem[]
+  payment         Payment?
+  bill            Bill?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id])
+  name        String
+  sku         String?
+  quantity    Float
+  unitPrice   Float    @map("unit_price")
+  taxRate     Float    @default(0) @map("tax_rate")
+  lineTotal   Float    @map("line_total")
+  rackLocation String? @map("rack_location")
+  packed      Boolean  @default(false)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique @map("order_id")
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  amount        Float
+  cashReceived  Float?        @map("cash_received")
+  changeGiven   Float?        @map("change_given")
+  txnId         String?       @map("txn_id")
+  splitDetails  Json?         @map("split_details")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@map("payments")
+}
+
+model Bill {
+  id          String   @id @default(uuid())
+  billNumber  String   @unique @map("bill_number")
+  orderId     String   @unique @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  storeId     String   @map("store_id")
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  type        String   @default("RECEIPT")
+  pdfUrl      String?  @map("pdf_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("bills")
+}
+
+model StaffShift {
+  id          String    @id @default(uuid())
+  storeId     String    @map("store_id")
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  staffId     String    @map("staff_id")
+  staff       User      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  shiftName   String    @default("General") @map("shift_name")
+  clockIn     DateTime? @map("clock_in")
+  clockOut    DateTime? @map("clock_out")
+  ordersHandled Int     @default(0) @map("orders_handled")
+  revenue     Float     @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("staff_shifts")
 }

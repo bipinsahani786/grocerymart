@@ -11,6 +11,8 @@ import dashboardRoutes from "./dashboard/dashboard.routes.js";
 import parkingsRoutes from "./parkings/parkings.routes.js";
 import reviewsRoutes from "./reviews/reviews.routes.js";
 import dbRoutes from "./db/db.routes.js";
+import storesRoutes from "./stores/stores.routes.js";
+import managersRoutes from "./managers/managers.routes.js";
 
 const router = express.Router();
 
@@ -20,6 +22,8 @@ router.use(verifyToken, verifyAdmin);
 // Mount feature-based sub-routers
 router.use("/dashboard", dashboardRoutes);
 router.use("/users", usersRoutes);
+router.use("/stores", storesRoutes);
+router.use("/managers", managersRoutes);
 
 router.use("/bookings", bookingsRoutes);
 router.use("/owners", ownersRoutes);

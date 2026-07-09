@@ -1,14 +1,11 @@
-import { useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { useThemeStore } from "@/store/themeStore";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { LoginForm, RegisterForm, RegisterOtpForm } from "../components/AuthForms";
+import { LoginForm } from "../components/AuthForms";
 
 export default function LoginPage() {
   const { appName, appLogo } = useAppStore();
   const { theme } = useThemeStore();
-  const [activeTab, setActiveTab] = useState<"login" | "signup" | "otp">("login");
-  const [registrationEmail, setRegistrationEmail] = useState("");
 
   const isDark = theme === "dark" || theme === "semi-dark";
 

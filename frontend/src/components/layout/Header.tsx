@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Menu, Expand, Shrink, Moon, Sun, ChevronDown, Zap, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2 } from "lucide-react";
+import { Search, Menu, Expand, Shrink, Moon, Sun, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useThemeStore, type LayoutTheme, type PrimaryColor, type FontFamily } from "@/store/themeStore";
@@ -173,7 +173,11 @@ function ProfileMenu() {
   const location = useLocation();
 
   // Use both roles and route path for robust determination
-  const isSuperadmin = user?.roles?.some(r => r.name === 'Superadmin') || location.pathname.startsWith('/superadmin');
+  const isSuperadmin = user?.role === 'super_admin'
+    || user?.role === 'admin'
+    || user?.roles?.some(r => r.name === 'Superadmin')
+    || location.pathname.startsWith('/superadmin')
+    || location.pathname === '/dashboard';
   const isPartner = user?.roles?.some(r => r.name === 'Partner') || location.pathname.startsWith('/partner');
 
   useEffect(() => {
@@ -287,20 +291,21 @@ function ProfileMenu() {
 
 export function Header({ className }: { className?: string }) {
   const { toggleSidebar, isSidebarCollapsed } = useLayoutStore();
-  const { theme, toggleTheme } = useThemeStore();
-  const { businesses, activeBusiness, setActiveBusiness, fetchBusinesses } = useTenantStore();
+  const user = useAuthStore(state => state.user);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
-  const isSuperadminMode = location.pathname.startsWith('/superadmin');
-  const isPartnerMode = location.pathname.startsWith('/partner');
+  const isSuperadminMode = user?.role === 'super_admin'
+    || user?.role === 'admin'
+    || user?.roles?.some(r => r.name === 'Superadmin')
+    || location.pathname.startsWith('/superadmin')
+    || location.pathname === '/dashboard';
 
+  // Real-time DateTime logic
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
   useEffect(() => {
-    if (!isSuperadminMode && !isPartnerMode) {
-      fetchBusinesses();
-    }
-  }, [fetchBusinesses, isSuperadminMode, isPartnerMode]);
+    const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Fullscreen toggle logic
   const handleFullscreen = () => {
@@ -349,90 +354,16 @@ export function Header({ className }: { className?: string }) {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Branch Selector */}
-        {!isSuperadminMode && !isPartnerMode && (
-          <div className="relative">
-            <button
-              onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-              className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-sm border border-primary-200 dark:border-primary-500/20 bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-500/20 transition-colors"
-            >
-              {activeBusiness?.logo_path ? (
-                <img src={activeBusiness.logo_path} alt="Logo" className="w-4 h-4 object-contain rounded-sm" />
-              ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-primary-400 flex items-center justify-center relative">
-                  <div className="w-1 h-1 bg-primary-600 rounded-full absolute -top-1 right-0"></div>
-                </div>
-              )}
-              <span className="text-[10px] font-bold tracking-widest uppercase truncate max-w-[120px]">
-                {activeBusiness?.name || 'ALL BRANCHES'}
-              </span>
-              <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
-            </button>
-
-            {isBranchDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-sm shadow-xl z-50 py-2">
-                <div className="px-3 py-1.5 mb-1 border-b border-slate-100 dark:border-white/5">
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select Branch</p>
-                </div>
-                <div className="max-h-60 overflow-y-auto">
-                  {businesses.map((b) => (
-                    <button
-                      key={b.id}
-                      onClick={() => {
-                        setActiveBusiness(b);
-                        setIsBranchDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "w-full text-left px-4 py-2 text-xs font-semibold flex items-center gap-3 transition-colors",
-                        activeBusiness?.id === b.id
-                          ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500"
-                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
-                      )}
-                    >
-                      {b.logo_path ? (
-                        <img src={b.logo_path} alt="Logo" className="w-5 h-5 object-contain rounded-sm bg-white/10" />
-                      ) : (
-                        <Building2 className="w-4 h-4 opacity-70" />
-                      )}
-                      <span className="truncate">{b.name}</span>
-                    </button>
-                  ))}
-                  {businesses.length === 0 && (
-                    <div className="px-4 py-3 text-xs text-slate-400 text-center">No branches found</div>
-                  )}
-                </div>
-                <div className="border-t border-slate-100 dark:border-white/5 mt-1 pt-1 px-2">
-                  <button
-                    onClick={() => {
-                      setIsBranchDropdownOpen(false);
-                      navigate('/setup/profile');
-                    }}
-                    className="w-full flex items-center justify-center py-2 text-xs font-bold text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-sm transition-colors"
-                  >
-                    + Add New Branch
-                  </button>
-                </div>
-              </div>
-            )}
+        {/* Real-time DateTime Display */}
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-sm border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] shadow-sm ml-2 mr-2">
+          <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 tracking-wider">
+            {currentDateTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
           </div>
-        )}
-
-        {/* Plan Badge */}
-        {!isSuperadminMode && !isPartnerMode && (
-          <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 rounded-sm border border-border bg-card shadow-sm ml-2 mr-2">
-            <div className="bg-primary-50 dark:bg-primary-500/10 text-primary-500 p-1.5 rounded-sm">
-              <Zap className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="text-[8px] font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase mb-0.5">Current Plan</div>
-              <div className="text-[10px] font-bold text-slate-800 dark:text-white uppercase tracking-wider">PROFESSIONAL Z</div>
-            </div>
-            <div className="border-l border-slate-200 dark:border-white/10 pl-3 ml-1">
-              <div className="text-[8px] font-bold text-emerald-500 tracking-widest uppercase">14+ DAYS LEFT</div>
-              <div className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">ACTIVE TRIAL</div>
-            </div>
+          <div className="w-1 h-1 rounded-full bg-primary-500 mx-1"></div>
+          <div className="text-[11px] font-black text-primary-600 dark:text-primary-400 tracking-widest">
+            {currentDateTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </div>
-        )}
+        </div>
 
         {/* Fullscreen Toggle */}
         <button onClick={handleFullscreen} className="p-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5" title="Toggle Fullscreen">
