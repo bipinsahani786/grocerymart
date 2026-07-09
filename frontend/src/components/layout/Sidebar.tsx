@@ -5,35 +5,76 @@ import {
   LayoutDashboard, 
   Store,
   UserCog,
+  ShoppingCart,
+  ClipboardCheck,
+  PackageCheck,
+  Package,
+  Boxes,
+  FileText,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAppStore } from "@/store/appStore";
-import { ShieldAlert, LogOut } from "lucide-react";
+import { useThemeStore } from "@/store/themeStore";
+import { ShieldAlert } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
-const businessMenuGroups = [
+export function isRouteActive(itemHref: string, pathname: string) {
+  return pathname === itemHref
+    || (itemHref === '/superadmin/dashboard' && (pathname === '/superadmin' || pathname === '/dashboard'))
+    || (itemHref === '/stores' && pathname === '/superadmin/stores')
+    || (itemHref === '/store-managers' && pathname === '/superadmin/store-managers')
+    || (itemHref === '/store/dashboard' && pathname === '/dashboard')
+    || (itemHref === '/dashboard' && pathname === '/');
+}
+
+export const businessMenuGroups = [
   {
     title: "MAIN",
     items: [
-      { name: "DASHBOARD", href: "/store/dashboard", icon: LayoutDashboard },
+      { name: "DASHBOARD", href: "/store/dashboard", icon: LayoutDashboard, subtitle: "Daily store operations, orders, catalog and revenue" },
+    ]
+  },
+  {
+    title: "SALES",
+    items: [
+      { name: "POS COUNTER", href: "/store/pos", icon: ShoppingCart, subtitle: "Touch friendly walk-in billing, cart checkout, discounts and receipt printing" },
+      { name: "ORDER QUEUE", href: "/store/orders", icon: ClipboardCheck, subtitle: "Accept, pack and track POS, delivery and online store orders" },
+      { name: "PICKUP QUEUE", href: "/store/pickup", icon: PackageCheck, subtitle: "Click & Collect packing queue, ready board and counter handover" },
+    ]
+  },
+  {
+    title: "INVENTORY",
+    items: [
+      { name: "PRODUCTS", href: "/store/products", icon: Package, subtitle: "Manage simple, weighted, variant, bundle, service and perishable products" },
+      { name: "STOCK", href: "/store/inventory", icon: Boxes, subtitle: "Single stock source shared by POS, delivery and Click & Collect" },
+      { name: "BILLING & GST", href: "/store/billing", icon: FileText, subtitle: "Thermal receipts, GST invoices, reprints, refunds and cash reconciliation" },
+    ]
+  },
+  {
+    title: "MANAGEMENT",
+    items: [
+      { name: "STAFF", href: "/store/staff", icon: Users, subtitle: "Roles, PIN login, shifts, performance and picker efficiency" },
+      { name: "ANALYTICS", href: "/store/analytics", icon: TrendingUp, subtitle: "Sales, products, payment methods, staff KPIs and hourly load" },
     ]
   }
 ];
 
-const superadminMenuGroups = [
+export const superadminMenuGroups = [
   {
     title: "GLOBAL",
     items: [
-      { name: "DASHBOARD", href: "/superadmin/dashboard", icon: ShieldAlert, permission: "view_dashboard" },
+      { name: "DASHBOARD", href: "/superadmin/dashboard", icon: ShieldAlert, permission: "view_dashboard", subtitle: "Global analytics, revenues, and partner commission tracking" },
     ]
   },
   {
     title: "STORE",
     items: [
-      { name: "STORE DASHBOARD", href: "/stores", icon: Store, permission: "view_dashboard" },
-      { name: "STORE MANAGERS", href: "/store-managers", icon: UserCog, permission: "view_dashboard" },
+      { name: "STORE DASHBOARD", href: "/stores", icon: Store, permission: "view_dashboard", subtitle: "Create stores and monitor store-level operating status" },
+      { name: "STORE MANAGERS", href: "/store-managers", icon: UserCog, permission: "view_dashboard", subtitle: "View, add, edit and suspend store manager access profiles" },
     ]
   }
 ];
@@ -85,8 +126,10 @@ export function Sidebar({ className }: { className?: string }) {
   const { isSidebarCollapsed, setSidebarCollapsed } = useLayoutStore();
   const user = useAuthStore((state) => state.user);
   const { appName, appLogo } = useAppStore();
+  const { theme } = useThemeStore();
   const { hasPermission } = usePermissions();
 
+  const isDark = theme === 'dark' || theme === 'semi-dark';
   const isSuperadmin = user?.role === 'super_admin' || user?.role === 'admin' || user?.userType === 'admin';
   
   const filteredSuperadminGroups = superadminMenuGroups.map(group => ({
@@ -109,12 +152,12 @@ export function Sidebar({ className }: { className?: string }) {
       )}
 
       <div className={cn(
-        "fixed lg:static inset-y-0 left-0 h-screen bg-card border-r border-border flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
-        isSidebarCollapsed ? "w-[200px] lg:w-[72px] -translate-x-full lg:translate-x-0" : "w-[200px] translate-x-0",
+        "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-card border-r border-slate-100 dark:border-white/5 flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
+        isSidebarCollapsed ? "w-[170px] lg:w-[64px] -translate-x-full lg:translate-x-0" : "w-[170px] translate-x-0",
         className
       )}>
       {/* Brand */}
-      <div className="h-16 flex items-center justify-between px-3 border-b border-slate-100 dark:border-white/5 shrink-0 overflow-hidden">
+      <div className="h-14 flex items-center justify-between px-3 border-b border-slate-100 dark:border-white/5 shrink-0 overflow-hidden">
         <div className="flex items-center">
           {appLogo ? (
             <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 mx-auto flex items-center justify-center bg-transparent">
@@ -126,51 +169,63 @@ export function Sidebar({ className }: { className?: string }) {
             </div>
           )}
           {!isSidebarCollapsed && (
-            <span className="font-bold text-base tracking-tight text-slate-800 dark:text-white uppercase font-display whitespace-nowrap ml-2.5">
-              {appName}
+            <span className="font-black text-[12px] tracking-tight text-zinc-900 dark:text-white uppercase font-display whitespace-nowrap ml-2">
+              {appName.split(" ").map((word, idx) => (
+                <span
+                  key={idx}
+                  className={
+                    idx % 2 === 1
+                      ? (isDark 
+                          ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1" 
+                          : "bg-clip-text bg-gradient-to-r from-cerulean to-dark-cyan text-transparent ml-1"
+                        )
+                      : "text-zinc-900 dark:text-white"
+                  }
+                >
+                  {word}
+                </span>
+              ))}
             </span>
           )}
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-5 space-y-7">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none py-3 space-y-4">
         {activeMenuGroups.map((group, idx) => (
           <div key={idx} className="px-2">
             {!isSidebarCollapsed && (
-              <h4 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-[0.15em] mb-2.5 px-4 whitespace-nowrap transition-opacity duration-300">
+              <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-[0.15em] mb-2 px-3.5 whitespace-nowrap transition-opacity duration-300">
                 {group.title}
               </h4>
             )}
             <div className="space-y-1.5">
               {group.items.map((item) => {
-                const isActive = location.pathname === item.href
-                  || (item.href === '/superadmin/dashboard' && (location.pathname === '/superadmin' || location.pathname === '/dashboard'))
-                  || (item.href === '/stores' && location.pathname === '/superadmin/stores')
-                  || (item.href === '/store-managers' && location.pathname === '/superadmin/store-managers')
-                  || (item.href === '/store/dashboard' && location.pathname === '/dashboard')
-                  || (item.href === '/dashboard' && location.pathname === '/');
+                const isActive = isRouteActive(item.href, location.pathname);
                 return (
                   <PortalTooltip key={item.name} text={item.name} visible={isSidebarCollapsed}>
                     <Link
                       to={item.href}
                       className={cn(
-                        "flex items-center text-[12px] font-medium tracking-[0.05em] transition-all duration-300 group relative",
-                        isSidebarCollapsed ? "px-0 justify-center w-10 h-10 mx-auto rounded-sm" : "py-2.5 px-3 rounded-sm mx-2",
+                        "flex items-center text-[11px] font-medium tracking-[0.05em] transition-all duration-300 group relative",
+                        isSidebarCollapsed ? "px-0 justify-center w-9 h-9 mx-auto rounded-sm" : "py-2 px-2.5 rounded-sm mx-1.5",
                         isActive
                           ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500 font-semibold"
                           : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
                       )}
                     >
+                      {isActive && (
+                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-600 rounded-r-md animate-in fade-in slide-in-from-left-1 duration-300" />
+                      )}
                       <item.icon
                         strokeWidth={isActive ? 2 : 1.5}
                         className={cn(
-                          "flex-shrink-0 h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110",
+                          "flex-shrink-0 h-[18px] w-[18px] transition-transform duration-200 group-hover:scale-110",
                           isSidebarCollapsed ? "mx-auto" : "mr-3.5",
-                          isActive ? "text-primary-600 dark:text-primary-500" : "text-slate-600 dark:text-slate-400 group-hover:text-primary-500"
+                          isActive ? "text-primary-600 dark:text-primary-500" : "text-slate-500 dark:text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-500"
                         )}
                       />
-                      {!isSidebarCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
+                      {!isSidebarCollapsed && <span className="whitespace-nowrap transition-transform duration-200 group-hover:translate-x-0.5">{item.name}</span>}
                     </Link>
                   </PortalTooltip>
                 );
@@ -179,30 +234,6 @@ export function Sidebar({ className }: { className?: string }) {
           </div>
         ))}
       </nav>
-
-      {/* Logout Button */}
-      <div className="p-4 border-t border-slate-100 dark:border-white/5 shrink-0">
-        <PortalTooltip text="LOG OUT" visible={isSidebarCollapsed}>
-          <button
-            onClick={() => {
-              useAuthStore.getState().logout();
-            }}
-            className={cn(
-              "flex items-center w-full text-[12px] font-medium tracking-[0.05em] transition-all duration-300 group relative text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10",
-              isSidebarCollapsed ? "px-0 justify-center h-11 rounded-sm" : "py-2.5 px-4 rounded-sm"
-            )}
-          >
-            <LogOut
-              strokeWidth={1.5}
-              className={cn(
-                "flex-shrink-0 h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110",
-                isSidebarCollapsed ? "mx-auto" : "mr-3.5"
-              )}
-            />
-            {!isSidebarCollapsed && <span className="whitespace-nowrap">LOG OUT</span>}
-          </button>
-        </PortalTooltip>
-      </div>
     </div>
     </>
   );

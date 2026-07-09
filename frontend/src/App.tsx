@@ -11,6 +11,15 @@ const SuperadminDashboard = lazy(() => import('@/features/superadmin/dashboard/p
 const StoreDashboard = lazy(() => import('@/features/superadmin/stores/pages/StoreDashboardPage'));
 const StoreManagers = lazy(() => import('@/features/superadmin/managers/pages/StoreManagersPage'));
 const StoreManagerDashboard = lazy(() => import('@/features/store/dashboard/pages/StoreManagerDashboardPage'));
+const StorePosPage = lazy(() => import('@/features/store/pos/pages/StorePosPage'));
+const StoreOrdersPage = lazy(() => import('@/features/store/orders/pages/StoreOrdersPage'));
+const StorePickupPage = lazy(() => import('@/features/store/pickup/pages/StorePickupPage'));
+const StoreProductsPage = lazy(() => import('@/features/store/products/pages/StoreProductsPage'));
+const StoreInventoryPage = lazy(() => import('@/features/store/inventory/pages/StoreInventoryPage'));
+const StoreBillingPage = lazy(() => import('@/features/store/billing/pages/StoreBillingPage'));
+const StoreStaffPage = lazy(() => import('@/features/store/staff/pages/StoreStaffPage'));
+const StoreSearchPage = lazy(() => import('@/features/store/search/pages/StoreSearchPage'));
+const StoreAnalyticsPage = lazy(() => import('@/features/store/analytics/pages/StoreAnalyticsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -120,6 +129,15 @@ function App() {
             <Route path="/store-managers" element={<SuperadminRoute><StoreManagers /></SuperadminRoute>} />
             <Route path="/superadmin/profile" element={<SuperadminRoute><ProfilePage /></SuperadminRoute>} />
             <Route path="/store/dashboard" element={<StoreManagerRoute><StoreManagerDashboard /></StoreManagerRoute>} />
+            <Route path="/store/pos" element={<StoreManagerRoute><StorePosPage /></StoreManagerRoute>} />
+            <Route path="/store/orders" element={<StoreManagerRoute><StoreOrdersPage /></StoreManagerRoute>} />
+            <Route path="/store/pickup" element={<StoreManagerRoute><StorePickupPage /></StoreManagerRoute>} />
+            <Route path="/store/products" element={<StoreManagerRoute><StoreProductsPage /></StoreManagerRoute>} />
+            <Route path="/store/inventory" element={<StoreManagerRoute><StoreInventoryPage /></StoreManagerRoute>} />
+            <Route path="/store/billing" element={<StoreManagerRoute><StoreBillingPage /></StoreManagerRoute>} />
+            <Route path="/store/staff" element={<StoreManagerRoute><StoreStaffPage /></StoreManagerRoute>} />
+            <Route path="/store/search" element={<StoreManagerRoute><StoreSearchPage /></StoreManagerRoute>} />
+            <Route path="/store/analytics" element={<StoreManagerRoute><StoreAnalyticsPage /></StoreManagerRoute>} />
             <Route path="/store" element={<Navigate to="/store/dashboard" replace />} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/superadmin/dashboard" element={<Navigate to="/dashboard" replace />} />
