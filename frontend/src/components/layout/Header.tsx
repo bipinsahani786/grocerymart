@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Menu, Expand, Shrink, Moon, Sun, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2 } from "lucide-react";
+import { Menu, Expand, Shrink, Moon, Sun, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2, Store } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useThemeStore, type LayoutTheme, type PrimaryColor, type FontFamily } from "@/store/themeStore";
@@ -7,6 +7,7 @@ import { useTenantStore } from "@/store/tenantStore";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { businessMenuGroups, superadminMenuGroups, isRouteActive } from "./Sidebar";
 
 // Theme dropdown component inside Header.tsx
 function ThemeCustomizer() {
@@ -326,31 +327,46 @@ export function Header({ className }: { className?: string }) {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  let ActiveIcon: any = Store;
+  let currentHeader = {
+    title: 'Grocery Mart',
+    subtitle: 'Intelligent Retail Dashboard',
+  };
+
+  if (location.pathname === '/profile' || location.pathname === '/superadmin/profile') {
+    currentHeader = {
+      title: 'User Profile',
+      subtitle: 'Manage your contact details, security credentials and regional preferences',
+    };
+    ActiveIcon = User;
+  } else {
+    const allItems = [
+      ...superadminMenuGroups.flatMap(g => g.items),
+      ...businessMenuGroups.flatMap(g => g.items)
+    ];
+    const activeItem = allItems.find(item => isRouteActive(item.href, location.pathname));
+    if (activeItem) {
+      currentHeader = {
+        title: activeItem.name,
+        subtitle: activeItem.subtitle || '',
+      };
+      ActiveIcon = activeItem.icon;
+    }
+  }
+
   return (
-    <header className={cn("h-16 flex items-center justify-between px-6 bg-card border-b border-border sticky top-0 z-30 shadow-sm transition-colors duration-300", className)}>
-      <div className="flex items-center flex-1 gap-4">
-        <button onClick={toggleSidebar} className="p-2 -ml-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5">
+    <header className={cn("h-14 flex items-center justify-between px-4 bg-card dark:bg-slate-900 border-b border-border sticky top-0 z-30 shadow-sm transition-colors duration-300", className)}>
+      <div className="flex items-center flex-1 gap-3 min-w-0">
+        <button onClick={toggleSidebar} className="p-2 -ml-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5 shrink-0">
           {isSidebarCollapsed ? <ArrowRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
 
-        {isSuperadminMode ? (
-          <div className="flex items-center ml-2">
-            {/* Empty space to keep layout balanced */}
-          </div>
-        ) : (
-          <div className="max-w-xs w-full hidden md:block">
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary-500 transition-colors">
-                <Search className="h-3.5 w-3.5" />
-              </div>
-              <input
-                type="text"
-                placeholder="SEARCH NAVIGATION..."
-                className="block w-full pl-10 pr-4 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all text-xs font-bold tracking-widest text-slate-800 dark:text-white placeholder:text-slate-400 uppercase shadow-inner"
-              />
-            </div>
-          </div>
-        )}
+        <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-primary-100/60 dark:border-primary-500/30 bg-primary-50/50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 select-none shadow-sm animate-in fade-in slide-in-from-left-4 duration-300 shrink-0">
+          <ActiveIcon className="h-4.5 w-4.5 text-primary-500 dark:text-primary-400 shrink-0" />
+          <span className="text-xs font-black uppercase tracking-widest leading-none truncate">
+            {currentHeader.title}
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

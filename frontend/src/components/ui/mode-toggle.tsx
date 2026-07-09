@@ -6,15 +6,59 @@ export function ModeToggle() {
   const { theme, setTheme } = useThemeStore();
   const isDark = theme === "dark" || theme === "semi-dark";
 
+  const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const nextTheme = isDark ? "light" : "dark";
+
+    // Fallback if View Transitions API is not supported or user prefers reduced motion
+    if (
+      !document.startViewTransition ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setTheme(nextTheme);
+      return;
+    }
+
+    const x = event.clientX;
+    const y = event.clientY;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(() => {
+      setTheme(nextTheme);
+    });
+
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`,
+      ];
+
+      document.documentElement.animate(
+        {
+          clipPath: isDark ? [...clipPath].reverse() : clipPath,
+        },
+        {
+          duration: 400,
+          easing: "ease-in-out",
+          pseudoElement: isDark
+            ? "::view-transition-old(root)"
+            : "::view-transition-new(root)",
+        }
+      );
+    });
+  };
+
   return (
     <Button
       variant="outline"
       size="icon"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={handleToggle}
       className="relative h-10 w-10 border border-border bg-input-bg text-foreground hover:bg-muted cursor-pointer shrink-0"
       title="Toggle theme"
     >
-      <Sun className={`h-[1.2rem] w-[1.2rem] transition-all duration-300 ${
+      <Sun className={`h-[1.2rem] w-[1.2rem] text-yellow-500 dark:text-yellow-400 transition-all duration-300 animate-[spin_20s_linear_infinite] ${
         isDark ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
       }`} />
       <Moon className={`absolute h-[1.2rem] w-[1.2rem] transition-all duration-300 ${
