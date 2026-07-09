@@ -271,6 +271,30 @@ export class AuthService {
       message: "Password changed successfully",
     };
   }
+
+  async seedAdmin() {
+    const passwordHash = await bcrypt.hash("admin123", 10);
+    const existing = await authRepository.findUserByEmail("admin@grocerymart.com");
+    if (existing) {
+      return { success: true, message: "Super admin already exists" };
+    }
+
+    const created = await authRepository.createUser({
+      email: "admin@grocerymart.com",
+      phone: "1234567890",
+      passwordHash,
+      name: "Super Admin",
+      userType: "admin",
+      adminRole: "super_admin",
+      status: "active",
+    });
+
+    return {
+      success: true,
+      message: "Super admin seeded successfully",
+      data: created,
+    };
+  }
 }
 
 export const authService = new AuthService();

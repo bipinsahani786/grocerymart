@@ -9,7 +9,7 @@ export function FilterContainer({ className, children, ...props }: FilterContain
   return (
     <div
       className={cn(
-        "bg-white dark:bg-[#111115] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm mb-6 flex flex-wrap items-center gap-3",
+        "bg-card border border-border rounded-xl p-4 shadow-sm mb-6 flex flex-wrap items-center gap-3",
         className
       )}
       {...props}

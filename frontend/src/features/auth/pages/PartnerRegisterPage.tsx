@@ -109,11 +109,11 @@ export default function PartnerRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] flex flex-col lg:flex-row font-sans selection:bg-[#fe7d02] selection:text-white">
+    <div className="min-h-screen bg-app-shell flex flex-col lg:flex-row font-sans selection:bg-brand-accent selection:text-brand-on-accent">
       {/* Left: Branding */}
       <div className="hidden lg:flex lg:w-1/2 p-2 relative overflow-hidden">
         <div className="w-full h-full rounded-[2.5rem] bg-zinc-900 border border-white/10 relative overflow-hidden flex flex-col justify-between p-20">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#fe7d02]/30 via-zinc-900 to-zinc-900"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-accent/30 via-brand-panel to-app-shell"></div>
           
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-16">
@@ -123,14 +123,14 @@ export default function PartnerRegisterPage() {
                 </div>
               ) : (
                 <div className="bg-white/10 p-2 rounded-2xl w-12 h-12 flex items-center justify-center">
-                  <span className="font-bold text-2xl text-[#fe7d02]">{appName?.charAt(0)}</span>
+                  <span className="font-bold text-2xl text-primary-300">{appName?.charAt(0)}</span>
                 </div>
               )}
               <span className="font-bold text-2xl text-white uppercase">{appName}</span>
             </div>
 
             <h2 className="text-5xl font-bold text-white mb-6 leading-tight">
-              Grow with Us as a <span className="text-[#fe7d02]">Partner</span>.
+              Grow with Us as a <span className="text-primary-300">Partner</span>.
             </h2>
             <p className="text-xl text-zinc-400 leading-relaxed max-w-md">
               Join our partner program and earn generous lifetime commissions for every business you refer to our platform.
@@ -144,7 +144,7 @@ export default function PartnerRegisterPage() {
         <div className="w-full max-w-md space-y-8 py-12">
           
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="bg-[#fe7d02] p-2.5 rounded-xl w-10 h-10 flex items-center justify-center font-bold text-white">
+            <div className="bg-brand-accent p-2.5 rounded-xl w-10 h-10 flex items-center justify-center font-bold text-brand-on-accent">
               {appName?.charAt(0) || 'B'}
             </div>
             <span className="font-bold text-xl text-white uppercase">{appName}</span>
@@ -172,7 +172,7 @@ export default function PartnerRegisterPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Full Name *"
-                    className="w-full pl-12 pr-4 py-4 bg-zinc-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#fe7d02] focus:ring-1 focus:ring-[#fe7d02] transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-input-bg/50 border border-overlay-border rounded-2xl text-foreground focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                   />
                 </div>
 
@@ -184,7 +184,7 @@ export default function PartnerRegisterPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email Address *"
-                    className="w-full pl-12 pr-4 py-4 bg-zinc-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#fe7d02] focus:ring-1 focus:ring-[#fe7d02] transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-input-bg/50 border border-overlay-border rounded-2xl text-foreground focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                   />
                 </div>
 
@@ -195,7 +195,7 @@ export default function PartnerRegisterPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Phone Number (Optional)"
-                    className="w-full pl-12 pr-4 py-4 bg-zinc-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#fe7d02] focus:ring-1 focus:ring-[#fe7d02] transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-input-bg/50 border border-overlay-border rounded-2xl text-foreground focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                   />
                 </div>
 
@@ -206,7 +206,7 @@ export default function PartnerRegisterPage() {
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     placeholder="Company/Agency Name (Optional)"
-                    className="w-full pl-12 pr-4 py-4 bg-zinc-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#fe7d02] focus:ring-1 focus:ring-[#fe7d02] transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-input-bg/50 border border-overlay-border rounded-2xl text-foreground focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                   />
                 </div>
 
@@ -219,7 +219,7 @@ export default function PartnerRegisterPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password *"
-                      className="w-full pl-12 pr-4 py-4 bg-zinc-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#fe7d02] focus:ring-1 focus:ring-[#fe7d02] transition-all"
+                      className="w-full pl-12 pr-4 py-4 bg-input-bg/50 border border-overlay-border rounded-2xl text-foreground focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                     />
                   </div>
                   <div className="relative">
@@ -230,7 +230,7 @@ export default function PartnerRegisterPage() {
                       value={passwordConfirmation}
                       onChange={(e) => setPasswordConfirmation(e.target.value)}
                       placeholder="Confirm *"
-                      className="w-full pl-12 pr-4 py-4 bg-zinc-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#fe7d02] focus:ring-1 focus:ring-[#fe7d02] transition-all"
+                      className="w-full pl-12 pr-4 py-4 bg-input-bg/50 border border-overlay-border rounded-2xl text-foreground focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                     />
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export default function PartnerRegisterPage() {
               <button
                 type="submit"
                 disabled={checkUserMutation.isPending || sendOtpMutation.isPending}
-                className="w-full bg-[#fe7d02] hover:bg-[#ea580c] text-white font-bold py-4 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
+                className="w-full bg-brand-accent hover:bg-brand-accent-hover text-brand-on-accent font-bold py-4 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
               >
                 {checkUserMutation.isPending || sendOtpMutation.isPending ? 'Processing...' : (
                   <>
@@ -251,7 +251,7 @@ export default function PartnerRegisterPage() {
               
               <p className="text-center text-zinc-500 mt-6">
                 Already have an account?{' '}
-                <Link to="/login" className="text-[#fe7d02] font-semibold hover:underline">
+                <Link to="/login" className="text-primary-400 font-semibold hover:underline">
                   Log in here
                 </Link>
               </p>
@@ -267,14 +267,14 @@ export default function PartnerRegisterPage() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   placeholder="123456"
-                  className="w-full pl-12 pr-4 py-4 bg-zinc-900/50 border border-white/10 rounded-2xl text-white text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:border-[#fe7d02] focus:ring-1 focus:ring-[#fe7d02] transition-all"
+                  className="w-full pl-12 pr-4 py-4 bg-input-bg/50 border border-overlay-border rounded-2xl text-foreground text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={verifyOtpMutation.isPending || registerMutation.isPending || otp.length !== 6}
-                className="w-full bg-[#fe7d02] hover:bg-[#ea580c] text-white font-bold py-4 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                className="w-full bg-brand-accent hover:bg-brand-accent-hover text-brand-on-accent font-bold py-4 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
               >
                 {verifyOtpMutation.isPending || registerMutation.isPending ? 'Verifying & Registering...' : (
                   <>

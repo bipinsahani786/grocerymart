@@ -119,7 +119,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#09090b] text-slate-900 dark:text-slate-200 relative overflow-hidden">
+      <div className="min-h-screen bg-background text-slate-900 dark:text-slate-200 relative overflow-hidden">
         {/* Abstract Background Elements */}
         <div className="absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-primary-500/10 to-transparent pointer-events-none" />
         
@@ -134,7 +134,7 @@ export default function ProfilePage() {
             
             {/* Avatar Skeleton */}
             <div className="lg:col-span-1 space-y-8">
-              <div className="bg-slate-900 dark:bg-[#111115] border border-slate-800 dark:border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden flex flex-col items-center">
+              <div className="bg-brand-panel border border-slate-800 dark:border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden flex flex-col items-center">
                 <Skeleton className="w-40 h-40 rounded-full bg-white/5" />
                 <div className="mt-6 flex gap-3">
                   <Skeleton className="h-10 w-10 rounded-xl bg-white/5" />
@@ -146,7 +146,7 @@ export default function ProfilePage() {
             {/* Forms Skeleton */}
             <div className="lg:col-span-2 space-y-8">
               {/* Profile Form */}
-              <div className="bg-white/70 dark:bg-[#111115]/80 backdrop-blur-xl border border-white/50 dark:border-white/5 rounded-3xl p-8 shadow-xl">
+              <div className="bg-card/80 backdrop-blur-xl border border-white/50 dark:border-white/5 rounded-3xl p-8 shadow-xl">
                 <div className="flex items-center gap-4 mb-8">
                   <Skeleton className="w-12 h-12 rounded-2xl bg-slate-200/50 dark:bg-white/5" />
                   <div className="space-y-2">
@@ -167,7 +167,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Security Form */}
-              <div className="bg-slate-900 dark:bg-[#111115] rounded-3xl p-8 shadow-2xl">
+              <div className="bg-brand-panel rounded-3xl p-8 shadow-2xl">
                 <div className="flex items-center gap-4 mb-8">
                   <Skeleton className="w-12 h-12 rounded-2xl bg-white/5" />
                   <div className="space-y-2">
@@ -201,7 +201,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#09090b] text-slate-900 dark:text-slate-200 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-slate-900 dark:text-slate-200 relative overflow-hidden">
       {/* Abstract Background Elements */}
       <div className="absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-primary-500/10 to-transparent pointer-events-none" />
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
@@ -216,7 +216,7 @@ export default function ProfilePage() {
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-8 relative z-10">
 
         {/* ═══════════ Avatar & Info Banner ═══════════ */}
-        <div className="group relative bg-white/70 dark:bg-[#111115]/80 backdrop-blur-xl border border-white/50 dark:border-white/5 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none transition-all duration-500">
+        <div className="group relative bg-card/80 backdrop-blur-xl border border-white/50 dark:border-white/5 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none transition-all duration-500">
           {/* Banner Gradient */}
           <div className="h-40 bg-gradient-to-br from-primary-600 via-primary-500 to-primary-800 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
@@ -227,7 +227,7 @@ export default function ProfilePage() {
             {/* Avatar Container with Glow */}
             <div className="relative -mt-16 md:-mt-20">
               <div className="absolute -inset-1 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
-              <div className="relative w-32 h-32 rounded-2xl border-4 border-white dark:border-[#111115] shadow-2xl overflow-hidden bg-slate-100 dark:bg-zinc-800 transform group-hover:-translate-y-1 transition duration-500">
+              <div className="relative w-32 h-32 rounded-2xl border-4 border-white dark:border-card shadow-2xl overflow-hidden bg-slate-100 dark:bg-zinc-800 transform group-hover:-translate-y-1 transition duration-500">
                 {profile?.avatar ? (
                   <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
                 ) : (
@@ -300,7 +300,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           
           {/* ═══════════ Personal Info Form ═══════════ */}
-          <div className="lg:col-span-3 bg-white/70 dark:bg-[#111115]/80 backdrop-blur-xl border border-white/50 dark:border-white/5 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-all hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-none relative overflow-hidden group">
+          <div className="lg:col-span-3 bg-card/80 backdrop-blur-xl border border-white/50 dark:border-white/5 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-all hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-none relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             
             <div className="mb-8 flex items-center gap-4">
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                   <Input
                     {...profileForm.register('name')}
                     placeholder="E.g. Jane Doe"
-                    className="h-12 bg-slate-50/50 dark:bg-[#0a0a0c] border-slate-200 dark:border-white/5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-inner"
+                    className="h-12 bg-slate-50/50 dark:bg-input-bg border-slate-200 dark:border-white/5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-inner"
                   />
                   {profileForm.formState.errors.name && (
                     <p className="text-xs text-rose-500 font-bold ml-1">{profileForm.formState.errors.name.message}</p>
@@ -339,7 +339,7 @@ export default function ProfilePage() {
                     {...profileForm.register('email')}
                     type="email"
                     placeholder="you@example.com"
-                    className="h-12 bg-slate-50/50 dark:bg-[#0a0a0c] border-slate-200 dark:border-white/5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-inner"
+                    className="h-12 bg-slate-50/50 dark:bg-input-bg border-slate-200 dark:border-white/5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-inner"
                   />
                   {profileForm.formState.errors.email && (
                     <p className="text-xs text-rose-500 font-bold ml-1">{profileForm.formState.errors.email.message}</p>
@@ -354,7 +354,7 @@ export default function ProfilePage() {
                   <Input
                     {...profileForm.register('phone')}
                     placeholder="+1 (555) 000-0000"
-                    className="h-12 bg-slate-50/50 dark:bg-[#0a0a0c] border-slate-200 dark:border-white/5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-inner"
+                    className="h-12 bg-slate-50/50 dark:bg-input-bg border-slate-200 dark:border-white/5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-inner"
                   />
                 </div>
               </div>
@@ -377,7 +377,7 @@ export default function ProfilePage() {
           </div>
 
           {/* ═══════════ Change Password Form ═══════════ */}
-          <div className="lg:col-span-2 bg-slate-900 dark:bg-[#111115] border border-slate-800 dark:border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
+          <div className="lg:col-span-2 bg-brand-panel border border-slate-800 dark:border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
             {/* Dark abstract glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl opacity-50 pointer-events-none" />
             
@@ -480,3 +480,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

@@ -45,7 +45,7 @@ export function StatCard({
   return (
     <Card 
       className={cn(
-        "transition-all duration-300 relative overflow-hidden group bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-xl shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-primary-500/20", 
+        "transition-all duration-300 relative overflow-hidden group bg-card border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary-500/20", 
         onClick && "cursor-pointer hover:-translate-y-0.5",
         isActive && "ring-2 ring-primary-500 border-primary-500",
         className

@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { identifierSchema, loginPasswordSchema, otpSchema, setPasswordSchema } from '../schemas/authSchema';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { User, Lock, KeyRound, ArrowRight } from 'lucide-react';
-import { useCheckUser, useSendOtp, useLogin, useVerifyOtp, useSetPassword } from '../api/useAuthMutations';
+import { User, Lock, Eye, EyeOff, Mail, ArrowRight, KeyRound } from 'lucide-react';
+import { useLogin, useRegister, useVerifyRegisterOtp } from '../api/useAuthMutations';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { AuthFormSkeleton } from './AuthFormSkeleton';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 // Higher Order Component to add Skeleton aesthetic
 const withSkeleton = (Component: React.FC<any>) => {
@@ -27,58 +25,6 @@ const withSkeleton = (Component: React.FC<any>) => {
   }
 }
 
-// --- IDENTIFIER FORM ---
-export const IdentifierForm = withSkeleton(({ onNext, setIdentifier }: any) => {
-  const form = useForm({ resolver: zodResolver(identifierSchema) });
-  const checkUserMutation = useCheckUser();
-  const sendOtpMutation = useSendOtp();
-
-  const onSubmit = (data: any) => {
-    checkUserMutation.mutate(data, {
-      onSuccess: (res) => {
-        setIdentifier(data.identifier);
-        if (res.exists) {
-          onNext('LOGIN');
-        } else {
-          sendOtpMutation.mutate(data, {
-            onSuccess: () => {
-              toast.success(`OTP has been sent to ${data.identifier}`);
-              onNext('OTP');
-            },
-            onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to send OTP')
-          });
-        }
-      },
-      onError: (err: any) => {
-        const errorMsg = err.response?.data?.errors 
-          ? (Object.values(err.response.data.errors)[0] as any)?.[0] as string
-          : err.response?.data?.message;
-        toast.error(errorMsg || 'Verification failed');
-      }
-    });
-  };
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="space-y-2">
-        <label htmlFor="identifier" className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1 cursor-pointer select-none">Identity</label>
-        <Input 
-          id="identifier"
-          icon={<User size={20} />}
-          className="py-3.5 rounded-xl text-[15px]"
-          {...form.register('identifier')} 
-          placeholder="Email or 10-digit Phone"
-          error={form.formState.errors.identifier?.message as string}
-        />
-      </div>
-      <Button type="submit" isLoading={checkUserMutation.isPending || sendOtpMutation.isPending} loadingText="Processing" className="w-full mt-2">
-        <span>Continue</span>
-        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-      </Button>
-    </form>
-  );
-});
-
 // --- LOGIN PASSWORD FORM ---
 export const LoginForm = withSkeleton(() => {
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -87,6 +33,7 @@ export const LoginForm = withSkeleton(() => {
     defaultValues: { email: '', password: '' }
   });
   const loginMutation = useLogin();
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = (data: any) => {
     loginMutation.mutate({ email: data.email, password: data.password }, {
@@ -100,52 +47,223 @@ export const LoginForm = withSkeleton(() => {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1 cursor-pointer select-none">Email Address</label>
-        <Input 
-          id="email"
-          type="email"
-          icon={<User size={20} />}
-          className="py-3.5 rounded-xl text-[15px]"
-          {...form.register('email', { required: 'Email is required' })} 
-          placeholder="admin@grocerymart.com"
-          error={form.formState.errors.email?.message as string}
-        />
-      </div>
-      <div className="space-y-2">
-        <div className="flex justify-between items-center px-1">
-          <label htmlFor="password" className="text-xs font-bold text-zinc-400 uppercase tracking-widest cursor-pointer select-none">Password</label>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      {/* Username / Email field */}
+      <div className="space-y-1.5 animate-in fade-in slide-in-from-left-6 duration-500 [animation-delay:100ms]">
+        <label htmlFor="email" className="text-sm font-semibold text-slate-800 dark:text-white/90 tracking-wide select-none ml-1">Email Address</label>
+        <div className="relative flex items-center bg-slate-100/80 dark:bg-primary-950/45 border-2 border-slate-200 dark:border-primary-700/30 rounded-xl px-2 py-1 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all">
+          <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
+            <User size={15} />
+          </div>
+          <input 
+            id="email"
+            type="email"
+            {...form.register('email', { required: 'Email is required' })} 
+            placeholder="admin@grocerymart.com"
+            className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
+          />
         </div>
-        <Input 
-          id="password"
-          type="password"
-          icon={<Lock size={20} />}
-          className="py-3.5 rounded-xl text-[15px]"
-          {...form.register('password', { required: 'Password is required' })} 
-          placeholder="••••••••"
-          error={form.formState.errors.password?.message as string}
-        />
       </div>
-      <Button type="submit" isLoading={loginMutation.isPending} loadingText="Authenticating" className="w-full mt-2">
-        <span>Sign into Dashboard</span>
-        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-      </Button>
+
+      {/* Password field */}
+      <div className="space-y-1.5 animate-in fade-in slide-in-from-right-6 duration-500 [animation-delay:200ms]">
+        <label htmlFor="password" className="text-sm font-semibold text-slate-800 dark:text-white/90 tracking-wide select-none ml-1">Password</label>
+        <div className="relative flex items-center bg-slate-100/80 dark:bg-primary-950/45 border-2 border-slate-200 dark:border-primary-700/30 rounded-xl px-2 py-1 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all">
+          <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
+            <Lock size={15} />
+          </div>
+          <input 
+            id="password"
+            type={showPassword ? "text" : "password"}
+            {...form.register('password', { required: 'Password is required' })} 
+            placeholder="••••••••"
+            className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="text-slate-400 dark:text-white/60 hover:text-slate-600 dark:hover:text-white mr-2 focus:outline-none transition-colors"
+          >
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Forgot Password */}
+      <div className="flex justify-between items-center animate-in fade-in slide-in-from-bottom-4 duration-500 [animation-delay:300ms] px-1">
+        <div className="flex items-center gap-2">
+          <input 
+            id="remember-me"
+            type="checkbox"
+            className="h-3.5 w-3.5 rounded border border-slate-300 dark:border-primary-700/35 bg-slate-100 dark:bg-primary-950/40 text-primary-500 focus:ring-primary-500 focus:ring-offset-0 focus:ring-offset-transparent cursor-pointer"
+          />
+          <label htmlFor="remember-me" className="text-xs text-slate-600 dark:text-white/85 font-medium select-none cursor-pointer">
+            Remember Me
+          </label>
+        </div>
+        <button 
+          type="button"
+          onClick={() => toast.info('Contact system administrator for password recovery.')}
+          className="text-xs font-semibold text-primary-600 dark:text-white/70 hover:text-primary-700 dark:hover:text-white transition-colors cursor-pointer"
+        >
+          Forgot Password?
+        </button>
+      </div>
+
+      {/* Login Button */}
+      <div className="pt-3 animate-in fade-in slide-in-from-bottom-6 duration-500 [animation-delay:400ms]">
+        <button 
+          type="submit" 
+          disabled={loginMutation.isPending}
+          className="w-full py-2.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-400 rounded-lg transition-all shadow-[0_4px_12px_rgba(0,0,0,0.3)] shadow-primary-500/20 hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {loginMutation.isPending ? 'Authenticating...' : 'Login'}
+        </button>
+      </div>
     </form>
   );
 });
 
-// --- OTP VERIFICATION FORM ---
-export const OtpForm = withSkeleton(({ identifier, onNext, goBack, setOtpToken }: any) => {
-  const form = useForm({ resolver: zodResolver(otpSchema) });
-  const verifyOtpMutation = useVerifyOtp();
+// --- REGISTER/SIGNUP FORM ---
+export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (email: string) => void }) => {
+  const form = useForm({
+    defaultValues: { name: '', email: '', password: '', passwordConfirmation: '' }
+  });
+  
+  const registerMutation = useRegister();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = (data: any) => {
-    verifyOtpMutation.mutate({ identifier, otp: data.otp }, {
+    if (data.password !== data.passwordConfirmation) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    registerMutation.mutate({ 
+      name: data.name, 
+      email: data.email, 
+      password: data.password, 
+      userType: 'owner' 
+    }, {
+      onSuccess: () => {
+        toast.success(`Verification OTP sent to ${data.email}`);
+        onOtpRequired(data.email);
+      },
+      onError: (err: any) => toast.error(err.response?.data?.message || 'Registration failed')
+    });
+  };
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      {/* Name field */}
+      <div className="space-y-1.5 animate-in fade-in slide-in-from-left-6 duration-500 [animation-delay:100ms]">
+        <label htmlFor="name" className="text-sm font-semibold text-slate-800 dark:text-white/90 tracking-wide select-none ml-1">Full Name</label>
+        <div className="relative flex items-center bg-slate-100/80 dark:bg-primary-950/45 border-2 border-slate-200 dark:border-primary-700/30 rounded-xl px-2 py-1 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all">
+          <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
+            <User size={15} />
+          </div>
+          <input 
+            id="name"
+            type="text"
+            {...form.register('name', { required: 'Name is required' })} 
+            placeholder="John Doe"
+            className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
+          />
+        </div>
+      </div>
+
+      {/* Email field */}
+      <div className="space-y-1.5 animate-in fade-in slide-in-from-right-6 duration-500 [animation-delay:200ms]">
+        <label htmlFor="reg-email" className="text-sm font-semibold text-slate-800 dark:text-white/90 tracking-wide select-none ml-1">Email Address</label>
+        <div className="relative flex items-center bg-slate-100/80 dark:bg-primary-950/45 border-2 border-slate-200 dark:border-primary-700/30 rounded-xl px-2 py-1 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all">
+          <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
+            <Mail size={15} />
+          </div>
+          <input 
+            id="reg-email"
+            type="email"
+            {...form.register('email', { required: 'Email is required' })} 
+            placeholder="name@example.com"
+            className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
+          />
+        </div>
+      </div>
+
+      {/* Password field */}
+      <div className="space-y-1.5 animate-in fade-in slide-in-from-left-6 duration-500 [animation-delay:300ms]">
+        <label htmlFor="reg-password" className="text-sm font-semibold text-slate-800 dark:text-white/90 tracking-wide select-none ml-1">Password</label>
+        <div className="relative flex items-center bg-slate-100/80 dark:bg-primary-950/45 border-2 border-slate-200 dark:border-primary-700/30 rounded-xl px-2 py-1 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all">
+          <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
+            <Lock size={15} />
+          </div>
+          <input 
+            id="reg-password"
+            type={showPassword ? "text" : "password"}
+            {...form.register('password', { required: 'Password is required' })} 
+            placeholder="••••••••"
+            className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="text-slate-400 dark:text-white/60 hover:text-slate-600 dark:hover:text-white mr-2 focus:outline-none transition-colors"
+          >
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Confirm Password field */}
+      <div className="space-y-1.5 animate-in fade-in slide-in-from-right-6 duration-500 [animation-delay:400ms]">
+        <label htmlFor="reg-confirm" className="text-sm font-semibold text-slate-800 dark:text-white/90 tracking-wide select-none ml-1">Confirm Password</label>
+        <div className="relative flex items-center bg-slate-100/80 dark:bg-primary-950/45 border-2 border-slate-200 dark:border-primary-700/30 rounded-xl px-2 py-1 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all">
+          <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
+            <Lock size={15} />
+          </div>
+          <input 
+            id="reg-confirm"
+            type={showConfirmPassword ? "text" : "password"}
+            {...form.register('passwordConfirmation', { required: 'Please confirm your password' })} 
+            placeholder="••••••••"
+            className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="text-slate-400 dark:text-white/60 hover:text-slate-600 dark:hover:text-white mr-2 focus:outline-none transition-colors"
+          >
+            {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Submit Button */}
+      <div className="pt-3 animate-in fade-in slide-in-from-bottom-6 duration-500 [animation-delay:500ms]">
+        <button 
+          type="submit" 
+          disabled={registerMutation.isPending}
+          className="w-full py-2.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-400 rounded-lg transition-all shadow-[0_4px_12px_rgba(0,0,0,0.3)] shadow-primary-500/20 hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {registerMutation.isPending ? 'Processing...' : 'Sign Up'}
+        </button>
+      </div>
+    </form>
+  );
+});
+
+// --- REGISTER OTP FORM ---
+export const RegisterOtpForm = withSkeleton(({ email }: { email: string }) => {
+  const form = useForm();
+  const verifyOtpMutation = useVerifyRegisterOtp();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const navigate = useNavigate();
+
+  const onSubmit = (data: any) => {
+    verifyOtpMutation.mutate({ email, otp: data.otp }, {
       onSuccess: (res) => {
-        setOtpToken(res.verification_token);
-        toast.success('OTP Verified!');
-        onNext('SET_PASSWORD');
+        toast.success('Registration successful!');
+        setAuth(res.data.user, res.data.accessToken);
+        navigate('/dashboard'); // Store owner always goes to dashboard
       },
       onError: (err: any) => toast.error(err.response?.data?.message || 'Invalid OTP')
     });
@@ -154,88 +272,20 @@ export const OtpForm = withSkeleton(({ identifier, onNext, goBack, setOtpToken }
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="space-y-2">
-        <label htmlFor="otp" className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1 cursor-pointer select-none">Secure Code</label>
+        <label htmlFor="otp" className="text-sm font-bold text-slate-800 dark:text-white/90 uppercase tracking-widest ml-1 cursor-pointer select-none">Secure Code</label>
+        <p className="text-xs text-slate-500 dark:text-white/70 ml-1 mb-2">Sent to {email}</p>
         <Input 
           id="otp"
           type="text"
           icon={<KeyRound size={20} />}
-          className="py-3.5 rounded-xl text-center text-lg tracking-widest font-bold"
+          className="py-3.5 rounded-xl text-center text-lg tracking-widest font-bold bg-slate-100/80 dark:bg-primary-950/45 text-slate-900 dark:text-white border-slate-200 dark:border-primary-700/30"
           {...form.register('otp')} 
-          placeholder="123456"
-          maxLength={6}
-          error={form.formState.errors.otp?.message as string}
+          placeholder="1234"
+          maxLength={4}
         />
       </div>
       <Button type="submit" isLoading={verifyOtpMutation.isPending} loadingText="Verifying" className="w-full mt-2">
-        <span>Verify OTP</span>
-        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-      </Button>
-      <div className="pt-8 text-center">
-        <button type="button" onClick={goBack} className="text-sm font-bold text-zinc-500 hover:text-white transition-colors">Wrong email/mobile? Go back</button>
-      </div>
-    </form>
-  );
-});
-
-// --- SET PASSWORD FORM ---
-export const SetPasswordForm = withSkeleton(({ otpToken }: any) => {
-  const setAuth = useAuthStore((state) => state.setAuth);
-  const navigate = useNavigate();
-  const form = useForm({ resolver: zodResolver(setPasswordSchema) });
-  const setPasswordMutation = useSetPassword();
-
-  const onSubmit = (data: any) => {
-    setPasswordMutation.mutate({ verification_token: otpToken, ...data }, {
-      onSuccess: (res) => {
-        setAuth(res.user, res.token);
-        toast.success('Account setup complete!');
-        const isSuperadmin = res.user.roles?.some((r: any) => r.name === 'Superadmin');
-        navigate(isSuperadmin ? '/superadmin/dashboard' : '/dashboard');
-      },
-      onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to set password')
-    });
-  };
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="space-y-2">
-        <label htmlFor="name" className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1 cursor-pointer select-none">Full Name</label>
-        <Input 
-          id="name"
-          type="text"
-          icon={<User size={20} />}
-          className="py-3.5 rounded-xl text-[15px]"
-          {...form.register('name')} 
-          placeholder="Your Name"
-          error={form.formState.errors.name?.message as string}
-        />
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="new_password" className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1 cursor-pointer select-none">New Password</label>
-        <Input 
-          id="new_password"
-          type="password"
-          icon={<Lock size={20} />}
-          className="py-3.5 rounded-xl text-[15px]"
-          {...form.register('password')} 
-          placeholder="••••••••"
-          error={form.formState.errors.password?.message as string}
-        />
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="password_confirmation" className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1 cursor-pointer select-none">Confirm Password</label>
-        <Input 
-          id="password_confirmation"
-          type="password"
-          icon={<Lock size={20} />}
-          className="py-3.5 rounded-xl text-[15px]"
-          {...form.register('password_confirmation')} 
-          placeholder="••••••••"
-          error={form.formState.errors.password_confirmation?.message as string}
-        />
-      </div>
-      <Button type="submit" isLoading={setPasswordMutation.isPending} loadingText="Processing" className="w-full mt-8">
-        <span>Complete Setup</span>
+        <span>Verify OTP & Complete</span>
         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </Button>
     </form>

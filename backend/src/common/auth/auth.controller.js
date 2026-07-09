@@ -53,6 +53,11 @@ export class AuthController {
     const result = await authService.changePassword(req.user.id, req.body);
     res.json(result);
   });
+
+  seedAdmin = catchAsync(async (req, res) => {
+    const result = await authService.seedAdmin();
+    res.json(result);
+  });
 }
 
 export const authController = new AuthController();

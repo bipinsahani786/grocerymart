@@ -6,7 +6,6 @@ import { Toaster } from 'sonner';
 import { PageLoadingSkeleton } from './components/ui/PageLoadingSkeleton';
 import { AppLayout } from './components/layout/AppLayout';
 
-
 const Login = lazy(() => import('@/features/auth/pages/LoginPage'));
 const SuperadminDashboard = lazy(() => import('@/features/superadmin/dashboard/pages/SuperadminDashboardPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
@@ -27,13 +26,13 @@ function SuperadminRoute({ children }: { children: React.ReactNode }) {
 // Color palettes
 const colorPalettes = {
   orange: {
-    '--primary-50': '#fff7ed', '--primary-100': '#ffedd5', '--primary-200': '#fed7aa', '--primary-300': '#fdba74', '--primary-400': '#fb923c', '--primary-500': '#f97316', '--primary-600': '#ea580c', '--primary-700': '#c2410c', '--primary-800': '#9a3412', '--primary-900': '#7c2d12', '--primary-950': '#431407',
+    '--primary-50': '#fff8eb', '--primary-100': '#ffedc6', '--primary-200': '#ffd889', '--primary-300': '#ffbd4a', '--primary-400': '#f59e0b', '--primary-500': '#d97706', '--primary-600': '#b45309', '--primary-700': '#92400e', '--primary-800': '#78350f', '--primary-900': '#5f2d10', '--primary-950': '#341605',
   },
   blue: {
-    '--primary-50': '#eff6ff', '--primary-100': '#dbeafe', '--primary-200': '#bfdbfe', '--primary-300': '#93c5fd', '--primary-400': '#60a5fa', '--primary-500': '#3b82f6', '--primary-600': '#2563eb', '--primary-700': '#1d4ed8', '--primary-800': '#1e40af', '--primary-900': '#1e3a8a', '--primary-950': '#172554',
+    '--primary-50': '#f0f9ff', '--primary-100': '#e0f2fe', '--primary-200': '#bae6fd', '--primary-300': '#7dd3fc', '--primary-400': '#4d908e', '--primary-500': '#277da1', '--primary-600': '#1f6481', '--primary-700': '#174c62', '--primary-800': '#0f3342', '--primary-900': '#081a21', '--primary-950': '#040d11',
   },
   green: {
-    '--primary-50': '#ecfdf5', '--primary-100': '#d1fae5', '--primary-200': '#a7f3d0', '--primary-300': '#6ee7b7', '--primary-400': '#34d399', '--primary-500': '#10b981', '--primary-600': '#059669', '--primary-700': '#047857', '--primary-800': '#065f46', '--primary-900': '#064e3b', '--primary-950': '#022c22',
+    '--primary-50': '#f0fdf4', '--primary-100': '#dcfce7', '--primary-200': '#bbf7d0', '--primary-300': '#86efac', '--primary-400': '#43aa8b', '--primary-500': '#90be6d', '--primary-600': '#7ba759', '--primary-700': '#658f46', '--primary-800': '#507833', '--primary-900': '#3b6020', '--primary-950': '#25490c',
   },
   purple: {
     '--primary-50': '#f5f3ff', '--primary-100': '#ede9fe', '--primary-200': '#ddd6fe', '--primary-300': '#c4b5fd', '--primary-400': '#a78bfa', '--primary-500': '#8b5cf6', '--primary-600': '#7c3aed', '--primary-700': '#6d28d9', '--primary-800': '#5b21b6', '--primary-900': '#4c1d95', '--primary-950': '#2e1065',
@@ -78,8 +77,9 @@ function App() {
       root.classList.add('light');
     }
 
-    // Inject color palette
-    const colors = colorPalettes[primaryColor];
+    // Inject color palette matching active theme's "Mart" highlight
+    const resolvedColor = (theme === 'dark' || theme === 'semi-dark') ? 'green' : 'blue';
+    const colors = colorPalettes[resolvedColor];
     for (const [key, value] of Object.entries(colors)) {
       root.style.setProperty(key, value);
     }

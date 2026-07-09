@@ -239,4 +239,17 @@ router.get("/profile", verifyToken, authController.getProfile);
  */
 router.post("/change-password", verifyToken, validate(changePasswordSchema), authController.changePassword);
 
+/**
+ * @openapi
+ * /api/auth/seed-admin:
+ *   get:
+ *     summary: Temporarily seed the Super Admin user
+ *     description: Creates the default superadmin user for testing.
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Superadmin seeded successfully
+ */
+router.get("/seed-admin", authController.seedAdmin);
+
 export default router;
