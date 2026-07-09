@@ -6,6 +6,7 @@ import { useThemeStore, type LayoutTheme, type PrimaryColor, type FontFamily } f
 import { useTenantStore } from "@/store/tenantStore";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 
 // Theme dropdown component inside Header.tsx
 function ThemeCustomizer() {
@@ -29,13 +30,13 @@ function ThemeCustomizer() {
     };
   }, [isOpen]);
 
-  const colors: { name: string, value: PrimaryColor, hex: string, textColor: string }[] = [
-    { name: "Blue", value: "blue", hex: "#3b82f6", textColor: "text-blue-500" },
-    { name: "Teal", value: "teal", hex: "#14b8a6", textColor: "text-teal-500 dark:text-teal-400" },
-    { name: "Purple", value: "purple", hex: "#8b5cf6", textColor: "text-purple-500" },
-    { name: "Green", value: "green", hex: "#10b981", textColor: "text-emerald-500" },
-    { name: "Orange", value: "orange", hex: "#f97316", textColor: "text-orange-500" },
-    { name: "Red", value: "red", hex: "#ef4444", textColor: "text-red-500" },
+  const colors: { name: string, value: PrimaryColor, textColor: string }[] = [
+    { name: "Blue", value: "blue", textColor: "text-blue-500" },
+    { name: "Teal", value: "teal", textColor: "text-teal-500 dark:text-teal-400" },
+    { name: "Purple", value: "purple", textColor: "text-purple-500" },
+    { name: "Green", value: "green", textColor: "text-emerald-500" },
+    { name: "Orange", value: "orange", textColor: "text-orange-500" },
+    { name: "Red", value: "red", textColor: "text-red-500" },
   ];
 
   const layouts: { name: string, value: LayoutTheme, icon: any }[] = [
@@ -69,7 +70,7 @@ function ThemeCustomizer() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-[-16px] sm:right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] sm:max-w-none bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl z-50 p-5 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+        <div className="absolute right-[-16px] sm:right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] sm:max-w-none bg-card border border-border rounded-lg shadow-xl z-50 p-5 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
           <h3 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-widest mb-5 flex items-center shrink-0">
             <Palette className="h-4 w-4 mr-2 text-primary-500" />
             Theme Customizer
@@ -100,7 +101,7 @@ function ThemeCustomizer() {
 
             {/* Colors Section */}
             <div className="relative border border-slate-200 dark:border-white/10 rounded-lg p-4 pt-6 bg-slate-50/30 dark:bg-white/[0.01]">
-              <div className="absolute -top-3 left-4 bg-white dark:bg-[#121212] px-3.5 py-0.5 border border-slate-200 dark:border-white/10 rounded-lg text-[9px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-zinc-400 shadow-sm">
+              <div className="absolute -top-3 left-4 bg-card px-3.5 py-0.5 border border-border rounded-lg text-[9px] font-extrabold uppercase tracking-widest text-muted-foreground shadow-sm">
                 Colors
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -129,7 +130,7 @@ function ThemeCustomizer() {
 
             {/* Typography Section */}
             <div className="relative border border-slate-200 dark:border-white/10 rounded-lg p-4 pt-6 bg-slate-50/30 dark:bg-white/[0.01]">
-              <div className="absolute -top-3 left-4 bg-white dark:bg-[#121212] px-3.5 py-0.5 border border-slate-200 dark:border-white/10 rounded-lg text-[9px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-zinc-400 shadow-sm">
+              <div className="absolute -top-3 left-4 bg-card px-3.5 py-0.5 border border-border rounded-lg text-[9px] font-extrabold uppercase tracking-widest text-muted-foreground shadow-sm">
                 Typography
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -214,7 +215,7 @@ function ProfileMenu() {
       <div className="absolute right-0 top-full h-3 w-full z-40"></div>
 
       <div className={cn(
-        "absolute right-[-16px] sm:right-0 mt-3 w-72 max-w-[calc(100vw-2rem)] sm:max-w-none bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] origin-top-right",
+        "absolute right-[-16px] sm:right-0 mt-3 w-72 max-w-[calc(100vw-2rem)] sm:max-w-none bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] origin-top-right",
         isOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
       )}>
         {/* Profile Header Block */}
@@ -321,7 +322,7 @@ export function Header({ className }: { className?: string }) {
   }, []);
 
   return (
-    <header className={cn("h-16 flex items-center justify-between px-6 bg-white dark:bg-[#09090b] border-b border-slate-200 dark:border-white/5 sticky top-0 z-30 shadow-sm transition-colors duration-300", className)}>
+    <header className={cn("h-16 flex items-center justify-between px-6 bg-card border-b border-border sticky top-0 z-30 shadow-sm transition-colors duration-300", className)}>
       <div className="flex items-center flex-1 gap-4">
         <button onClick={toggleSidebar} className="p-2 -ml-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5">
           {isSidebarCollapsed ? <ArrowRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -369,7 +370,7 @@ export function Header({ className }: { className?: string }) {
             </button>
 
             {isBranchDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-sm shadow-xl z-50 py-2">
+              <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-sm shadow-xl z-50 py-2">
                 <div className="px-3 py-1.5 mb-1 border-b border-slate-100 dark:border-white/5">
                   <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select Branch</p>
                 </div>
@@ -418,7 +419,7 @@ export function Header({ className }: { className?: string }) {
 
         {/* Plan Badge */}
         {!isSuperadminMode && !isPartnerMode && (
-          <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 rounded-sm border border-slate-200 dark:border-white/5 bg-white dark:bg-[#09090b] shadow-sm ml-2 mr-2">
+          <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 rounded-sm border border-border bg-card shadow-sm ml-2 mr-2">
             <div className="bg-primary-50 dark:bg-primary-500/10 text-primary-500 p-1.5 rounded-sm">
               <Zap className="h-4 w-4" />
             </div>
@@ -438,17 +439,14 @@ export function Header({ className }: { className?: string }) {
           {isFullscreen ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
         </button>
 
-        {/* Toggle generic theme quickly */}
-        <button onClick={() => toggleTheme()} className="p-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5" title="Toggle Dark/Light Mode">
-          {theme === 'dark' || theme === 'semi-dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
+        {/* Shadcn UI Style Theme Toggle */}
+        <ModeToggle />
 
         {/* Advanced Theme Customizer */}
         <ThemeCustomizer />
 
         {/* Profile Dropdown Menu */}
         <ProfileMenu />
-
       </div>
     </header>
   );

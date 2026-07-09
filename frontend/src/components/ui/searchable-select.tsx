@@ -85,7 +85,7 @@ export function SearchableSelect({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111115] px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#fe7d02]/20 focus:border-[#fe7d02] disabled:cursor-not-allowed disabled:opacity-50 transition-all text-left shadow-sm font-medium",
+          "flex h-11 w-full items-center justify-between rounded-xl border border-border bg-input-bg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all text-left shadow-sm font-medium",
           error && "border-rose-500 focus:ring-rose-500/10 focus:border-rose-500",
           className
         )}
@@ -97,7 +97,7 @@ export function SearchableSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111115] shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute z-50 mt-2 w-full rounded-xl border border-border bg-card shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="relative flex items-center mb-1.5 bg-slate-50 dark:bg-black/20 rounded-lg px-3 py-2 border border-slate-100 dark:border-white/5">
             <Search className="h-4 w-4 text-slate-400 shrink-0 mr-2" />
             <input
@@ -145,12 +145,12 @@ export function SearchableSelect({
                     className={cn(
                       "flex w-full items-center justify-between px-3 py-2 text-sm text-left rounded-lg font-medium transition-colors",
                       isSelected
-                        ? "bg-[#fe7d02]/10 text-[#fe7d02]"
+                        ? "bg-primary-500/10 text-primary-500"
                         : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
                     )}
                   >
                     <span className="truncate">{opt.label}</span>
-                    {isSelected && <Check className="h-4 w-4 text-[#fe7d02] shrink-0" />}
+                    {isSelected && <Check className="h-4 w-4 text-primary-500 shrink-0" />}
                   </button>
                 );
               })

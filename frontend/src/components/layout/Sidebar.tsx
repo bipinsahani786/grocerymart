@@ -109,7 +109,7 @@ export function Sidebar({ className }: { className?: string }) {
       )}
 
       <div className={cn(
-        "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-[#09090b] border-r border-slate-200 dark:border-white/5 flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
+        "fixed lg:static inset-y-0 left-0 h-screen bg-card border-r border-border flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
         isSidebarCollapsed ? "w-[260px] lg:w-[80px] -translate-x-full lg:translate-x-0" : "w-[260px] translate-x-0",
         className
       )}>

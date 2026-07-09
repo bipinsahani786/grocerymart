@@ -79,7 +79,7 @@ function CustomKpiCard({ title, value, subtitle, icon, glowColor }: {
   const colors = colorMap[glowColor];
 
   return (
-    <div className="transition-all duration-300 relative overflow-hidden group bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-lg shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-slate-300 dark:hover:border-white/10 p-3 sm:p-3.5 flex flex-col justify-between min-h-[110px] w-full">
+    <div className="transition-all duration-300 relative overflow-hidden group bg-card border border-slate-200/60 dark:border-white/5 rounded-lg shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-slate-300 dark:hover:border-white/10 p-3 sm:p-3.5 flex flex-col justify-between min-h-[110px] w-full">
       {/* Accent Bar */}
       <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${colors.bar} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
 
@@ -187,7 +187,7 @@ export default function SuperadminDashboardPage() {
   const commOffset = donutCircumference - (commPct / 100) * donutCircumference;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] text-slate-900 dark:text-slate-200">
+    <div className="min-h-screen bg-background text-slate-900 dark:text-slate-200">
 
       {/* Header Section */}
       <PageHeader
@@ -274,7 +274,7 @@ export default function SuperadminDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Revenue & Profit Area Chart */}
-          <div className="lg:col-span-2 bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm relative flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-card border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm relative flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-300">
@@ -346,7 +346,7 @@ export default function SuperadminDashboardPage() {
                             y1={y}
                             x2={svgWidth - 20}
                             y2={y}
-                            stroke="#94a3b8"
+                            stroke="var(--muted-foreground)"
                             strokeDasharray="4 4"
                             strokeWidth="1"
                           />
@@ -379,14 +379,14 @@ export default function SuperadminDashboardPage() {
                         <path
                           d={trend.map((t, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(t.revenue)}`).join(' ')}
                           fill="none"
-                          stroke="#3b82f6"
+                          stroke="var(--primary-500)"
                           strokeWidth="2.5"
                           className="stroke-primary-500"
                         />
                         <path
                           d={trend.map((t, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(t.profit)}`).join(' ')}
                           fill="none"
-                          stroke="#10b981"
+                          stroke="var(--brand-panel-soft)"
                           strokeWidth="2.5"
                           className="stroke-emerald-500 dark:stroke-emerald-400"
                         />
@@ -400,7 +400,7 @@ export default function SuperadminDashboardPage() {
                         y1={paddingY - 10}
                         x2={hoveredPoint.x}
                         y2={svgHeight - paddingY}
-                        stroke="#64748b"
+                        stroke="var(--muted-foreground)"
                         strokeWidth="1"
                         strokeDasharray="3 3"
                         className="opacity-50"
@@ -470,7 +470,7 @@ export default function SuperadminDashboardPage() {
           </div>
 
           {/* Profit Distribution Donut Chart */}
-          <div className="bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
             <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-300 mb-4">
               Profit Distribution
             </h2>
@@ -483,7 +483,7 @@ export default function SuperadminDashboardPage() {
                     cy="50"
                     r={donutRadius}
                     fill="transparent"
-                    stroke="#e2e8f0"
+                    stroke="var(--border)"
                     className="dark:stroke-zinc-800"
                     strokeWidth={donutStrokeWidth}
                   />
@@ -493,7 +493,7 @@ export default function SuperadminDashboardPage() {
                       cy="50"
                       r={donutRadius}
                       fill="transparent"
-                      stroke="#10b981"
+                      stroke="var(--brand-panel-soft)"
                       strokeWidth={donutStrokeWidth}
                       strokeDasharray={donutCircumference}
                       strokeDashoffset={profitOffset}
@@ -507,7 +507,7 @@ export default function SuperadminDashboardPage() {
                       cy="50"
                       r={donutRadius}
                       fill="transparent"
-                      stroke="#3b82f6"
+                      stroke="var(--primary-500)"
                       strokeWidth={donutStrokeWidth}
                       strokeDasharray={donutCircumference}
                       strokeDashoffset={commOffset}
@@ -564,7 +564,7 @@ export default function SuperadminDashboardPage() {
         </div>
 
         {/* ── Lead Conversion Funnel Panel ── */}
-        <div className="bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm">
+        <div className="bg-card border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-300">
@@ -707,7 +707,7 @@ export default function SuperadminDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Best Sales Affiliates / Partners */}
-          <div className="bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
             <div>
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-300 mb-4 flex items-center gap-2">
                 <Award className="w-4 h-4 text-emerald-500" />
@@ -760,7 +760,7 @@ export default function SuperadminDashboardPage() {
           </div>
 
           {/* Top Subscription Plans */}
-          <div className="bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
             <div>
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-300 mb-4 flex items-center gap-2">
                 <Target className="w-4 h-4 text-primary-500" />
@@ -813,7 +813,7 @@ export default function SuperadminDashboardPage() {
           </div>
 
           {/* upcoming expirations list */}
-          <div className="bg-white dark:bg-[#111115] border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm flex flex-col justify-between">
             <div>
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-300 mb-4 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-rose-500" />
@@ -873,3 +873,4 @@ export default function SuperadminDashboardPage() {
     </div>
   );
 }
+

@@ -8,7 +8,7 @@ export function AppLayout() {
   const isSemiDark = theme === 'semi-dark';
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-[#09090b] text-slate-800 dark:text-white font-sans selection:bg-primary-500 selection:text-white transition-colors duration-300">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans selection:bg-primary-500 selection:text-brand-on-accent transition-colors duration-300">
       <Sidebar className={isSemiDark ? "dark" : ""} />
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
         <Header className={isSemiDark ? "dark" : ""} />

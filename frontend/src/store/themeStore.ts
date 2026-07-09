@@ -19,7 +19,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       theme: 'semi-dark',
-      primaryColor: 'orange',
+      primaryColor: 'blue',
       fontFamily: 'inter',
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((state) => ({ theme: (state.theme === 'dark' || state.theme === 'semi-dark') ? 'light' : 'dark' })),

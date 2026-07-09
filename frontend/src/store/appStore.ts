@@ -10,7 +10,7 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      appName: 'MobileCRM',
+      appName: 'Grocery Mart',
       appLogo: null,
       setSettings: (settings) => set((state) => ({ ...state, ...settings })),
     }),

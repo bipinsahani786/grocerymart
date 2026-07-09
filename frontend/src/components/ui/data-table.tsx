@@ -185,7 +185,7 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-lg shadow-sm overflow-hidden flex flex-col w-full">
+    <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden flex flex-col w-full">
 
       {/* Header Controls */}
       {searchable && (

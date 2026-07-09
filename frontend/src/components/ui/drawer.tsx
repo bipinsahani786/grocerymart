@@ -37,7 +37,7 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, className }
       {/* Drawer */}
       <div 
         className={cn(
-          "fixed right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#111115] shadow-2xl z-[110] flex flex-col animate-in slide-in-from-right duration-300",
+          "fixed right-0 top-0 h-full w-full max-w-lg bg-card shadow-2xl z-[110] flex flex-col animate-in slide-in-from-right duration-300",
           className
         )}
       >

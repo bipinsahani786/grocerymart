@@ -1,47 +1,21 @@
 import { useMutation } from '@tanstack/react-query';
-import api from '@/lib/api';
-
-export const useCheckUser = () => {
-  return useMutation({
-    mutationFn: async (data: { identifier: string }) => {
-      const response = await api.post('/check-user', data);
-      return response.data.data;
-    }
-  });
-};
-
-export const useSendOtp = () => {
-  return useMutation({
-    mutationFn: async (data: { identifier: string }) => {
-      const response = await api.post('/send-otp', data);
-      return response.data.data;
-    }
-  });
-};
+import { authService } from '@/services/auth.service';
+import type { LoginParams, RegisterParams, VerifyRegisterOtpParams } from '@/services/auth.service';
 
 export const useLogin = () => {
   return useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
-      const response = await api.post('/auth/login-password', data);
-      return response.data;
-    }
+    mutationFn: (data: LoginParams) => authService.login(data),
   });
 };
 
-export const useVerifyOtp = () => {
+export const useRegister = () => {
   return useMutation({
-    mutationFn: async (data: { identifier: string; otp: string }) => {
-      const response = await api.post('/verify-otp', data);
-      return response.data.data;
-    }
+    mutationFn: (data: RegisterParams) => authService.register(data),
   });
 };
 
-export const useSetPassword = () => {
+export const useVerifyRegisterOtp = () => {
   return useMutation({
-    mutationFn: async (data: any) => {
-      const response = await api.post('/set-password', data);
-      return response.data.data;
-    }
+    mutationFn: (data: VerifyRegisterOtpParams) => authService.verifyRegisterOtp(data),
   });
 };

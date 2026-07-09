@@ -36,7 +36,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '2x
       onClick={handleOverlayClick}
     >
       <div 
-        className={`bg-white dark:bg-[#09090b] w-full ${maxWidthClasses[maxWidth]} rounded-xl shadow-2xl border border-slate-200 dark:border-white/10 max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
+        className={`bg-card w-full ${maxWidthClasses[maxWidth]} rounded-xl shadow-2xl border border-border max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
       >
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center shrink-0 bg-slate-50/50 dark:bg-white/[0.02]">
