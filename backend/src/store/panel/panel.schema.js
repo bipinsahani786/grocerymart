@@ -59,7 +59,7 @@ export const createPosOrderSchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   body: z.object({
-    status: z.enum(["HELD", "PLACED", "ACCEPTED", "PACKING", "PACKED", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "COLLECTED", "COMPLETED", "CANCELLED"]),
+    status: z.enum(["PLACED", "ACCEPTED", "PACKING", "PACKED", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "COLLECTED", "COMPLETED", "CANCELLED", "REFUNDED"]),
   }),
   query: z.object({}).optional(),
   params: z.object({
@@ -73,7 +73,7 @@ export const createStaffSchema = z.object({
     email: z.string().email().optional().nullable(),
     phone: optionalText,
     password: z.string().min(6).optional().nullable(),
-    roleName: z.enum(["cashier", "picker", "kitchen_staff", "delivery_partner", "store_manager"]).default("cashier"),
+    roleName: z.enum(["CASHIER", "PICKER", "DELIVERY_PARTNER", "STORE_MANAGER"]).default("CASHIER"),
   }),
   query: z.object({}).optional(),
   params: z.object({}).optional(),
