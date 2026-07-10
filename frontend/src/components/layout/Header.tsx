@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { businessMenuGroups, superadminMenuGroups, isRouteActive } from "./Sidebar";
+import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
 
 // Theme dropdown component inside Header.tsx
 function ThemeCustomizer() {
@@ -166,6 +168,7 @@ function ThemeCustomizer() {
 // Profile Dropdown
 function ProfileMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
@@ -279,13 +282,34 @@ function ProfileMenu() {
         {/* Logout */}
         <div className="border-t border-slate-100 dark:border-white/5 p-2 bg-slate-50/50 dark:bg-white/[0.01]">
           <button
-            onClick={() => logout()}
-            className="w-full flex items-center px-3 py-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all duration-200 group/btn"
+            onClick={() => setIsSignOutOpen(true)}
+            className="w-full flex items-center px-3 py-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all duration-200 group/btn cursor-pointer"
           >
             <LogOut className="w-4 h-4 mr-3 opacity-70 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" /> Sign out
           </button>
         </div>
       </div>
+
+      <Modal
+        isOpen={isSignOutOpen}
+        onClose={() => setIsSignOutOpen(false)}
+        title="Confirm Sign Out"
+        footer={
+          <div className="flex gap-3 justify-end w-full">
+            <Button variant="outline" size="sm" onClick={() => setIsSignOutOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => { logout(); setIsSignOutOpen(false); }}>
+              Sign Out
+            </Button>
+          </div>
+        }
+        maxWidth="sm"
+      >
+        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+          Are you sure you want to sign out of Grocery Mart? This will end your active session on this terminal.
+        </p>
+      </Modal>
     </div>
   );
 }

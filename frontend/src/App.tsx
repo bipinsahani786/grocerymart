@@ -5,6 +5,8 @@ import { useAuthStore } from './store/authStore';
 import { Toaster } from 'sonner';
 import { PageLoadingSkeleton } from './components/ui/PageLoadingSkeleton';
 import { AppLayout } from './components/layout/AppLayout';
+import { AccessDeniedPage } from './components/layout/AccessDeniedPage';
+import { NotFoundPage } from './components/layout/NotFoundPage';
 
 const Login = lazy(() => import('@/features/auth/pages/LoginPage'));
 const SuperadminDashboard = lazy(() => import('@/features/superadmin/dashboard/pages/SuperadminDashboardPage'));
@@ -20,6 +22,9 @@ const StoreBillingPage = lazy(() => import('@/features/store/billing/pages/Store
 const StoreStaffPage = lazy(() => import('@/features/store/staff/pages/StoreStaffPage'));
 const StoreSearchPage = lazy(() => import('@/features/store/search/pages/StoreSearchPage'));
 const StoreAnalyticsPage = lazy(() => import('@/features/store/analytics/pages/StoreAnalyticsPage'));
+const StoreCategoriesPage = lazy(() => import('@/features/store/categories/pages/StoreCategoriesPage'));
+const StoreCustomersPage = lazy(() => import('@/features/store/customers/pages/StoreCustomersPage'));
+const StoreSettingsPage = lazy(() => import('@/features/store/settings/pages/StoreSettingsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -31,14 +36,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function SuperadminRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
   const isSuperadmin = user?.role === 'super_admin' || user?.role === 'admin' || user?.userType === 'admin';
-  if (!isSuperadmin) return <Navigate to="/login" replace />;
+  if (!isSuperadmin) return <AccessDeniedPage />;
   return <>{children}</>;
 }
 
 function StoreManagerRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
-  const isStoreManager = user?.role === 'store_manager';
-  if (!isStoreManager) return <Navigate to="/login" replace />;
+  const isStoreManager = user?.role === 'store_manager' || user?.role === 'super_admin' || user?.role === 'admin' || user?.userType === 'admin';
+  if (!isStoreManager) return <AccessDeniedPage />;
   return <>{children}</>;
 }
 
@@ -134,16 +139,20 @@ function App() {
             <Route path="/store/pickup" element={<StoreManagerRoute><StorePickupPage /></StoreManagerRoute>} />
             <Route path="/store/products" element={<StoreManagerRoute><StoreProductsPage /></StoreManagerRoute>} />
             <Route path="/store/inventory" element={<StoreManagerRoute><StoreInventoryPage /></StoreManagerRoute>} />
+            <Route path="/store/categories" element={<StoreManagerRoute><StoreCategoriesPage /></StoreManagerRoute>} />
+            <Route path="/store/customers" element={<StoreManagerRoute><StoreCustomersPage /></StoreManagerRoute>} />
             <Route path="/store/billing" element={<StoreManagerRoute><StoreBillingPage /></StoreManagerRoute>} />
             <Route path="/store/staff" element={<StoreManagerRoute><StoreStaffPage /></StoreManagerRoute>} />
             <Route path="/store/search" element={<StoreManagerRoute><StoreSearchPage /></StoreManagerRoute>} />
             <Route path="/store/analytics" element={<StoreManagerRoute><StoreAnalyticsPage /></StoreManagerRoute>} />
+            <Route path="/store/settings" element={<StoreManagerRoute><StoreSettingsPage /></StoreManagerRoute>} />
             <Route path="/store" element={<Navigate to="/store/dashboard" replace />} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/superadmin/dashboard" element={<Navigate to="/dashboard" replace />} />
             <Route path="/superadmin/stores" element={<Navigate to="/stores" replace />} />
             <Route path="/superadmin/store-managers" element={<Navigate to="/store-managers" replace />} />
           </Route>
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </>
