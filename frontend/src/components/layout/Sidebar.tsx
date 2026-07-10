@@ -258,13 +258,13 @@ export function Sidebar({ className }: { className?: string }) {
 
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    "OPERATIONS": true,
-    "CATALOG": true,
-    "RESOURCES": true,
-    "FINANCIALS": true,
-    "SYSTEM": true,
-    "GLOBAL": true,
-    "STORE": true,
+    OPERATIONS: true,
+    CATALOG: true,
+    RESOURCES: true,
+    FINANCIALS: true,
+    SYSTEM: true,
+    GLOBAL: true,
+    STORE: true,
   });
 
   const toggleSection = (title: string) => {
@@ -300,8 +300,8 @@ export function Sidebar({ className }: { className?: string }) {
         className={cn(
           "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-card border-r border-slate-100 dark:border-white/5 flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
           isSidebarCollapsed
-            ? "w-[170px] lg:w-[64px] -translate-x-full lg:translate-x-0"
-            : "w-[170px] translate-x-0",
+            ? "w-[200px] lg:w-[64px] -translate-x-full lg:translate-x-0"
+            : "w-[200px] translate-x-0",
           className,
         )}
       >
@@ -370,55 +370,63 @@ export function Sidebar({ className }: { className?: string }) {
                     className="w-full flex items-center justify-between py-1.5 px-3.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-[0.15em] hover:text-primary-500 dark:hover:text-white transition-colors cursor-pointer uppercase select-none mb-1 text-left"
                   >
                     <span>{group.title}</span>
-                    <ChevronDown className={cn("h-3 w-3 transition-transform duration-200 text-muted-foreground", isSectionOpen && "rotate-180")} />
+                    <ChevronDown
+                      className={cn(
+                        "h-3 w-3 transition-transform duration-200 text-muted-foreground",
+                        isSectionOpen && "rotate-180",
+                      )}
+                    />
                   </button>
                 ) : null}
-                
+
                 {(isSectionOpen || isSidebarCollapsed) && (
-                   <div className="space-y-1.5">
-                     {group.items.map((item) => {
-                       const isActive = isRouteActive(item.href, location.pathname);
-                       return (
-                         <PortalTooltip
-                           key={item.name}
-                           text={item.name}
-                           visible={isSidebarCollapsed}
-                         >
-                           <Link
-                             to={item.href}
-                             className={cn(
-                               "flex items-center text-[11px] font-medium tracking-[0.05em] transition-all duration-300 group relative",
-                               isSidebarCollapsed
-                                 ? "px-0 justify-center w-9 h-9 mx-auto rounded-sm"
-                                 : "py-2 px-2.5 rounded-sm mx-1.5",
-                               isActive
-                                 ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500 font-semibold"
-                                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5",
-                             )}
-                           >
-                             {isActive && (
-                               <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-600 rounded-r-md animate-in fade-in slide-in-from-left-1 duration-300" />
-                             )}
-                             <item.icon
-                               strokeWidth={isActive ? 2 : 1.5}
-                               className={cn(
-                                 "flex-shrink-0 h-[18px] w-[18px] transition-transform duration-200 group-hover:scale-110",
-                                 isSidebarCollapsed ? "mx-auto" : "mr-3.5",
-                                 isActive
-                                   ? "text-primary-600 dark:text-primary-500"
-                                   : "text-slate-500 dark:text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-500",
-                               )}
-                             />
-                             {!isSidebarCollapsed && (
-                               <span className="whitespace-nowrap transition-transform duration-200 group-hover:translate-x-0.5">
-                                 {item.name}
-                               </span>
-                             )}
-                           </Link>
-                         </PortalTooltip>
-                       );
-                     })}
-                   </div>
+                  <div className="space-y-1.5">
+                    {group.items.map((item) => {
+                      const isActive = isRouteActive(
+                        item.href,
+                        location.pathname,
+                      );
+                      return (
+                        <PortalTooltip
+                          key={item.name}
+                          text={item.name}
+                          visible={isSidebarCollapsed}
+                        >
+                          <Link
+                            to={item.href}
+                            className={cn(
+                              "flex items-center text-[11px] font-medium tracking-[0.05em] transition-all duration-300 group relative",
+                              isSidebarCollapsed
+                                ? "px-0 justify-center w-9 h-9 mx-auto rounded-sm"
+                                : "py-2 px-2.5 rounded-sm mx-1.5",
+                              isActive
+                                ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500 font-semibold"
+                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5",
+                            )}
+                          >
+                            {isActive && (
+                              <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-600 rounded-r-md animate-in fade-in slide-in-from-left-1 duration-300" />
+                            )}
+                            <item.icon
+                              strokeWidth={isActive ? 2 : 1.5}
+                              className={cn(
+                                "flex-shrink-0 h-[18px] w-[18px] transition-transform duration-200 group-hover:scale-110",
+                                isSidebarCollapsed ? "mx-auto" : "mr-3.5",
+                                isActive
+                                  ? "text-primary-600 dark:text-primary-500"
+                                  : "text-slate-500 dark:text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-500",
+                              )}
+                            />
+                            {!isSidebarCollapsed && (
+                              <span className="whitespace-nowrap transition-transform duration-200 group-hover:translate-x-0.5">
+                                {item.name}
+                              </span>
+                            )}
+                          </Link>
+                        </PortalTooltip>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             );

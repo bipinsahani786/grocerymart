@@ -7,7 +7,8 @@
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --forceExit",
     "dev": "npx prisma generate && nodemon -L index.js",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "db:push": "cross-env DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/grocerymart_db?schema=public\" prisma db push --accept-data-loss"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
