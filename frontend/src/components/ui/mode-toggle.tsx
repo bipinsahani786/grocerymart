@@ -6,47 +6,17 @@ export function ModeToggle() {
   const { theme, setTheme } = useThemeStore();
   const isDark = theme === "dark" || theme === "semi-dark";
 
-  const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleToggle = () => {
     const nextTheme = isDark ? "light" : "dark";
 
-    // Fallback if View Transitions API is not supported or user prefers reduced motion
-    if (
-      !document.startViewTransition ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
+    // Fallback if View Transitions API is not supported
+    if (!document.startViewTransition) {
       setTheme(nextTheme);
       return;
     }
 
-    const x = event.clientX;
-    const y = event.clientY;
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
-
-    const transition = document.startViewTransition(() => {
+    document.startViewTransition(() => {
       setTheme(nextTheme);
-    });
-
-    transition.ready.then(() => {
-      const clipPath = [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${endRadius}px at ${x}px ${y}px)`,
-      ];
-
-      document.documentElement.animate(
-        {
-          clipPath: isDark ? [...clipPath].reverse() : clipPath,
-        },
-        {
-          duration: 400,
-          easing: "ease-in-out",
-          pseudoElement: isDark
-            ? "::view-transition-old(root)"
-            : "::view-transition-new(root)",
-        }
-      );
     });
   };
 
