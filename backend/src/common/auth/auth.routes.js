@@ -2,6 +2,7 @@ import express from "express";
 import { authController } from "./auth.controller.js";
 import { validate } from "../../middleware/validate.middleware.js";
 import { verifyToken } from "../../middleware/auth.middleware.js";
+import { uploadAvatarMiddleware } from "../../middleware/upload.middleware.js";
 import {
   registerSchema,
   verifyRegisterOtpSchema,
@@ -210,6 +211,48 @@ router.post("/logout", verifyToken, authController.logout);
  *         description: Profile payload retrieved successfully
  */
 router.get("/profile", verifyToken, authController.getProfile);
+
+/**
+ * @openapi
+ * /api/auth/profile:
+ *   patch:
+ *     summary: Update User Profile
+ *     description: Update name, email, phone of authenticated user.
+ *     tags: [Authentication]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ */
+router.patch("/profile", verifyToken, authController.updateProfile);
+
+/**
+ * @openapi
+ * /api/auth/profile/avatar:
+ *   post:
+ *     summary: Upload avatar
+ *     description: Upload user avatar image.
+ *     tags: [Authentication]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Avatar uploaded
+ */
+router.post("/profile/avatar", verifyToken, uploadAvatarMiddleware.single('avatar'), authController.uploadAvatar);
+
+/**
+ * @openapi
+ * /api/auth/profile/avatar:
+ *   delete:
+ *     summary: Remove avatar
+ *     description: Remove user avatar.
+ *     tags: [Authentication]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Avatar removed
+ */
+router.delete("/profile/avatar", verifyToken, authController.removeAvatar);
 
 /**
  * @openapi

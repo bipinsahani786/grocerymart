@@ -17,9 +17,13 @@ async function main() {
       phone: "1234567890",
       passwordHash,
       name: "Super Admin",
-      userType: "admin",
-      adminRole: "super_admin",
       status: "active",
+      role: {
+        create: {
+          roleName: "super_admin",
+          role: "SUPER_ADMIN"
+        }
+      }
     },
   });
 

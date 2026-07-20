@@ -83,6 +83,7 @@ model User {
   email          String?        @unique
   passwordHash   String?        @map("password_hash")
   name           String?
+  avatar         String?
   status         UserStatus     @default(active)
   pin            String?        // 4-6 digit PIN for POS login
   isActive       Boolean        @default(true)

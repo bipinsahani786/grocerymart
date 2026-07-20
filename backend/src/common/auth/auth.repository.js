@@ -83,6 +83,14 @@ export class AuthRepository {
       data: { passwordHash },
     });
   }
+
+  async updateUser(id, data) {
+    return await prisma.user.update({
+      where: { id },
+      data,
+      include: { role: true, store: true },
+    });
+  }
 }
 
 export const authRepository = new AuthRepository();

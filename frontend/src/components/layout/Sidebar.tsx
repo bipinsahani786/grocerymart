@@ -291,14 +291,15 @@ export function Sidebar({ className }: { className?: string }) {
       {/* Mobile Backdrop */}
       {!isSidebarCollapsed && (
         <div
-          className="fixed inset-0 bg-slate-900/50 dark:bg-black/50 z-40 lg:hidden animate-in fade-in"
+          className={cn("fixed inset-0 bg-slate-900/50 dark:bg-black/50 z-40 lg:hidden animate-in fade-in", isDark && "dark")}
           onClick={() => setSidebarCollapsed(true)}
         />
       )}
 
       <div
         className={cn(
-          "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-card border-r border-slate-100 dark:border-white/5 flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
+          "fixed lg:static inset-y-0 left-0 h-screen border-r flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
+          isDark ? "dark bg-[#0f172a] border-white/5" : "bg-white border-slate-100",
           isSidebarCollapsed
             ? "w-[200px] lg:w-[64px] -translate-x-full lg:translate-x-0"
             : "w-[200px] translate-x-0",
@@ -306,7 +307,7 @@ export function Sidebar({ className }: { className?: string }) {
         )}
       >
         {/* Brand */}
-        <div className="h-14 flex items-center justify-between px-3 border-b border-slate-100 dark:border-white/5 shrink-0 overflow-hidden">
+        <div className={cn("h-14 flex items-center justify-between px-3 border-b shrink-0 overflow-hidden", isDark ? "border-white/5" : "border-slate-100")}>
           <div className="flex items-center">
             {appLogo ? (
               <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 mx-auto flex items-center justify-center bg-transparent">
@@ -322,7 +323,7 @@ export function Sidebar({ className }: { className?: string }) {
               </div>
             )}
             {!isSidebarCollapsed && (
-              <span className="font-black text-[12px] tracking-tight text-zinc-900 dark:text-white uppercase font-display whitespace-nowrap ml-2">
+              <span className={cn("font-black text-[12px] tracking-tight uppercase font-display whitespace-nowrap ml-2", isDark ? "text-white" : "text-zinc-900")}>
                 {appName.split(" ").map((word, idx) => (
                   <span
                     key={idx}
@@ -331,7 +332,7 @@ export function Sidebar({ className }: { className?: string }) {
                         ? isDark
                           ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1"
                           : "bg-clip-text bg-gradient-to-r from-cerulean to-dark-cyan text-transparent ml-1"
-                        : "text-zinc-900 dark:text-white"
+                        : isDark ? "text-white" : "text-zinc-900"
                     }
                   >
                     {word}
@@ -344,14 +345,17 @@ export function Sidebar({ className }: { className?: string }) {
 
         {/* Searchbar */}
         {!isSidebarCollapsed && (
-          <div className="px-3 pt-3 pb-1 border-b border-slate-100 dark:border-white/5 shrink-0">
+          <div className={cn("px-3 pt-3 pb-1 border-b shrink-0", isDark ? "border-white/5" : "border-slate-100")}>
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search sections..."
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-2.5 text-[10px] font-bold rounded-lg border border-border bg-slate-50 dark:bg-card focus:outline-none focus:ring-2 focus:ring-primary-500/20 text-foreground"
+                className={cn(
+                  "w-full h-8 pl-8 pr-2.5 text-[10px] font-bold rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary-500/20 text-foreground",
+                  isDark ? "bg-[#1e293b] border-white/5" : "bg-slate-50 border-border"
+                )}
               />
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             </div>
@@ -367,7 +371,10 @@ export function Sidebar({ className }: { className?: string }) {
                 {!isSidebarCollapsed ? (
                   <button
                     onClick={() => toggleSection(group.title)}
-                    className="w-full flex items-center justify-between py-1.5 px-3.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-[0.15em] hover:text-primary-500 dark:hover:text-white transition-colors cursor-pointer uppercase select-none mb-1 text-left"
+                    className={cn(
+                      "w-full flex items-center justify-between py-1.5 px-3.5 text-[10px] font-bold tracking-[0.15em] transition-colors cursor-pointer uppercase select-none mb-1 text-left",
+                      isDark ? "text-slate-500 hover:text-white" : "text-slate-400 hover:text-primary-500"
+                    )}
                   >
                     <span>{group.title}</span>
                     <ChevronDown
@@ -395,30 +402,33 @@ export function Sidebar({ className }: { className?: string }) {
                           <Link
                             to={item.href}
                             className={cn(
-                              "flex items-center text-[11px] font-medium tracking-[0.05em] transition-all duration-300 group relative",
+                              "flex items-center text-[11px] font-medium tracking-[0.05em] transition-all duration-200 group relative overflow-hidden active:scale-[0.98]",
                               isSidebarCollapsed
-                                ? "px-0 justify-center w-9 h-9 mx-auto rounded-sm"
-                                : "py-2 px-2.5 rounded-sm mx-1.5",
+                                ? "px-0 justify-center w-10 h-10 mx-auto rounded-xl"
+                                : "py-2.5 px-3 rounded-xl mx-2",
                               isActive
-                                ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500 font-semibold"
-                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5",
+                                ? cn("bg-gradient-to-r font-bold border-l", isDark ? "from-primary-500/10 to-transparent text-primary-400 border-primary-500/30" : "from-primary-50/80 to-transparent text-primary-700 border-primary-200")
+                                : cn("transition-colors", isDark ? "text-slate-400 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80")
                             )}
                           >
                             {isActive && (
-                              <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-600 rounded-r-md animate-in fade-in slide-in-from-left-1 duration-300" />
+                              <div className={cn("absolute left-0 top-0 bottom-0 w-[3px] shadow-[1px_0_8px_rgba(16,185,129,0.4)] animate-in fade-in duration-300", isDark ? "bg-primary-500" : "bg-primary-600")} />
                             )}
                             <item.icon
-                              strokeWidth={isActive ? 2 : 1.5}
+                              strokeWidth={isActive ? 2.5 : 1.5}
                               className={cn(
-                                "flex-shrink-0 h-[18px] w-[18px] transition-transform duration-200 group-hover:scale-110",
-                                isSidebarCollapsed ? "mx-auto" : "mr-3.5",
+                                "flex-shrink-0 h-[18px] w-[18px] transition-all duration-300",
+                                isSidebarCollapsed ? "mx-auto" : "mr-3",
                                 isActive
-                                  ? "text-primary-600 dark:text-primary-500"
-                                  : "text-slate-500 dark:text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-500",
+                                  ? cn("scale-110", isDark ? "text-primary-400" : "text-primary-600")
+                                  : cn("group-hover:scale-110", isDark ? "text-slate-500 group-hover:text-primary-400" : "text-slate-400 group-hover:text-primary-500")
                               )}
                             />
                             {!isSidebarCollapsed && (
-                              <span className="whitespace-nowrap transition-transform duration-200 group-hover:translate-x-0.5">
+                              <span className={cn(
+                                "whitespace-nowrap transition-transform duration-300",
+                                isActive ? "translate-x-0.5" : "group-hover:translate-x-1"
+                              )}>
                                 {item.name}
                               </span>
                             )}

@@ -29,10 +29,10 @@
     --brand-panel: #1e293b;
     --brand-panel-soft: #334155;
     
-    /* Map brand colors to the new palette (no hardcoded colors) */
-    --brand-accent: var(--cerulean);
-    --brand-accent-hover: var(--dark-cyan);
-    --brand-accent-soft: var(--seagrass);
+    /* Map brand colors to the dynamic primary palette */
+    --brand-accent: var(--primary-600);
+    --brand-accent-hover: var(--primary-700);
+    --brand-accent-soft: var(--primary-500);
     --brand-on-accent: #ffffff;
     --overlay-soft: rgba(255, 255, 255, 0.05);
     --overlay-border: rgba(255, 255, 255, 0.1);
@@ -66,10 +66,10 @@
     --brand-panel: #0f172a;
     --brand-panel-soft: #1e293b;
     
-    /* Map brand colors to the new palette */
-    --brand-accent: var(--willow-green);
-    --brand-accent-hover: var(--seagrass);
-    --brand-accent-soft: var(--dark-cyan);
+    /* Map brand colors to the dynamic primary palette */
+    --brand-accent: var(--primary-500);
+    --brand-accent-hover: var(--primary-400);
+    --brand-accent-soft: var(--primary-600);
     --brand-on-accent: #ffffff;
     --overlay-soft: rgba(255, 255, 255, 0.05);
     --overlay-border: rgba(255, 255, 255, 0.1);

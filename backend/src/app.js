@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
@@ -24,6 +25,9 @@ app.use(cors({
 
 // Parse structured incoming JSON payloads
 app.use(express.json());
+
+// Serve static files (avatars, images, etc.)
+app.use(express.static(path.join(process.cwd(), "public")));
 
 // Console stream HTTP Request/Response logger
 app.use(morgan("dev"));

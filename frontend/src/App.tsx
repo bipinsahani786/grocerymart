@@ -102,8 +102,7 @@ function App() {
     }
 
     // Inject color palette matching active theme's "Mart" highlight
-    const resolvedColor = (theme === 'dark' || theme === 'semi-dark') ? 'green' : 'blue';
-    const colors = colorPalettes[resolvedColor];
+    const colors = colorPalettes[primaryColor] || colorPalettes['blue'];
     for (const [key, value] of Object.entries(colors)) {
       root.style.setProperty(key, value);
     }
