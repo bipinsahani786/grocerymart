@@ -18,7 +18,7 @@ export const useProfile = () => {
   return useQuery<{ data: ProfileData }>({
     queryKey: ['profile'],
     queryFn: async () => {
-      const { data } = await api.get('/profile');
+      const { data } = await api.get('/auth/profile');
       return data;
     },
   });
@@ -31,7 +31,7 @@ export const useUpdateProfile = () => {
 
   return useMutation({
     mutationFn: async (data: { name?: string; email?: string; phone?: string }) => {
-      const response = await api.patch('/profile', data);
+      const response = await api.patch('/auth/profile', data);
       return response.data.data;
     },
     onSuccess: (updatedUser) => {
@@ -55,7 +55,7 @@ export const useUploadAvatar = () => {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('avatar', file);
-      const response = await api.post('/profile/avatar', formData, {
+      const response = await api.post('/auth/profile/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data.data;
@@ -76,7 +76,7 @@ export const useRemoveAvatar = () => {
 
   return useMutation({
     mutationFn: async () => {
-      await api.delete('/profile/avatar');
+      await api.delete('/auth/profile/avatar');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -93,7 +93,7 @@ export const useChangePassword = () => {
       new_password: string;
       new_password_confirmation: string;
     }) => {
-      const response = await api.post('/profile/password', data);
+      const response = await api.post('/auth/change-password', data);
       return response.data;
     },
   });

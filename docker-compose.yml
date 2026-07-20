@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
     container_name: grocerymart_db
-    restart: always
+    restart: "no"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -19,7 +17,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: grocerymart_backend
-    restart: always
+    restart: "no"
     ports:
       - "5000:5000"
     environment:
@@ -38,7 +36,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: grocerymart_frontend
-    restart: always
+    restart: "no"
     ports:
       - "5173:5173"
     environment:
@@ -50,7 +48,7 @@ services:
   adminer:
     image: adminer
     container_name: grocerymart_adminer
-    restart: always
+    restart: "no"
     ports:
       - "8081:8080"
     depends_on:

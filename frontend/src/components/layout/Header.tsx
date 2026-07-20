@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useThemeStore, type LayoutTheme, type PrimaryColor, type FontFamily } from "@/store/themeStore";
 import { useTenantStore } from "@/store/tenantStore";
-import { cn } from "@/lib/utils";
+import { cn, getFileUrl } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { businessMenuGroups, superadminMenuGroups, isRouteActive } from "./Sidebar";
@@ -202,7 +202,7 @@ function ProfileMenu() {
 
   // Handle absolute vs relative avatar URL
   const avatarUrl = user?.avatar
-    ? user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${user.avatar}`
+    ? getFileUrl(user.avatar)
     : `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=0f172a&color=ffffff`;
 
   return (
