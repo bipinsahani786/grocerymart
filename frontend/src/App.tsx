@@ -11,7 +11,10 @@ import { NotFoundPage } from './components/layout/NotFoundPage';
 const Login = lazy(() => import('@/features/auth/pages/LoginPage'));
 const SuperadminDashboard = lazy(() => import('@/features/superadmin/dashboard/pages/SuperadminDashboardPage'));
 const StoreDashboard = lazy(() => import('@/features/superadmin/stores/pages/StoreDashboardPage'));
+const CreateStorePage = lazy(() => import('@/features/superadmin/stores/pages/CreateStorePage'));
+const EditStorePage = lazy(() => import('@/features/superadmin/stores/pages/EditStorePage'));
 const StoreManagers = lazy(() => import('@/features/superadmin/managers/pages/StoreManagersPage'));
+const TaxManagementPage = lazy(() => import('@/features/superadmin/taxes/pages/TaxManagementPage'));
 const StoreManagerDashboard = lazy(() => import('@/features/store/dashboard/pages/StoreManagerDashboardPage'));
 const StorePosPage = lazy(() => import('@/features/store/pos/pages/StorePosPage'));
 const StoreOrdersPage = lazy(() => import('@/features/store/orders/pages/StoreOrdersPage'));
@@ -27,6 +30,8 @@ const StoreCustomersPage = lazy(() => import('@/features/store/customers/pages/S
 const StoreSettingsPage = lazy(() => import('@/features/store/settings/pages/StoreSettingsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
+import { ROLES } from './constants/roles';
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -35,14 +40,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function SuperadminRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
-  const isSuperadmin = user?.role === 'super_admin' || user?.role === 'admin' || user?.userType === 'admin';
+  const isSuperadmin = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN || user?.userType === 'admin';
   if (!isSuperadmin) return <AccessDeniedPage />;
   return <>{children}</>;
 }
 
 function StoreManagerRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
-  const isStoreManager = user?.role === 'store_manager' || user?.role === 'super_admin' || user?.role === 'admin' || user?.userType === 'admin';
+  const isStoreManager = user?.role === ROLES.STORE_MANAGER || user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN || user?.userType === 'admin';
   if (!isStoreManager) return <AccessDeniedPage />;
   return <>{children}</>;
 }
@@ -130,7 +135,10 @@ function App() {
             {/* Superadmin Routes (made default for Dashboard) */}
             <Route path="/dashboard" element={<SuperadminRoute><SuperadminDashboard /></SuperadminRoute>} />
             <Route path="/stores" element={<SuperadminRoute><StoreDashboard /></SuperadminRoute>} />
+            <Route path="/stores/create" element={<SuperadminRoute><CreateStorePage /></SuperadminRoute>} />
+            <Route path="/stores/edit/:id" element={<SuperadminRoute><EditStorePage /></SuperadminRoute>} />
             <Route path="/store-managers" element={<SuperadminRoute><StoreManagers /></SuperadminRoute>} />
+            <Route path="/superadmin/taxes" element={<SuperadminRoute><TaxManagementPage /></SuperadminRoute>} />
             <Route path="/superadmin/profile" element={<SuperadminRoute><ProfilePage /></SuperadminRoute>} />
             <Route path="/store/dashboard" element={<StoreManagerRoute><StoreManagerDashboard /></StoreManagerRoute>} />
             <Route path="/store/pos" element={<StoreManagerRoute><StorePosPage /></StoreManagerRoute>} />

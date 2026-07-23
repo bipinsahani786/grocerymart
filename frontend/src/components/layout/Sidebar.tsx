@@ -16,20 +16,21 @@ import {
   Layers,
   Tv,
   Settings,
-  ChevronDown,
   Search,
+  ShieldAlert,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAppStore } from "@/store/appStore";
 import { useThemeStore } from "@/store/themeStore";
-import { ShieldAlert } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export function isRouteActive(itemHref: string, pathname: string) {
+  if (pathname === itemHref || pathname.startsWith(itemHref + '/')) {
+    return true;
+  }
   return (
-    pathname === itemHref ||
     (itemHref === "/superadmin/dashboard" &&
       (pathname === "/superadmin" || pathname === "/dashboard")) ||
     (itemHref === "/stores" && pathname === "/superadmin/stores") ||
@@ -46,24 +47,28 @@ export const businessMenuGroups = [
     title: "OPERATIONS",
     items: [
       {
-        name: "DASHBOARD",
+        name: "Dashboard",
         href: "/store/dashboard",
         icon: LayoutDashboard,
         subtitle: "Daily store operations, orders, catalog and revenue",
       },
       {
-        name: "LIVE ORDERS",
+        name: "Live Orders",
         href: "/store/orders",
         icon: ClipboardCheck,
-        subtitle:
-          "Accept, pack and track POS, delivery and online store orders",
+        subtitle: "Accept, pack and track POS, delivery and online store orders",
       },
       {
-        name: "POS",
+        name: "Point of Sale",
         href: "/store/pos",
         icon: ShoppingCart,
-        subtitle:
-          "Touch friendly walk-in billing, cart checkout, discounts and receipt printing",
+        subtitle: "Barcode, manual entry and customer billing terminal",
+      },
+      {
+        name: "Pickup Board",
+        href: "/store/pickup",
+        icon: PackageCheck,
+        subtitle: "Click & Collect orders TV display mode",
       },
     ],
   },
@@ -71,17 +76,22 @@ export const businessMenuGroups = [
     title: "CATALOG",
     items: [
       {
-        name: "INVENTORY",
-        href: "/store/inventory",
-        icon: Boxes,
-        subtitle:
-          "Unified stock, product listing, stock updates, and bulk uploads",
+        name: "Products",
+        href: "/store/products",
+        icon: Package,
+        subtitle: "Add, manage and organize your store product catalog",
       },
       {
-        name: "CATEGORIES",
+        name: "Categories",
         href: "/store/categories",
         icon: Layers,
-        subtitle: "Manage parent and sub-categories of products",
+        subtitle: "Group and sort items into nested hierarchy trees",
+      },
+      {
+        name: "Inventory",
+        href: "/store/inventory",
+        icon: Boxes,
+        subtitle: "Stock levels, batch tracking, purchase orders and audits",
       },
     ],
   },
@@ -89,13 +99,13 @@ export const businessMenuGroups = [
     title: "RESOURCES",
     items: [
       {
-        name: "CUSTOMERS",
+        name: "Customers",
         href: "/store/customers",
         icon: Users,
-        subtitle: "Customer profiles, history, and credit/khata ledger",
+        subtitle: "Customer profiles, loyalty points and credit tracking",
       },
       {
-        name: "STAFF",
+        name: "Staff",
         href: "/store/staff",
         icon: UserCog,
         subtitle: "Roles, PIN login, shifts, performance and picker efficiency",
@@ -106,18 +116,16 @@ export const businessMenuGroups = [
     title: "FINANCIALS",
     items: [
       {
-        name: "BILLING",
+        name: "Billing",
         href: "/store/billing",
         icon: FileText,
-        subtitle:
-          "Thermal receipts, GST invoices, reprints, refunds and cash reconciliation",
+        subtitle: "Thermal receipts, GST invoices, reprints, refunds and cash reconciliation",
       },
       {
-        name: "ANALYTICS",
+        name: "Analytics",
         href: "/store/analytics",
         icon: TrendingUp,
-        subtitle:
-          "Sales, products, payment methods, staff KPIs and hourly load",
+        subtitle: "Sales, products, payment methods, staff KPIs and hourly load",
       },
     ],
   },
@@ -125,32 +133,39 @@ export const businessMenuGroups = [
     title: "SYSTEM",
     items: [
       {
-        name: "PICKUP BOARD",
+        name: "Pickup Board",
         href: "/store/pickup",
         icon: Tv,
         subtitle: "Click & Collect orders TV display mode",
       },
       {
-        name: "SETTINGS",
+        name: "Settings",
         href: "/store/settings",
         icon: Settings,
-        subtitle:
-          "Store hours, order types enable/disable, tax config, and POS settings",
+        subtitle: "Store hours, order types enable/disable, tax config, and POS settings",
       },
     ],
   },
 ];
 
 export const superadminMenuGroups = [
+
   {
     title: "GLOBAL",
     items: [
       {
-        name: "DASHBOARD",
+        name: "Dashboard",
         href: "/superadmin/dashboard",
         icon: ShieldAlert,
         permission: "view_dashboard",
         subtitle: "Global analytics, revenues, and partner commission tracking",
+      },
+      {
+        name: "Tax Management",
+        href: "/superadmin/taxes",
+        icon: FileText,
+        permission: "view_dashboard",
+        subtitle: "Manage dynamic tax rules and HSN tax classes",
       },
     ],
   },
@@ -158,14 +173,14 @@ export const superadminMenuGroups = [
     title: "STORE",
     items: [
       {
-        name: "STORE DASHBOARD",
+        name: "Store Dashboard",
         href: "/stores",
         icon: Store,
         permission: "view_dashboard",
         subtitle: "Create stores and monitor store-level operating status",
       },
       {
-        name: "STORE MANAGERS",
+        name: "Store Managers",
         href: "/store-managers",
         icon: UserCog,
         permission: "view_dashboard",
@@ -175,6 +190,7 @@ export const superadminMenuGroups = [
   },
 ];
 
+/* ── Tooltip for collapsed sidebar styled dynamically to active theme color ── */
 function PortalTooltip({
   text,
   children,
@@ -191,7 +207,7 @@ function PortalTooltip({
   const handleMouseEnter = (e: any) => {
     if (visible && ref.current) {
       const rect = ref.current.getBoundingClientRect();
-      setPos({ top: rect.top + rect.height / 2, left: rect.right + 12 });
+      setPos({ top: rect.top + rect.height / 2, left: rect.right + 10 });
       setShow(true);
     }
     if ((children.props as any).onMouseEnter)
@@ -217,10 +233,10 @@ function PortalTooltip({
         visible &&
         createPortal(
           <div
-            className="fixed z-[9999] px-3.5 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-[11px] font-black uppercase tracking-widest rounded-sm -translate-y-1/2 shadow-xl shadow-primary-500/30 flex items-center whitespace-nowrap border border-white/20 animate-in fade-in zoom-in-95 duration-200 pointer-events-none"
+            className="fixed z-[9999] px-3 py-1.5 bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold rounded-md -translate-y-1/2 shadow-lg shadow-primary-500/25 pointer-events-none whitespace-nowrap flex items-center border border-white/20 animate-in fade-in zoom-in-95 duration-150"
             style={{ top: pos.top, left: pos.left }}
           >
-            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary-500 rotate-45 rounded-sm border-l border-b border-white/20"></div>
+            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary-600 dark:bg-primary-500 rotate-45" />
             {text}
           </div>,
           document.body,
@@ -257,19 +273,6 @@ export function Sidebar({ className }: { className?: string }) {
     : businessMenuGroups;
 
   const [sidebarSearch, setSidebarSearch] = useState("");
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    OPERATIONS: true,
-    CATALOG: true,
-    RESOURCES: true,
-    FINANCIALS: true,
-    SYSTEM: true,
-    GLOBAL: true,
-    STORE: true,
-  });
-
-  const toggleSection = (title: string) => {
-    setOpenSections((prev) => ({ ...prev, [title]: !prev[title] }));
-  };
 
   const filteredMenuGroups = React.useMemo(() => {
     if (!sidebarSearch) return activeMenuGroups;
@@ -291,156 +294,120 @@ export function Sidebar({ className }: { className?: string }) {
       {/* Mobile Backdrop */}
       {!isSidebarCollapsed && (
         <div
-          className={cn("fixed inset-0 bg-slate-900/50 dark:bg-black/50 z-40 lg:hidden animate-in fade-in", isDark && "dark")}
+          className={cn("fixed inset-0 bg-black/30 z-40 lg:hidden", isDark && "dark")}
           onClick={() => setSidebarCollapsed(true)}
         />
       )}
 
       <div
         className={cn(
-          "fixed lg:static inset-y-0 left-0 h-screen border-r flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
-          isDark ? "dark bg-[#0f172a] border-white/5" : "bg-white border-slate-100",
+          "fixed lg:static inset-y-0 left-0 h-screen border-r flex-col z-50 shrink-0 transition-all duration-200 ease-out flex",
+          isDark ? "dark bg-slate-900 border-slate-700/50" : "bg-white border-slate-200",
           isSidebarCollapsed
-            ? "w-[200px] lg:w-[64px] -translate-x-full lg:translate-x-0"
-            : "w-[200px] translate-x-0",
+            ? "w-[220px] lg:w-[56px] -translate-x-full lg:translate-x-0"
+            : "w-[220px] translate-x-0",
           className,
         )}
       >
-        {/* Brand */}
-        <div className={cn("h-14 flex items-center justify-between px-3 border-b shrink-0 overflow-hidden", isDark ? "border-white/5" : "border-slate-100")}>
-          <div className="flex items-center">
+        {/* ── Brand ── */}
+        <div
+          className={cn(
+            "h-14 flex items-center border-b shrink-0 overflow-hidden",
+            isSidebarCollapsed ? "justify-center px-0" : "px-4",
+            isDark ? "border-slate-800" : "border-slate-200"
+          )}
+        >
+          <div className={cn("flex items-center gap-2 min-w-0", isSidebarCollapsed && "justify-center")}>
             {appLogo ? (
-              <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 mx-auto flex items-center justify-center bg-transparent">
-                <img
-                  src={appLogo}
-                  alt={appName}
-                  className="max-w-full max-h-full object-contain"
-                />
+              <div className="w-7 h-7 rounded-md overflow-hidden shrink-0 flex items-center justify-center">
+                <img src={appLogo} alt={appName} className="w-full h-full object-contain" />
               </div>
             ) : (
-              <div className="bg-primary-500 p-1.5 rounded-lg w-8 h-8 flex items-center justify-center font-bold text-white shrink-0 mx-auto">
-                {appName ? appName.charAt(0).toUpperCase() : "B"}
+              <div className="bg-primary-600 rounded-md w-7 h-7 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                {appName ? appName.charAt(0).toUpperCase() : "G"}
               </div>
             )}
             {!isSidebarCollapsed && (
-              <span className={cn("font-black text-[12px] tracking-tight uppercase font-display whitespace-nowrap ml-2", isDark ? "text-white" : "text-zinc-900")}>
-                {appName.split(" ").map((word, idx) => (
-                  <span
-                    key={idx}
-                    className={
-                      idx % 2 === 1
-                        ? isDark
-                          ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1"
-                          : "bg-clip-text bg-gradient-to-r from-cerulean to-dark-cyan text-transparent ml-1"
-                        : isDark ? "text-white" : "text-zinc-900"
-                    }
-                  >
-                    {word}
-                  </span>
-                ))}
+              <span className={cn("text-sm font-semibold tracking-tight truncate", isDark ? "text-white" : "text-slate-900")}>
+                {appName}
               </span>
             )}
           </div>
         </div>
 
-        {/* Searchbar */}
+        {/* ── Search ── */}
         {!isSidebarCollapsed && (
-          <div className={cn("px-3 pt-3 pb-1 border-b shrink-0", isDark ? "border-white/5" : "border-slate-100")}>
+          <div className={cn("px-3 py-2 border-b shrink-0", isDark ? "border-slate-700/50" : "border-slate-200")}>
             <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search sections..."
+                placeholder="Search..."
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 className={cn(
-                  "w-full h-8 pl-8 pr-2.5 text-[10px] font-bold rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary-500/20 text-foreground",
-                  isDark ? "bg-[#1e293b] border-white/5" : "bg-slate-50 border-border"
+                  "w-full h-7 pl-7 pr-2 text-xs rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary-500/30 transition-colors",
+                  isDark ? "bg-slate-800 text-slate-200 placeholder:text-slate-500" : "bg-slate-100 text-slate-700 placeholder:text-slate-400"
                 )}
               />
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             </div>
           </div>
         )}
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none py-3 space-y-4">
-          {filteredMenuGroups.map((group, idx) => {
-            const isSectionOpen = sidebarSearch || !!openSections[group.title];
-            return (
-              <div key={idx} className="px-2">
-                {!isSidebarCollapsed ? (
-                  <button
-                    onClick={() => toggleSection(group.title)}
-                    className={cn(
-                      "w-full flex items-center justify-between py-1.5 px-3.5 text-[10px] font-bold tracking-[0.15em] transition-colors cursor-pointer uppercase select-none mb-1 text-left",
-                      isDark ? "text-slate-500 hover:text-white" : "text-slate-400 hover:text-primary-500"
-                    )}
-                  >
-                    <span>{group.title}</span>
-                    <ChevronDown
-                      className={cn(
-                        "h-3 w-3 transition-transform duration-200 text-muted-foreground",
-                        isSectionOpen && "rotate-180",
-                      )}
-                    />
-                  </button>
-                ) : null}
-
-                {(isSectionOpen || isSidebarCollapsed) && (
-                  <div className="space-y-1.5">
-                    {group.items.map((item) => {
-                      const isActive = isRouteActive(
-                        item.href,
-                        location.pathname,
-                      );
-                      return (
-                        <PortalTooltip
-                          key={item.name}
-                          text={item.name}
-                          visible={isSidebarCollapsed}
-                        >
-                          <Link
-                            to={item.href}
-                            className={cn(
-                              "flex items-center text-[11px] font-medium tracking-[0.05em] transition-all duration-200 group relative overflow-hidden active:scale-[0.98]",
-                              isSidebarCollapsed
-                                ? "px-0 justify-center w-10 h-10 mx-auto rounded-xl"
-                                : "py-2.5 px-3 rounded-xl mx-2",
-                              isActive
-                                ? cn("bg-gradient-to-r font-bold border-l", isDark ? "from-primary-500/10 to-transparent text-primary-400 border-primary-500/30" : "from-primary-50/80 to-transparent text-primary-700 border-primary-200")
-                                : cn("transition-colors", isDark ? "text-slate-400 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80")
-                            )}
-                          >
-                            {isActive && (
-                              <div className={cn("absolute left-0 top-0 bottom-0 w-[3px] shadow-[1px_0_8px_rgba(16,185,129,0.4)] animate-in fade-in duration-300", isDark ? "bg-primary-500" : "bg-primary-600")} />
-                            )}
-                            <item.icon
-                              strokeWidth={isActive ? 2.5 : 1.5}
-                              className={cn(
-                                "flex-shrink-0 h-[18px] w-[18px] transition-all duration-300",
-                                isSidebarCollapsed ? "mx-auto" : "mr-3",
-                                isActive
-                                  ? cn("scale-110", isDark ? "text-primary-400" : "text-primary-600")
-                                  : cn("group-hover:scale-110", isDark ? "text-slate-500 group-hover:text-primary-400" : "text-slate-400 group-hover:text-primary-500")
-                              )}
-                            />
-                            {!isSidebarCollapsed && (
-                              <span className={cn(
-                                "whitespace-nowrap transition-transform duration-300",
-                                isActive ? "translate-x-0.5" : "group-hover:translate-x-1"
-                              )}>
-                                {item.name}
-                              </span>
-                            )}
-                          </Link>
-                        </PortalTooltip>
-                      );
-                    })}
-                  </div>
-                )}
+        {/* ── Navigation ── */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none py-1">
+          {filteredMenuGroups.map((group, idx) => (
+            <div key={idx}>
+              {idx > 0 && !isSidebarCollapsed && (
+                <div className={cn("mx-3 my-1 border-t", isDark ? "border-slate-700/50" : "border-slate-100")} />
+              )}
+              {!isSidebarCollapsed && (
+                <div className={cn(
+                  "px-4 pt-3 pb-1 text-[10px] font-semibold tracking-wider uppercase select-none",
+                  isDark ? "text-slate-500" : "text-slate-400"
+                )}>
+                  {group.title}
+                </div>
+              )}
+              <div className={cn("space-y-[1px]", isSidebarCollapsed ? "px-0" : "px-2")}>
+                {group.items.map((item) => {
+                  const isActive = isRouteActive(item.href, location.pathname);
+                  return (
+                    <PortalTooltip key={item.name} text={item.name} visible={isSidebarCollapsed}>
+                      <Link
+                        to={item.href}
+                        className={cn(
+                          "flex items-center text-[13px] font-medium transition-colors duration-150 relative rounded-md",
+                          isSidebarCollapsed
+                            ? "justify-center w-9 h-9 mx-auto"
+                            : "h-8 px-2.5 gap-2.5",
+                          isActive
+                            ? cn(isDark ? "bg-primary-500/15 text-primary-400" : "bg-primary-50 text-primary-700 font-semibold")
+                            : cn(isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50")
+                        )}
+                      >
+                        {isActive && !isSidebarCollapsed && (
+                          <div className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r", isDark ? "bg-primary-400" : "bg-primary-600")} />
+                        )}
+                        <item.icon
+                          strokeWidth={isActive ? 2 : 1.5}
+                          className={cn(
+                            "shrink-0 h-4 w-4",
+                            isActive
+                              ? cn(isDark ? "text-primary-400" : "text-primary-600")
+                              : cn(isDark ? "text-slate-500" : "text-slate-400")
+                          )}
+                        />
+                        {!isSidebarCollapsed && (
+                          <span className="truncate">{item.name}</span>
+                        )}
+                      </Link>
+                    </PortalTooltip>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </nav>
       </div>
     </>

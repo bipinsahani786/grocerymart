@@ -30,6 +30,25 @@ export class ManagersService {
       message: "Store manager created successfully",
     };
   }
+
+  async updateManagerStatus(id, status) {
+    const data = await managersRepository.updateManager(id, { status });
+    return {
+      success: true,
+      data,
+      message: `Store manager status updated to ${status}`,
+    };
+  }
+
+  async updateManagerPassword(id, password) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    const data = await managersRepository.updateManager(id, { passwordHash });
+    return {
+      success: true,
+      data,
+      message: "Store manager password updated successfully",
+    };
+  }
 }
 
 export const managersService = new ManagersService();

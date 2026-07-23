@@ -260,7 +260,18 @@ export class AuthService {
 
   async getUserProfile(id) {
     const user = await authRepository.getUserProfile(id);
-    return user;
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      avatar: user.avatar,
+      status: user.status,
+      role: user.role?.roleName || "user",
+      store: user.store || null,
+    };
   }
 
   async changePassword(userId, { oldPassword, newPassword }) {

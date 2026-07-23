@@ -15,20 +15,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={isLoading || props.disabled}
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-2xl font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed group gap-3",
+          "inline-flex items-center justify-center whitespace-nowrap rounded-md font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed group gap-2",
           {
             "bg-primary-600 text-brand-on-accent hover:bg-primary-700": variant === "default",
             "bg-gradient-to-r from-primary-600 to-primary-400 text-brand-on-accent hover:brightness-110 shadow-lg shadow-primary-600/20 border border-primary-500/50": variant === "gradient",
             "border border-border bg-input-bg hover:bg-muted text-foreground": variant === "outline",
             "hover:bg-muted text-foreground": variant === "ghost",
             "bg-rose-500 hover:bg-rose-600 text-white shadow-md": variant === "destructive",
-            "bg-brand-accent hover:bg-brand-accent-hover text-brand-on-accent shadow-xl shadow-primary-600/25 hover:shadow-primary-600/35 hover:-translate-y-1": variant === "brand",
+            "bg-brand-accent hover:bg-brand-accent-hover text-brand-on-accent shadow-sm shadow-primary-600/25 hover:shadow-primary-600/35 hover:-translate-y-0.5": variant === "brand",
           },
           {
-            "h-14 px-6 py-5 text-base": size === "default",
-            "h-9 px-3 rounded-lg text-xs": size === "sm",
-            "h-16 px-8 rounded-2xl text-lg": size === "lg",
-            "h-10 w-10 rounded-xl p-0": size === "icon",
+            "h-10 px-4 py-2 text-sm": size === "default",
+            "h-8 px-3 text-xs": size === "sm",
+            "h-12 px-6 text-base": size === "lg",
+            "h-9 w-9 p-0": size === "icon",
           },
           className
         )}

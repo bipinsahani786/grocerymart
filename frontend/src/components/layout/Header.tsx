@@ -61,7 +61,7 @@ function ThemeCustomizer() {
 
   return (
     <div className="relative" ref={ref}>
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "p-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5",
@@ -78,7 +78,7 @@ function ThemeCustomizer() {
             <Palette className="h-4 w-4 mr-2 text-primary-500" />
             Theme Customizer
           </h3>
-          
+
           <div className="space-y-6 overflow-y-auto pr-1 flex-1 py-1">
             {/* Layout Options */}
             <div>
@@ -90,8 +90,8 @@ function ThemeCustomizer() {
                     onClick={() => setTheme(l.value)}
                     className={cn(
                       "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors border cursor-pointer",
-                      theme === l.value 
-                        ? "bg-primary-50 dark:bg-primary-500/10 border-primary-500 text-primary-600 dark:text-primary-500 shadow-sm" 
+                      theme === l.value
+                        ? "bg-primary-50 dark:bg-primary-500/10 border-primary-500 text-primary-600 dark:text-primary-500 shadow-sm"
                         : "bg-slate-50 dark:bg-zinc-900 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20"
                     )}
                   >
@@ -379,7 +379,7 @@ export function Header({ className }: { className?: string }) {
   }
 
   return (
-    <header className={cn("h-14 flex items-center justify-between px-4 bg-card dark:bg-slate-900 border-b border-border sticky top-0 z-30 shadow-sm transition-colors duration-300", className)}>
+    <header className={cn("h-14 flex items-center justify-between px-4 bg-card dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors duration-300", className)}>
       <div className="flex items-center flex-1 gap-3 min-w-0">
         <button onClick={toggleSidebar} className="p-2 -ml-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5 shrink-0">
           {isSidebarCollapsed ? <ArrowRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

@@ -3,7 +3,34 @@
 
 @layer base {
   :root {
-    /* Strawberry & ocean color palette */
+    /* ── Enterprise neutral palette ── */
+    --background: #F8FAFC;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #1e293b;
+    --border: #E5E7EB;
+    --input: #D1D5DB;
+    --input-bg: #ffffff;
+    --muted: #F1F5F9;
+    --muted-foreground: #64748b;
+    --destructive: #DC2626;
+    --success: #16A34A;
+    --warning: #F59E0B;
+
+    /* Dynamic primary palette (default: blue) */
+    --primary-50: #eff6ff;
+    --primary-100: #dbeafe;
+    --primary-200: #bfdbfe;
+    --primary-300: #93c5fd;
+    --primary-400: #60a5fa;
+    --primary-500: #3b82f6;
+    --primary-600: #2563eb;
+    --primary-700: #1d4ed8;
+    --primary-800: #1e40af;
+    --primary-900: #1e3a8a;
+    --primary-950: #172554;
+
+    /* Brand accents (kept for compatibility) */
     --strawberry-red: #f94144;
     --atomic-tangerine: #f3722c;
     --carrot-orange: #f8961e;
@@ -15,58 +42,32 @@
     --blue-slate: #577590;
     --cerulean: #277da1;
 
-    --background: #f8fafc;
-    --foreground: #0f172a;
-    --card: #ffffff;
-    --card-foreground: #0f172a;
-    --border: #e2e8f0;
-    --input: #cbd5e1;
-    --input-bg: #ffffff;
-    --muted: #f1f5f9;
-    --muted-foreground: #64748b;
-    --app-shell: #0f172a;
-    --app-shell-foreground: #f8fafc;
-    --brand-panel: #1e293b;
-    --brand-panel-soft: #334155;
-    
-    /* Map brand colors to the dynamic primary palette */
     --brand-accent: var(--primary-600);
     --brand-accent-hover: var(--primary-700);
     --brand-accent-soft: var(--primary-500);
     --brand-on-accent: #ffffff;
+    --app-shell: #0f172a;
+    --app-shell-foreground: #f8fafc;
+    --brand-panel: #1e293b;
+    --brand-panel-soft: #334155;
     --overlay-soft: rgba(255, 255, 255, 0.05);
     --overlay-border: rgba(255, 255, 255, 0.1);
-
-    /* Default primary colors mapped to new color palette variables */
-    --primary-50: var(--willow-green);
-    --primary-100: var(--seagrass);
-    --primary-200: var(--dark-cyan);
-    --primary-300: var(--blue-slate);
-    --primary-400: var(--dark-cyan);
-    --primary-500: var(--cerulean);
-    --primary-600: var(--dark-cyan);
-    --primary-700: var(--blue-slate);
-    --primary-800: var(--cerulean);
-    --primary-900: var(--dark-cyan);
-    --primary-950: var(--blue-slate);
   }
 
   .dark {
     --background: #0f172a;
-    --foreground: #f8fafc;
+    --foreground: #f1f5f9;
     --card: #1e293b;
-    --card-foreground: #f8fafc;
+    --card-foreground: #f1f5f9;
     --border: #334155;
-    --input: #334155;
-    --input-bg: #0f172a;
+    --input: #475569;
+    --input-bg: #1e293b;
     --muted: #1e293b;
     --muted-foreground: #94a3b8;
     --app-shell: #0f172a;
     --app-shell-foreground: #f8fafc;
     --brand-panel: #0f172a;
     --brand-panel-soft: #1e293b;
-    
-    /* Map brand colors to the dynamic primary palette */
     --brand-accent: var(--primary-500);
     --brand-accent-hover: var(--primary-400);
     --brand-accent-soft: var(--primary-600);
@@ -121,7 +122,7 @@
   --color-primary-950: var(--primary-950);
 
   --font-sans: var(--font-primary, 'Inter', ui-sans-serif, system-ui, sans-serif);
-  --font-display: var(--font-heading, 'Outfit', ui-sans-serif, system-ui, sans-serif);
+  --font-display: var(--font-heading, 'Inter', ui-sans-serif, system-ui, sans-serif);
 }
 
 @layer base {
@@ -131,99 +132,48 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Custom Global Scrollbar */
+/* ── Scrollbar: clean enterprise ── */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, var(--primary-400), var(--primary-600));
-  border-radius: 10px;
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-::-webkit-scrollbar-thumb:hover,
-::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(to bottom, var(--primary-300), var(--primary-500));
-}
-
-/* Firefox Fallback */
 @-moz-document url-prefix() {
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--primary-500) transparent;
+    scrollbar-color: #cbd5e1 transparent;
   }
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-/* Hide scrollbar for IE, Edge and Firefox */
-.scrollbar-none {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
+/* Hide scrollbar utility */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* View Transitions Theme Toggle (Fade Effect) */
+/* ── View Transitions (theme toggle) ── */
 ::view-transition-old(root) {
-  animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both fade-out;
+  animation: 200ms ease-out both vt-fade-out;
 }
 ::view-transition-new(root) {
-  animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both fade-in;
+  animation: 200ms ease-out both vt-fade-in;
 }
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-/* Global smooth transition fallback for theme variable changes */
-body, .bg-card, .text-foreground, .border, .text-slate-900, header, main, nav, button, input {
-  transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1), 
-              border-color 300ms cubic-bezier(0.4, 0, 0.2, 1), 
-              color 300ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Page Enter Animation */
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-page-enter {
-  animation: page-enter 350ms cubic-bezier(0.21, 1.02, 0.43, 1.01) forwards;
-}
-
-/* Layout spacing optimizations: decrease header and sidebar gaps globally */
-.max-w-\[1500px\] {
-  padding-left: 0.75rem !important; /* px-3 instead of px-4 on mobile */
-  padding-right: 0.75rem !important;
-  padding-top: 0.625rem !important; /* pt-2.5 instead of pt-6/py-6 from header */
-  padding-bottom: 1.5rem !important; /* pb-6 */
-}
-
-@media (min-width: 640px) {
-  .max-w-\[1500px\] {
-    padding-left: 1rem !important; /* px-4 instead of px-6 on desktop */
-    padding-right: 1rem !important;
-  }
-}
+@keyframes vt-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes vt-fade-out { from { opacity: 1 } to { opacity: 0 } }

@@ -1,14 +1,18 @@
-import { useState, type FormEvent } from 'react';
-import { Mail, Phone, Plus, ShieldCheck, Store, User } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { useState, type FormEvent, useMemo } from 'react';
+import { Mail, Phone, Plus, Store, User, Lock, Power, Users } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
+import { DataTable, type ColumnDef } from '@/components/ui/data-table';
+import { Modal } from '@/components/ui/modal';
 import { useStores } from '../../stores/api/useStores';
-import { useCreateManager, useManagers, type CreateManagerPayload } from '../api/useManagers';
+import { useCreateManager, useManagers, useUpdateManagerStatus, useUpdateManagerPassword, type CreateManagerPayload, type StoreManager } from '../api/useManagers';
+import { toast } from 'sonner';
 
 const defaultForm: CreateManagerPayload = {
   name: '',
@@ -21,9 +25,15 @@ const defaultForm: CreateManagerPayload = {
 export default function StoreManagersPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CreateManagerPayload>(defaultForm);
+  const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; managerId: string; managerName: string }>({ isOpen: false, managerId: '', managerName: '' });
+  const [newPassword, setNewPassword] = useState('');
+  
   const { data: managers = [], isLoading: managersLoading } = useManagers();
-  const { data: stores = [], isLoading: storesLoading } = useStores();
+  const { data: storesResponse, isLoading: storesLoading } = useStores();
+  const stores = storesResponse?.data || [];
   const createManager = useCreateManager();
+  const updateStatus = useUpdateManagerStatus();
+  const updatePassword = useUpdateManagerPassword();
 
   const updateForm = <K extends keyof CreateManagerPayload>(key: K, value: CreateManagerPayload[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -39,125 +49,249 @@ export default function StoreManagersPage() {
     });
   };
 
+  const handlePasswordSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    updatePassword.mutate({ id: passwordModal.managerId, password: newPassword }, {
+      onSuccess: () => {
+        setPasswordModal({ isOpen: false, managerId: '', managerName: '' });
+        setNewPassword('');
+      }
+    });
+  };
+
+  const columns: ColumnDef<StoreManager>[] = useMemo(() => [
+    {
+      header: 'Manager Info',
+      accessorKey: 'name',
+      cell: (manager) => (
+        <div className="py-0.5">
+          <p className="font-bold text-[13px] text-slate-900 dark:text-slate-100 leading-tight">{manager.name || 'Unnamed Manager'}</p>
+          <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
+            <Mail className="w-2.5 h-2.5" />
+            <span className="truncate max-w-[150px]">{manager.email}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Phone',
+      accessorKey: 'phone',
+      cell: (manager) => (
+        <span className="text-[12px] font-medium text-slate-600 dark:text-slate-300">
+          {manager.phone || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Assigned Store',
+      cell: (manager) => {
+        const assignedStore = manager.managedStore || manager.store;
+        return (
+          <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">
+            {assignedStore?.name || 'Unassigned'}
+          </span>
+        );
+      },
+    },
+    {
+      header: 'Role',
+      cell: (manager) => (
+        <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-slate-50 text-slate-600 border-slate-200">
+          {manager.role?.roleName || 'store_manager'}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Status',
+      cell: (manager) => (
+        <Badge variant={manager.status === 'active' ? 'success' : 'warning'} className="text-[10px] px-2 py-0.5">
+          {manager.status}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      cell: (manager) => {
+        const isActive = manager.status === 'active';
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/50"
+              title={isActive ? "Suspend Manager" : "Activate Manager"}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateStatus.mutate({ id: manager.id, status: isActive ? 'suspended' : 'active' });
+              }}
+            >
+              <Power className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-emerald-500'}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/50"
+              title="Change Password"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPasswordModal({ isOpen: true, managerId: manager.id, managerName: manager.name || 'Unnamed' });
+              }}
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ], [updateStatus]);
+
   if (managersLoading || storesLoading) return <PageLoadingSkeleton />;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950/50 text-foreground pb-12">
       <PageHeader
-        icon={ShieldCheck}
         title="Store Managers"
-        subtitle="Create manager accounts and assign them to stores"
-      />
-
-      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Managers</p>
-            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{managers.length}</h2>
-          </div>
-          <Button size="sm" onClick={() => setShowForm((value) => !value)}>
-            <Plus className="h-4 w-4" />
+        breadcrumb={['Home', 'Stores', 'Managers']}
+        actions={
+          <Button size="sm" onClick={() => setShowForm((value) => !value)} className="bg-primary-600 hover:bg-primary-700 text-white shadow-sm h-8 px-3 text-[11px] font-semibold tracking-wide">
+            <Plus className="h-3.5 w-3.5 mr-1" />
             Create Manager
           </Button>
+        }
+      />
+
+      <div className="w-full px-4 sm:px-6 py-4 space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <StatCard
+            title="Total Managers"
+            value={managers.length}
+            subtitle="Registered store managers"
+            icon={<Users />}
+            color="bg-primary-50/70 dark:bg-primary-500/5 text-primary-600 dark:text-primary-400"
+          />
         </div>
 
-        {showForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Store Manager</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                <Input
-                  required
-                  placeholder="Manager name"
-                  value={form.name}
-                  onChange={(event) => updateForm('name', event.target.value)}
-                  icon={<User className="h-4 w-4" />}
-                />
-                <Input
-                  required
-                  type="email"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={(event) => updateForm('email', event.target.value)}
-                  icon={<Mail className="h-4 w-4" />}
-                />
-                <Input
-                  placeholder="Phone"
-                  value={form.phone}
-                  onChange={(event) => updateForm('phone', event.target.value)}
-                  icon={<Phone className="h-4 w-4" />}
-                />
-                <Input
-                  required
-                  type="password"
-                  placeholder="Temporary password"
-                  value={form.password}
-                  onChange={(event) => updateForm('password', event.target.value)}
-                />
-                <Select
-                  value={form.storeId || ''}
-                  onChange={(event) => updateForm('storeId', event.target.value || null)}
-                  icon={<Store className="h-4 w-4" />}
-                >
-                  <option value="">Assign store later</option>
-                  {stores.map((store) => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
-                </Select>
-                <div className="md:col-span-2 xl:col-span-3 flex justify-end gap-3 pt-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
-                  <Button type="submit" size="sm" isLoading={createManager.isPending} loadingText="Creating">
-                    Create Manager
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
+        <Modal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          title={
+            <div className="flex items-center gap-2">
+              <div className="bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-500 p-1.5 rounded-lg">
+                <User className="w-4 h-4" />
+              </div>
+              <span className="text-[15px] font-bold">Create Store Manager</span>
+            </div>
+          }
+          maxWidth="lg"
+        >
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              required
+              placeholder="Manager name"
+              value={form.name}
+              onChange={(event) => updateForm('name', event.target.value)}
+              icon={<User className="h-4 w-4" />}
+            />
+            <Input
+              required
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={(event) => updateForm('email', event.target.value)}
+              icon={<Mail className="h-4 w-4" />}
+            />
+            <Input
+              placeholder="Phone"
+              value={form.phone}
+              onChange={(event) => updateForm('phone', event.target.value)}
+              icon={<Phone className="h-4 w-4" />}
+            />
+            <Input
+              required
+              type="password"
+              placeholder="Temporary password"
+              value={form.password}
+              onChange={(event) => updateForm('password', event.target.value)}
+            />
+            <div className="sm:col-span-2">
+              <Select
+                value={form.storeId || ''}
+                onChange={(event) => updateForm('storeId', event.target.value || null)}
+                icon={<Store className="h-4 w-4" />}
+              >
+                <option value="">Assign store later</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>{store.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="sm:col-span-2 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-white/5 mt-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} className="h-8 text-[12px]">Cancel</Button>
+              <Button type="submit" size="sm" isLoading={createManager.isPending} loadingText="Creating" className="h-8 text-[12px] bg-primary-600 hover:bg-primary-700 text-white">
+                Create Manager
+              </Button>
+            </div>
+          </form>
+        </Modal>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {managers.map((manager) => {
-            const assignedStore = manager.managedStore || manager.store;
-            return (
-              <Card key={manager.id}>
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-extrabold text-slate-900 dark:text-white truncate">{manager.name || 'Unnamed Manager'}</h3>
-                      <p className="text-sm text-muted-foreground mt-1 truncate">{manager.email}</p>
-                    </div>
-                    <Badge variant={manager.status === 'active' ? 'success' : 'warning'}>{manager.status}</Badge>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 text-xs">
-                    <div>
-                      <p className="font-bold text-muted-foreground uppercase">Phone</p>
-                      <p className="font-semibold truncate mt-1">{manager.phone || 'Not added'}</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-muted-foreground uppercase">Store</p>
-                      <p className="font-semibold truncate mt-1">{assignedStore?.name || 'Unassigned'}</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-muted-foreground uppercase">Role</p>
-                      <p className="font-semibold truncate mt-1">{manager.role?.roleName || 'store_manager'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={managers}
+            searchPlaceholder="Search managers by name or email..."
+            searchKey="name"
+          />
         </div>
-
-        {managers.length === 0 && (
-          <Card>
-            <CardContent className="p-10 text-center text-sm font-semibold text-muted-foreground">
-              No store managers created yet.
-            </CardContent>
-          </Card>
-        )}
       </div>
+
+      <Modal
+        isOpen={passwordModal.isOpen}
+        onClose={() => {
+          setPasswordModal({ isOpen: false, managerId: '', managerName: '' });
+          setNewPassword('');
+        }}
+        title={<span className="text-[15px] font-bold">Change Password for {passwordModal.managerName}</span>}
+        maxWidth="sm"
+      >
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <Input
+            required
+            type="password"
+            placeholder="New Password (min 6 chars)"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            icon={<Lock className="w-4 h-4" />}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setPasswordModal({ isOpen: false, managerId: '', managerName: '' });
+                setNewPassword('');
+              }}
+              className="h-8 text-[12px]"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              isLoading={updatePassword.isPending}
+              loadingText="Updating..."
+              className="h-8 text-[12px] bg-primary-600 hover:bg-primary-700 text-white"
+            >
+              Update Password
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

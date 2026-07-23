@@ -45,7 +45,7 @@ export function StatCard({
   return (
     <Card 
       className={cn(
-        "transition-all duration-300 relative overflow-hidden group bg-card border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary-500/20", 
+        "transition-all duration-300 relative overflow-hidden group bg-card border border-border rounded-md shadow-sm hover:shadow-md hover:border-primary-500/20", 
         onClick && "cursor-pointer hover:-translate-y-0.5",
         isActive && "ring-2 ring-primary-500 border-primary-500",
         className
@@ -58,30 +58,30 @@ export function StatCard({
       {/* Subtle backdrop mesh gradient glow */}
       <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-2xl group-hover:bg-primary-500/10 dark:group-hover:bg-primary-500/15 transition-all duration-500"></div>
 
-      <CardContent className="p-4 relative z-10 flex flex-col justify-between h-full min-h-[110px]">
+      <CardContent className="p-3 relative z-10 flex flex-col justify-between h-full min-h-[96px]">
         <div>
           {/* Header Line */}
-          <div className="flex items-center justify-between mb-3.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-zinc-500 select-none truncate pr-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-zinc-500 select-none truncate pr-2">
               {displayTitle}
             </span>
             <div className={cn(
-              "p-2 rounded-lg transition-all duration-300 flex items-center justify-center shrink-0",
+              "p-1.5 rounded-lg transition-all duration-300 flex items-center justify-center shrink-0",
               color ? color : (
                 isActive 
                   ? "bg-primary-500 text-white shadow-md shadow-primary-500/20" 
                   : "bg-primary-50/70 dark:bg-primary-500/5 text-primary-500 dark:text-primary-400 group-hover:scale-105 group-hover:bg-primary-100/70 dark:group-hover:bg-primary-500/10"
               )
             )}>
-              {isElementType(icon) ? (() => { const Icon = icon as ElementType; return <Icon className="w-4 h-4" />; })() : (
-                isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' }) : icon
+              {isElementType(icon) ? (() => { const Icon = icon as ElementType; return <Icon className="w-3.5 h-3.5" />; })() : (
+                isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: 'w-3.5 h-3.5' }) : icon
               )}
             </div>
           </div>
 
           {/* Value Line */}
           <div className="flex items-baseline">
-            <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display">
+            <span className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display">
               {value}
             </span>
           </div>

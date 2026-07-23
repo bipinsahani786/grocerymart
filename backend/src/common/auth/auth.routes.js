@@ -2,7 +2,6 @@ import express from "express";
 import { authController } from "./auth.controller.js";
 import { validate } from "../../middleware/validate.middleware.js";
 import { verifyToken } from "../../middleware/auth.middleware.js";
-import { uploadAvatarMiddleware } from "../../middleware/upload.middleware.js";
 import {
   registerSchema,
   verifyRegisterOtpSchema,
@@ -225,20 +224,6 @@ router.get("/profile", verifyToken, authController.getProfile);
  *         description: Profile updated
  */
 router.patch("/profile", verifyToken, authController.updateProfile);
-
-/**
- * @openapi
- * /api/auth/profile/avatar:
- *   post:
- *     summary: Upload avatar
- *     description: Upload user avatar image.
- *     tags: [Authentication]
- *     security: [{ bearerAuth: [] }]
- *     responses:
- *       200:
- *         description: Avatar uploaded
- */
-router.post("/profile/avatar", verifyToken, uploadAvatarMiddleware.single('avatar'), authController.uploadAvatar);
 
 /**
  * @openapi

@@ -15,19 +15,19 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className="w-full">
-        <div className="relative group">
+        <div className="relative">
           {icon && (
-            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none group-focus-within:text-primary-500 transition-colors text-muted-foreground">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 [&>svg]:w-4 [&>svg]:h-4">
               {icon}
             </div>
           )}
           <input
             type={inputType}
             className={cn(
-              "block w-full pr-5 py-2.5 bg-input-bg border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium text-sm text-foreground shadow-sm placeholder:text-muted-foreground",
-              icon ? "pl-14" : "pl-5",
-              isPassword && "pr-14",
-              error && "border-red-500 focus:ring-red-500/10 focus:border-red-500",
+              "block w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md text-sm text-foreground placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors",
+              icon ? "pl-9" : "pl-3",
+              isPassword ? "pr-9" : "pr-3",
+              error && "border-red-400 focus:ring-red-500/20 focus:border-red-500",
               className
             )}
             ref={ref}
@@ -37,17 +37,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-5 flex items-center text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
+              className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none transition-colors"
               tabIndex={-1}
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           )}
         </div>
         {error && (
-          <p className="text-xs text-red-500 mt-2 ml-1 font-medium animate-in slide-in-from-top-1 fade-in-0 duration-300">
-            {error}
-          </p>
+          <p className="text-xs text-red-500 mt-1 font-medium">{error}</p>
         )}
       </div>
     )

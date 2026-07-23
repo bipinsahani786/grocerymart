@@ -11,3 +11,21 @@ export const createManagerSchema = z.object({
   query: z.object({}).optional(),
   params: z.object({}).optional(),
 });
+
+export const updateManagerStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(["active", "suspended", "banned"]),
+  }),
+  params: z.object({
+    id: z.string().uuid("Valid manager ID is required"),
+  }),
+});
+
+export const updateManagerPasswordSchema = z.object({
+  body: z.object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  }),
+  params: z.object({
+    id: z.string().uuid("Valid manager ID is required"),
+  }),
+});

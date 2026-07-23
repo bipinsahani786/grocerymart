@@ -76,7 +76,7 @@ export const useSuperadminDashboardStats = (params?: SuperadminDashboardFilters)
   return useQuery<DashboardStatsResponse>({
     queryKey: ['superadmin', 'dashboard', 'stats', params],
     queryFn: async () => {
-      const { data } = await api.get('/superadmin/dashboard/stats', { params });
+      const { data } = await api.get('/admin/dashboard/stats', { params });
       return data.data;
     },
   });

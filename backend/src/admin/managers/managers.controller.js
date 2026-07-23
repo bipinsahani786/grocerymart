@@ -11,6 +11,20 @@ export class ManagersController {
     const result = await managersService.createManager(req.body);
     res.status(201).json(result);
   });
+
+  updateManagerStatus = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const result = await managersService.updateManagerStatus(id, status);
+    res.json(result);
+  });
+
+  updateManagerPassword = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const { password } = req.body;
+    const result = await managersService.updateManagerPassword(id, password);
+    res.json(result);
+  });
 }
 
 export const managersController = new ManagersController();

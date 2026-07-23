@@ -211,7 +211,7 @@ export function DataTable<T>({
                 <th
                   key={idx}
                   className={cn(
-                    "px-4 py-[16px] text-xs font-bold text-slate-700 dark:text-zinc-200 uppercase tracking-wider select-none transition-colors align-middle group",
+                    "px-4 py-3 text-[11px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider select-none transition-colors align-middle group",
                     col.sortable && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white",
                     col.className
                   )}

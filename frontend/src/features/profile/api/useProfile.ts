@@ -36,7 +36,6 @@ export const useUpdateProfile = () => {
     },
     onSuccess: (updatedUser) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      // Update auth store so Header reflects the new name/email instantly
       updateUser({
         name: updatedUser.name,
         email: updatedUser.email,
@@ -52,12 +51,9 @@ export const useUploadAvatar = () => {
   const updateUser = useAuthStore((s) => s.updateUser);
 
   return useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('avatar', file);
-      const response = await api.post('/auth/profile/avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    mutationFn: async (result: { path: string; public_url: string }) => {
+      const avatarUrl = result.public_url || result.path;
+      const response = await api.patch('/auth/profile', { avatar: avatarUrl });
       return response.data.data;
     },
     onSuccess: (data) => {

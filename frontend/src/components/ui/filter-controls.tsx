@@ -9,7 +9,7 @@ export function FilterContainer({ className, children, ...props }: FilterContain
   return (
     <div
       className={cn(
-        "bg-card border border-border rounded-xl p-4 shadow-sm mb-6 flex flex-wrap items-center gap-3",
+        "bg-card border border-border rounded-md p-4 shadow-sm mb-6 flex flex-wrap items-center gap-3",
         className
       )}
       {...props}
@@ -36,19 +36,19 @@ export function FilterSearch({
   return (
     <div
       className={cn(
-        "relative flex items-center w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all overflow-hidden h-10 pr-3",
+        "relative flex items-center w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all overflow-hidden h-8 pr-3",
         wrapperClassName
       )}
     >
-      <div className="h-10 w-10 flex items-center justify-center bg-primary-50 dark:bg-primary-500/10 border-r border-slate-200 dark:border-zinc-800 text-primary-500 dark:text-primary-400 shrink-0">
-        <Search className="w-4 h-4" />
+      <div className="h-8 w-8 flex items-center justify-center bg-primary-50 dark:bg-primary-500/10 border-r border-slate-200 dark:border-zinc-800 text-primary-500 dark:text-primary-400 shrink-0">
+        <Search className="w-3.5 h-3.5" />
       </div>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          "flex-1 bg-transparent border-0 pl-3 focus:outline-none focus:ring-0 text-xs tracking-wider placeholder:text-xs placeholder:font-medium placeholder:tracking-wider text-slate-900 dark:text-white uppercase placeholder:uppercase",
+          "flex-1 bg-transparent border-0 pl-3 focus:outline-none focus:ring-0 text-[11px] tracking-wider placeholder:text-[10px] placeholder:font-medium placeholder:tracking-wider text-slate-900 dark:text-white uppercase placeholder:uppercase",
           className
         )}
         {...props}
@@ -121,7 +121,7 @@ export function FilterSelect({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-bold tracking-widest text-slate-700 dark:text-zinc-300 uppercase shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all cursor-pointer text-left",
+          "flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-[11px] font-medium tracking-widest text-slate-700 dark:text-zinc-300 uppercase shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all cursor-pointer text-left",
           className
         )}
       >
@@ -163,7 +163,7 @@ export function FilterSelect({
                 setIsOpen(false);
               }}
               className={cn(
-                "cursor-pointer px-3 py-2 text-xs font-bold tracking-widest uppercase hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors",
+                "cursor-pointer px-3 py-1.5 text-[11px] font-medium tracking-widest uppercase hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors",
                 !value
                   ? "text-primary-500 dark:text-primary-400 bg-slate-50 dark:bg-white/[0.02]"
                   : "text-slate-500 dark:text-zinc-400"
@@ -183,9 +183,9 @@ export function FilterSelect({
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "cursor-pointer px-3 py-2.5 text-xs font-medium uppercase transition-colors tracking-wide",
+                      "cursor-pointer px-3 py-1.5 text-[11px] font-medium uppercase transition-colors tracking-wide",
                       isSelected
-                        ? "bg-primary-500 text-white font-bold"
+                        ? "bg-primary-500 text-white"
                         : "text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400"
                     )}
                   >
@@ -255,7 +255,7 @@ export function FilterReset({ className, onClick, ...props }: FilterResetProps) 
       size="sm"
       onClick={onClick}
       className={cn(
-        "h-10 text-xs font-bold tracking-wider uppercase border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-white/5 px-4 rounded-lg text-slate-600 dark:text-zinc-400 flex items-center gap-1.5 shrink-0 ml-auto",
+        "h-8 text-[11px] font-medium tracking-wider uppercase border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-white/5 px-3 rounded-lg text-slate-600 dark:text-zinc-400 flex items-center gap-1.5 shrink-0 ml-auto",
         className
       )}
       {...props}

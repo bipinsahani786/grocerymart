@@ -1,211 +1,251 @@
-import { useState, type FormEvent } from 'react';
-import { Building2, Clock, MapPin, Plus, Store as StoreIcon } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { useState, useMemo, useEffect } from 'react';
+import { Building2, Plus, Store as StoreIcon, User, Power, Edit, MapPin, Phone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
-import { useCreateStore, useStores, type CreateStorePayload } from '../api/useStores';
+import { StatCard } from '@/components/ui/stat-card';
+import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
+import { DataTable, type ColumnDef } from '@/components/ui/data-table';
+import { TableSkeleton } from '@/components/ui/skeleton-loaders';
+import { useStores, useUpdateStoreStatus, usePrefetchStore } from '../api/useStores';
+import type { Store } from '../types';
+import { STORE_STATUS_OPTIONS, STORE_MODULE_OPTIONS } from '@/constants/options';
 
-const defaultForm: CreateStorePayload = {
-  name: '',
-  address: '',
-  lat: 0,
-  long: 0,
-  radiusKm: 3,
-  phone: '',
-  gstin: '',
-  openingTime: '08:00',
-  closingTime: '22:00',
-  isActive: true,
-  posEnabled: true,
-  deliveryEnabled: true,
-  clickCollectEnabled: true,
-};
-
-function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-input-bg px-4 py-3 text-sm font-semibold text-foreground">
-      <span>{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4 accent-primary-500"
-      />
-    </label>
-  );
-}
+const EmptyStoreIllustration = () => (
+  <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 dark:text-slate-600 mb-2">
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" strokeWidth="1" fill="currentColor" fillOpacity="0.1" />
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    <path d="M12 9v4" />
+    <path d="M12 17h.01" />
+    <path d="M6 13h.01" />
+    <path d="M6 17h.01" />
+    <path d="M18 13h.01" />
+    <path d="M18 17h.01" />
+  </svg>
+);
 
 export default function StoreDashboardPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<CreateStorePayload>(defaultForm);
-  const { data: stores = [], isLoading } = useStores();
-  const createStore = useCreateStore();
+  const navigate = useNavigate();
+  const prefetchStore = usePrefetchStore();
 
-  const updateForm = <K extends keyof CreateStorePayload>(key: K, value: CreateStorePayload[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  // Filters State
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [module, setModule] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, status, module]);
+
+  const { data: response, isLoading } = useStores({
+    search,
+    status: status || 'all',
+    module: module || 'all',
+    page,
+    limit,
+  });
+
+  const updateStatus = useUpdateStoreStatus();
+
+  const handleToggleStatus = (store: Store) => {
+    updateStatus.mutate({ id: store.id, isActive: !store.isActive });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    createStore.mutate(form, {
-      onSuccess: () => {
-        setForm(defaultForm);
-        setShowForm(false);
-      },
-    });
+  const handleResetFilters = () => {
+    setSearch('');
+    setStatus('');
+    setModule('');
+    setPage(1);
   };
 
-  if (isLoading) return <PageLoadingSkeleton />;
+  const stores = response?.data || [];
+  const meta = response?.meta || { total: 0, page: 1, limit: 10, totalPages: 1 };
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <PageHeader
-        icon={StoreIcon}
-        title="Store Dashboard"
-        subtitle="Create stores and monitor store-level operating status"
-      />
+  const activeCount = stores.filter(s => s.isActive).length;
+  const inactiveCount = stores.filter(s => !s.isActive).length;
+  const totalStaffCount = stores.reduce((acc, curr) => acc + (curr._count?.users || 0), 0);
 
-      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Stores</p>
-            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{stores.length}</h2>
+  const columns: ColumnDef<Store>[] = useMemo(() => [
+    {
+      header: 'Franchise Store',
+      accessorKey: 'name',
+      cell: (store) => (
+        <div className="flex items-center gap-2 py-0.5">
+          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 shrink-0">
+            <Building2 className="w-3.5 h-3.5" />
           </div>
-          <Button size="sm" onClick={() => setShowForm((value) => !value)}>
-            <Plus className="h-4 w-4" />
-            Create Store
+          <div>
+            <p className="font-bold text-[13px] text-slate-900 dark:text-slate-100 leading-tight">{store.name}</p>
+            <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
+              <MapPin className="w-2.5 h-2.5" />
+              <span className="line-clamp-1">{store.address}</span>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Manager Info',
+      cell: (store) => (
+        <div className="py-0.5">
+          <p className="font-semibold text-[13px] text-slate-800 dark:text-slate-200 leading-tight">
+            {store.manager?.name || 'Unassigned'}
+          </p>
+          <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
+            <Phone className="w-2.5 h-2.5" />
+            <span>{store.phone || store.manager?.phone || 'No phone'}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Hours',
+      cell: (store) => (
+        <Badge variant="outline" className="bg-slate-50 text-slate-600 font-medium whitespace-nowrap text-[10px] px-1.5 py-0">
+          {store.openingTime} - {store.closingTime}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Modules',
+      cell: (store) => (
+        <div className="flex flex-wrap gap-1 max-w-[140px]">
+          {store.posEnabled && <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 border-blue-200">POS</Badge>}
+          {store.deliveryEnabled && <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">DLV</Badge>}
+          {store.clickCollectEnabled && <Badge variant="outline" className="text-[9px] px-1 py-0 bg-amber-50 text-amber-700 border-amber-200">C&C</Badge>}
+        </div>
+      ),
+    },
+    {
+      header: 'Status',
+      cell: (store) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleToggleStatus(store);
+          }}
+          disabled={updateStatus.isPending}
+          className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500 focus:ring-offset-1 disabled:opacity-50 ${
+            store.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+          }`}
+        >
+          <span
+            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+              store.isActive ? 'translate-x-3.5' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+      ),
+    },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      cell: (store) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0 text-slate-500 hover:text-primary-600 hover:bg-primary-50"
+            onMouseEnter={() => prefetchStore(store.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/stores/edit/${store.id}`);
+            }}
+          >
+            <Edit className="w-3.5 h-3.5" />
           </Button>
         </div>
+      ),
+    }
+  ], [updateStatus, navigate, prefetchStore]);
 
-        {showForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Store</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                <Input
-                  required
-                  placeholder="Store name"
-                  value={form.name}
-                  onChange={(event) => updateForm('name', event.target.value)}
-                  icon={<Building2 className="h-4 w-4" />}
-                />
-                <Input
-                  required
-                  placeholder="Address"
-                  value={form.address}
-                  onChange={(event) => updateForm('address', event.target.value)}
-                  icon={<MapPin className="h-4 w-4" />}
-                />
-                <Input
-                  placeholder="Phone"
-                  value={form.phone}
-                  onChange={(event) => updateForm('phone', event.target.value)}
-                />
-                <Input
-                  placeholder="GSTIN"
-                  value={form.gstin}
-                  onChange={(event) => updateForm('gstin', event.target.value)}
-                />
-                <Input
-                  required
-                  type="number"
-                  step="0.000001"
-                  placeholder="Latitude"
-                  value={form.lat}
-                  onChange={(event) => updateForm('lat', Number(event.target.value))}
-                />
-                <Input
-                  required
-                  type="number"
-                  step="0.000001"
-                  placeholder="Longitude"
-                  value={form.long}
-                  onChange={(event) => updateForm('long', Number(event.target.value))}
-                />
-                <Input
-                  required
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  placeholder="Radius KM"
-                  value={form.radiusKm}
-                  onChange={(event) => updateForm('radiusKm', Number(event.target.value))}
-                />
-                <Input
-                  required
-                  type="time"
-                  value={form.openingTime}
-                  onChange={(event) => updateForm('openingTime', event.target.value)}
-                  icon={<Clock className="h-4 w-4" />}
-                />
-                <Input
-                  required
-                  type="time"
-                  value={form.closingTime}
-                  onChange={(event) => updateForm('closingTime', event.target.value)}
-                  icon={<Clock className="h-4 w-4" />}
-                />
-                <ToggleField label="Store Active" checked={form.isActive} onChange={(checked) => updateForm('isActive', checked)} />
-                <ToggleField label="POS Enabled" checked={form.posEnabled} onChange={(checked) => updateForm('posEnabled', checked)} />
-                <ToggleField label="Delivery Enabled" checked={form.deliveryEnabled} onChange={(checked) => updateForm('deliveryEnabled', checked)} />
-                <ToggleField label="Click & Collect" checked={form.clickCollectEnabled} onChange={(checked) => updateForm('clickCollectEnabled', checked)} />
-                <div className="md:col-span-2 xl:col-span-3 flex justify-end gap-3 pt-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
-                  <Button type="submit" size="sm" isLoading={createStore.isPending} loadingText="Creating">
-                    Create Store
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
+  return (
+    <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950/50 text-foreground">
+      <PageHeader
+        title="Store Dashboard"
+        breadcrumb={['Home', 'Stores', 'Dashboard']}
+        actions={
+          <Button size="sm" onClick={() => navigate('/stores/create')} className="bg-primary-600 hover:bg-primary-700 text-white shadow-sm h-8 px-3 text-[11px] font-semibold tracking-wide">
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Create Franchise Store
+          </Button>
+        }
+      />
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {stores.map((store) => (
-            <Card key={store.id} className="overflow-hidden">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white truncate">{store.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{store.address}</p>
-                  </div>
-                  <Badge variant={store.isActive ? 'success' : 'secondary'}>{store.isActive ? 'Active' : 'Inactive'}</Badge>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 text-xs">
-                  <div>
-                    <p className="font-bold text-muted-foreground uppercase">Manager</p>
-                    <p className="font-semibold truncate mt-1">{store.manager?.name || 'Unassigned'}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-muted-foreground uppercase">Hours</p>
-                    <p className="font-semibold mt-1">{store.openingTime} - {store.closingTime}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-muted-foreground uppercase">Radius</p>
-                    <p className="font-semibold mt-1">{store.radiusKm} km</p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-muted-foreground uppercase">Users</p>
-                    <p className="font-semibold mt-1">{store._count?.users ?? 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      <div className="w-full px-4 sm:px-6 py-3 space-y-3">
+        {/* Analytics Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <StatCard
+            title="Total Stores"
+            value={meta.total}
+            icon={Building2}
+            color="text-primary-600 bg-primary-100"
+          />
+          <StatCard
+            title="Active Stores"
+            value={activeCount}
+            icon={Power}
+            color="text-emerald-600 bg-emerald-100"
+          />
+          <StatCard
+            title="Inactive Stores"
+            value={inactiveCount}
+            icon={Power}
+            color="text-rose-600 bg-rose-100"
+          />
+          <StatCard
+            title="Total Staff"
+            value={totalStaffCount}
+            icon={User}
+            color="text-blue-600 bg-blue-100"
+          />
         </div>
 
-        {stores.length === 0 && (
-          <Card>
-            <CardContent className="p-10 text-center text-sm font-semibold text-muted-foreground">
-              No stores created yet.
-            </CardContent>
-          </Card>
-        )}
+        {/* Filters Row */}
+        <FilterContainer className="mb-4">
+          <div className="w-full sm:w-72">
+            <FilterSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Search by name, address or phone"
+            />
+          </div>
+          <FilterSelect
+            value={status}
+            onChange={setStatus}
+            placeholder="All Status"
+            options={STORE_STATUS_OPTIONS}
+          />
+          <FilterSelect
+            value={module}
+            onChange={setModule}
+            placeholder="All Modules"
+            options={STORE_MODULE_OPTIONS}
+          />
+          <FilterReset onClick={handleResetFilters} />
+        </FilterContainer>
+
+        {/* Data Table */}
+        <div className="bg-white dark:bg-zinc-900 rounded-md shadow-sm border border-slate-200 dark:border-white/10 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={stores}
+            isLoading={isLoading}
+            loadingSkeleton={<TableSkeleton cols={6} rows={10} />}
+            serverSide={true}
+            totalItems={meta.total}
+            page={page}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onPageSizeChange={setLimit}
+            emptyIcon={<EmptyStoreIllustration />}
+            emptyMessage="No stores found matching your filters."
+          />
+        </div>
       </div>
     </div>
   );

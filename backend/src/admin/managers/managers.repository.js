@@ -77,6 +77,14 @@ export class ManagersRepository {
       });
     });
   }
+
+  async updateManager(id, data) {
+    return await prisma.user.update({
+      where: { id },
+      data,
+      select: managerSelect,
+    });
+  }
 }
 
 export const managersRepository = new ManagersRepository();

@@ -60,3 +60,36 @@ export const useCreateManager = () => {
     },
   });
 };
+
+export const useUpdateManagerStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { data } = await api.patch(`/admin/managers/${id}/status`, { status });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
+      toast.success('Manager status updated');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    },
+  });
+};
+
+export const useUpdateManagerPassword = () => {
+  return useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      const { data } = await api.patch(`/admin/managers/${id}/password`, { password });
+      return data.data;
+    },
+    onSuccess: () => {
+      toast.success('Manager password updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update password');
+    },
+  });
+};

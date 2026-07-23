@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { useMockStore } from '@/store/mockStore';
 import { 
@@ -136,57 +137,34 @@ export default function StoreAnalyticsPage() {
         
         {/* Top Mini Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Gross Sales Volume</span>
-                <h4 className="text-xl font-black mt-1 text-slate-900 dark:text-white">₹{generalStats.totalSales.toLocaleString('en-IN')}</h4>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Excludes voided/refunds</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <BadgeIndianRupee className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Average Cart Size</span>
-                <h4 className="text-xl font-black mt-1 text-slate-900 dark:text-white">₹{generalStats.avgOrderVal}</h4>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Spend per check-out</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Completed Orders</span>
-                <h4 className="text-xl font-black mt-1 text-slate-900 dark:text-white">{generalStats.ordersCount}</h4>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Fulfillment count</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                <ShoppingCart className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Total Units Handled</span>
-                <h4 className="text-xl font-black mt-1 text-slate-900 dark:text-white">{generalStats.totalItems}</h4>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Stock items dispatched</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                <Clock className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Gross Sales Volume"
+            value={`₹${generalStats.totalSales.toLocaleString('en-IN')}`}
+            subtitle="Excludes voided/refunds"
+            icon={<BadgeIndianRupee />}
+            color="bg-emerald-50/70 dark:bg-emerald-500/5 text-emerald-600 dark:text-emerald-400"
+          />
+          <StatCard
+            title="Average Cart Size"
+            value={`₹${generalStats.avgOrderVal}`}
+            subtitle="Spend per check-out"
+            icon={<TrendingUp />}
+            color="bg-primary-50/70 dark:bg-primary-500/5 text-primary-600 dark:text-primary-400"
+          />
+          <StatCard
+            title="Completed Orders"
+            value={generalStats.ordersCount}
+            subtitle="Fulfillment count"
+            icon={<ShoppingCart />}
+            color="bg-blue-50/70 dark:bg-blue-500/5 text-blue-600 dark:text-blue-400"
+          />
+          <StatCard
+            title="Total Units Handled"
+            value={generalStats.totalItems}
+            subtitle="Stock items dispatched"
+            icon={<Clock />}
+            color="bg-purple-50/70 dark:bg-purple-500/5 text-purple-600 dark:text-purple-400"
+          />
         </div>
 
         {/* Tab Controls */}

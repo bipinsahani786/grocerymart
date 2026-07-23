@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "../config/swagger.js";
 import authRoutes from "./common/auth/auth.routes.js";
+import uploadRoutes from "./common/upload/upload.routes.js";
 import adminRoutes from "./admin/index.js";
 
 const app = express();
@@ -53,6 +54,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Mount Core Application Slices
 app.use("/api/auth", authRoutes);
+app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Platform System Readiness Check Endpoint
