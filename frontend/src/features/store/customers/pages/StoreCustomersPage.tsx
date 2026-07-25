@@ -2,18 +2,18 @@ import React, { useState, useMemo } from 'react';
 import { 
   Users, 
   Search, 
-  Plus, 
+   
   History, 
-  CreditCard, 
+   
   TrendingUp, 
-  UserPlus, 
+  UserPlus,
   ArrowUpRight, 
   ArrowDownRight,
   BookOpen,
   CalendarDays
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

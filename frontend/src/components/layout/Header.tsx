@@ -316,14 +316,8 @@ function ProfileMenu() {
 
 export function Header({ className }: { className?: string }) {
   const { toggleSidebar, isSidebarCollapsed } = useLayoutStore();
-  const user = useAuthStore(state => state.user);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const location = useLocation();
-  const isSuperadminMode = user?.role === 'super_admin'
-    || user?.role === 'admin'
-    || user?.roles?.some(r => r.name === 'Superadmin')
-    || location.pathname.startsWith('/superadmin')
-    || location.pathname === '/dashboard';
 
   // Real-time DateTime logic
   const [currentDateTime, setCurrentDateTime] = useState(new Date());

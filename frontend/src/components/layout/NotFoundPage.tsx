@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileQuestion, Home, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';

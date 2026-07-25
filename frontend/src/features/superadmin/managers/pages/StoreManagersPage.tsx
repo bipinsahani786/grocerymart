@@ -1,5 +1,5 @@
 import { useState, type FormEvent, useMemo } from 'react';
-import { Mail, Phone, Plus, Store, User, Lock, Power, Users, Edit, UserCheck, UserX } from 'lucide-react';
+import { Mail, Phone, Plus, User, Lock, Power, Users, Edit, UserCheck, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';

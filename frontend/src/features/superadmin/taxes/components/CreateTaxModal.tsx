@@ -59,19 +59,23 @@ export function CreateTaxModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
-          <Input
-            required
-            label="Tax Profile Name"
-            placeholder="e.g. Standard GST 18%, Dairy Tax"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            label="Description (Optional)"
-            placeholder="What products does this apply to?"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tax Profile Name</label>
+            <Input
+              required
+              placeholder="e.g. Standard GST 18%, Dairy Tax"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Description (Optional)</label>
+            <Input
+              placeholder="What products does this apply to?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="pt-4 border-t border-slate-100 dark:border-white/5 space-y-4">
@@ -80,16 +84,18 @@ export function CreateTaxModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
             <p className="text-xs text-slate-500 mb-4">Set the current rate for this profile.</p>
           </div>
 
-          <Input
-            type="datetime-local"
-            label="Effective From"
-            value={effectiveFrom}
-            onChange={(e) => setEffectiveFrom(e.target.value)}
-          />
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Effective From</label>
+            <Input
+              type="datetime-local"
+              value={effectiveFrom}
+              onChange={(e) => setEffectiveFrom(e.target.value)}
+            />
+          </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tax Components</label>
-            {components.map((comp, index) => (
+            {components.map((comp) => (
               <div key={comp.id} className="flex gap-2 items-center">
                 <Input
                   placeholder="e.g. CGST"

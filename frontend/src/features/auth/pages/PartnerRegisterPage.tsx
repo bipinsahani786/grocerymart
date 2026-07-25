@@ -6,8 +6,6 @@ import { useAppStore } from '@/store/appStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Building2, User, Mail, Phone, Lock, ArrowRight, KeyRound, ArrowLeft } from 'lucide-react';
-import { useCheckUser, useSendOtp, useVerifyOtp } from '../api/useAuthMutations';
-
 export default function PartnerRegisterPage() {
   const [step, setStep] = useState<'FORM' | 'OTP'>('FORM');
   const [otp, setOtp] = useState('');
@@ -23,9 +21,24 @@ export default function PartnerRegisterPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
 
-  const checkUserMutation = useCheckUser();
-  const sendOtpMutation = useSendOtp();
-  const verifyOtpMutation = useVerifyOtp();
+  const checkUserMutation = useMutation({
+    mutationFn: async (data: { identifier: string }) => {
+      const response = await api.post('/auth/check-user', data);
+      return response.data;
+    }
+  });
+  const sendOtpMutation = useMutation({
+    mutationFn: async (data: { identifier: string }) => {
+      const response = await api.post('/auth/send-otp', data);
+      return response.data;
+    }
+  });
+  const verifyOtpMutation = useMutation({
+    mutationFn: async (data: { identifier: string; otp: string }) => {
+      const response = await api.post('/auth/verify-otp', data);
+      return response.data;
+    }
+  });
 
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -54,7 +67,7 @@ export default function PartnerRegisterPage() {
     }
     
     checkUserMutation.mutate({ identifier: email }, {
-      onSuccess: (res) => {
+      onSuccess: (res: any) => {
         if (res.exists) {
           toast.error('This email is already registered.');
         } else {
@@ -85,7 +98,7 @@ export default function PartnerRegisterPage() {
     }
 
     verifyOtpMutation.mutate({ identifier: email, otp }, {
-      onSuccess: (res) => {
+      onSuccess: (res: any) => {
         const verificationToken = res.verification_token;
         toast.success('OTP Verified! Creating your account...');
         

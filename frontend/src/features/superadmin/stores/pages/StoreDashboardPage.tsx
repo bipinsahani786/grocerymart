@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Building2, Plus, Store as StoreIcon, User, Power, Edit, MapPin, Phone, Users } from 'lucide-react';
+import { Building2, Plus,  User, Power, Edit, MapPin, Phone, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Tv, 
   Clock, 
@@ -7,11 +7,10 @@ import {
   Maximize2, 
   Minimize2, 
   CheckCircle2,
-  X,
+  
   AlertCircle
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMockStore } from '@/store/mockStore';

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   FileText, 
   Search, 
@@ -6,17 +6,17 @@ import {
   RotateCcw, 
   ReceiptText, 
   X,
-  CreditCard,
-  User,
-  ShoppingBag,
+  
+  
+  
   BadgeIndianRupee
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useMockStore, type Order } from '@/store/mockStore';
+import { useMockStore} from '@/store/mockStore';
 import { toast } from 'sonner';
 
 export default function StoreBillingPage() {
@@ -124,8 +124,6 @@ export default function StoreBillingPage() {
                 ) : (
                   filteredBills.map(bill => {
                     const taxVal = bill.taxAmount;
-                    const itemsQty = bill.items.reduce((sum, item) => sum + item.qty, 0);
-                    
                     return (
                       <tr key={bill.id} className="hover:bg-muted/10 transition-colors">
                         <td className="p-4">

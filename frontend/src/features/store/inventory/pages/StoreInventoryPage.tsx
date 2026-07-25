@@ -8,7 +8,7 @@ import {
   ArrowDownRight, 
   Upload, 
   FileSpreadsheet, 
-  AlertTriangle,
+  
   RefreshCw,
   FolderOpen
 } from 'lucide-react';

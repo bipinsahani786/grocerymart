@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   ClipboardCheck,
   Search,
@@ -8,13 +8,13 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  ArrowRight,
+  
   Package,
   MapPin,
   Smartphone,
   Tag,
   Ban,
-  UserCheck,
+  
   Zap,
   Plus,
 } from "lucide-react";

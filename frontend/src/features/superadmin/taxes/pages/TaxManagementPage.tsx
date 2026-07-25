@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent,   } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Percent, CalendarClock, Box } from 'lucide-react';
 import { useTaxes } from '../api/useTaxes';

@@ -59,20 +59,22 @@ export function ScheduleRateModal({ isOpen, onClose, taxClass }: { isOpen: boole
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
-          <Input
-            required
-            type="datetime-local"
-            label="Effective From"
-            value={effectiveFrom}
-            onChange={(e) => setEffectiveFrom(e.target.value)}
-          />
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Effective From</label>
+            <Input
+              required
+              type="datetime-local"
+              value={effectiveFrom}
+              onChange={(e) => setEffectiveFrom(e.target.value)}
+            />
+          </div>
           <p className="text-xs text-slate-500">The exact date and time when this new rate will automatically become active.</p>
         </div>
 
         <div className="space-y-4">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tax Components</label>
           <div className="space-y-2">
-            {components.map((comp, index) => (
+            {components.map((comp) => (
               <div key={comp.id} className="flex gap-2 items-center">
                 <Input
                   required

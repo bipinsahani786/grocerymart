@@ -2,16 +2,11 @@ import React, { useState } from "react";
 import {
   TrendingUp, Users, Award,
   AlertTriangle, Calendar,
-  Activity, DollarSign, Target, Shield, X
+  Activity, DollarSign, Target,  X
 } from "lucide-react";
 import { PageLoadingSkeleton } from "@/components/ui/PageLoadingSkeleton";
 import { useSuperadminDashboardStats } from "../api/useSuperadminDashboard";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { CustomDatePicker } from "@/components/ui/custom-date-picker";
-import {
-  FilterContainer,
-  FilterReset
-} from "@/components/ui/filter-controls";
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-IN', {
