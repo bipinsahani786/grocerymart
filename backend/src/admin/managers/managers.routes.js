@@ -1,7 +1,7 @@
 import express from "express";
 import { managersController } from "./managers.controller.js";
 import { validate } from "../../middleware/validate.middleware.js";
-import { createManagerSchema, updateManagerStatusSchema, updateManagerPasswordSchema } from "./managers.schema.js";
+import { createManagerSchema, updateManagerStatusSchema, updateManagerPasswordSchema, updateManagerProfileSchema } from "./managers.schema.js";
 
 const router = express.Router();
 
@@ -73,6 +73,38 @@ router.post("/", validate(createManagerSchema), managersController.createManager
  *         description: Manager status updated successfully
  */
 router.patch("/:id/status", validate(updateManagerStatusSchema), managersController.updateManagerStatus);
+
+/**
+ * @openapi
+ * /api/admin/managers/{id}:
+ *   put:
+ *     summary: Super Admin - Update Store Manager Profile
+ *     description: Update manager's basic profile details and store assignment.
+ *     tags: [Admin Manager Management]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               email: { type: string }
+ *               phone: { type: string }
+ *               storeId: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Manager profile updated successfully
+ *       400:
+ *         description: Validation error or email exists
+ */
+router.put("/:id", validate(updateManagerProfileSchema), managersController.updateManagerProfile);
 
 /**
  * @openapi

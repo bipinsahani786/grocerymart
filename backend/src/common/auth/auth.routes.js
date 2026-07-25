@@ -17,8 +17,8 @@ const router = express.Router();
  * @openapi
  * /api/auth/register:
  *   post:
- *     summary: Step 1 - User/Owner Registration (Sends OTP)
- *     description: Starts registration for a new user (Driver, Owner, or Admin) and sends a 4-digit OTP.
+ *     summary: Step 1 - User Registration (Sends OTP)
+ *     description: Starts registration for a new user (Customer, Store Manager, or Admin) and sends a 4-digit OTP.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -42,8 +42,8 @@ const router = express.Router();
  *                 example: "SecurePass123"
  *               userType:
  *                 type: string
- *                 enum: [driver, owner, admin]
- *                 example: "driver"
+ *                 enum: [CUSTOMER, STORE_MANAGER, SUPER_ADMIN]
+ *                 example: "CUSTOMER"
  *     responses:
  *       201:
  *         description: OTP sent successfully. No user record has been created yet.

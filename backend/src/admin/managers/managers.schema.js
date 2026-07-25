@@ -12,6 +12,18 @@ export const createManagerSchema = z.object({
   params: z.object({}).optional(),
 });
 
+export const updateManagerProfileSchema = z.object({
+  body: z.object({
+    name: z.string().min(2, "Manager name is required").optional(),
+    email: z.string().email("Valid email is required").optional(),
+    phone: z.string().optional().nullable(),
+    storeId: z.string().uuid("Select a valid store").optional().nullable(),
+  }),
+  params: z.object({
+    id: z.string().uuid("Valid manager ID is required"),
+  }),
+});
+
 export const updateManagerStatusSchema = z.object({
   body: z.object({
     status: z.enum(["active", "suspended", "banned"]),

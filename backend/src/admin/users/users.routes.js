@@ -16,8 +16,8 @@ const router = express.Router();
  *     parameters:
  *       - in: query
  *         name: userType
- *         schema: { type: string, enum: [driver, owner, admin] }
- *         example: "driver"
+ *         schema: { type: string, enum: [CUSTOMER, STORE_MANAGER, SUPER_ADMIN] }
+ *         example: "CUSTOMER"
  *       - in: query
  *         name: status
  *         schema: { type: string, enum: [active, suspended, banned] }

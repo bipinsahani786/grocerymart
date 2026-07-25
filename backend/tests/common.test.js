@@ -9,14 +9,14 @@ describe('Common/Auth APIs (Full Coverage)', () => {
 
   beforeAll(() => {
     process.env.JWT_SECRET = 'test-secret';
-    token = jwt.sign({ id: 'user-1', role: 'driver', version: 1 }, process.env.JWT_SECRET);
+    token = jwt.sign({ id: 'user-1', role: 'CUSTOMER', version: 1 }, process.env.JWT_SECRET);
   });
 
   const routes = [
-    { method: 'post', url: '/api/auth/register', body: { name: 'New', email: 'test@example.com', phone: '9876543210', password: 'password123', userType: 'driver' }, expected: 201 },
+    { method: 'post', url: '/api/auth/register', body: { name: 'New', email: 'test@example.com', phone: '9876543210', password: 'password123', userType: 'CUSTOMER' }, expected: 201 },
     { method: 'post', url: '/api/auth/verify-register-otp', body: { phone: '9876543210', otp: '1234' }, expected: 200 },
-    { method: 'post', url: '/api/auth/login-otp/send', body: { phone: '9876543210', userType: 'driver' }, expected: 200 },
-    { method: 'post', url: '/api/auth/login-otp/verify', body: { phone: '9876543210', otp: '1234', userType: 'driver' }, expected: 200 },
+    { method: 'post', url: '/api/auth/login-otp/send', body: { phone: '9876543210', userType: 'CUSTOMER' }, expected: 200 },
+    { method: 'post', url: '/api/auth/login-otp/verify', body: { phone: '9876543210', otp: '1234', userType: 'CUSTOMER' }, expected: 200 },
     { method: 'post', url: '/api/auth/refresh', body: { refreshToken: 'dummy' }, expected: 401 }, // Will fail due to invalid refresh token mock, just checking route exists
     { method: 'post', url: '/api/auth/logout', body: {}, expected: 200 },
     { method: 'get', url: '/api/auth/profile', expected: 200 },

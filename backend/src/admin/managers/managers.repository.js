@@ -49,6 +49,13 @@ export class ManagersRepository {
     });
   }
 
+  async findManagerByEmail(email) {
+    return await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true }
+    });
+  }
+
   async createManager(userData, storeId = null) {
     return await prisma.$transaction(async (tx) => {
       const manager = await tx.user.create({
@@ -83,6 +90,47 @@ export class ManagersRepository {
       where: { id },
       data,
       select: managerSelect,
+    });
+  }
+
+  async updateManagerProfile(id, userData, newStoreId) {
+    return await prisma.$transaction(async (tx) => {
+      // 1. Update the user data
+      const updateData = { ...userData };
+      
+      // If storeId is explicitly passed (even as null)
+      if (newStoreId !== undefined) {
+        updateData.storeId = newStoreId;
+      }
+
+      const manager = await tx.user.update({
+        where: { id },
+        data: updateData,
+        select: managerSelect,
+      });
+
+      // 2. Handle Store Re-assignment if newStoreId was explicitly provided
+      if (newStoreId !== undefined) {
+        // Remove manager from any store they currently manage
+        await tx.store.updateMany({
+          where: { managerId: id },
+          data: { managerId: null },
+        });
+
+        // Assign to the new store, if not null
+        if (newStoreId !== null) {
+          await tx.store.update({
+            where: { id: newStoreId },
+            data: { managerId: id },
+          });
+        }
+      }
+
+      // 3. Return the fully updated manager
+      return await tx.user.findUnique({
+        where: { id },
+        select: managerSelect,
+      });
     });
   }
 }

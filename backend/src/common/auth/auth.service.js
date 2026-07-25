@@ -18,7 +18,7 @@ export class AuthService {
     };
 
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET || "fallback_secret", {
-      expiresIn: "1h",
+      expiresIn: "7d",
     });
 
     const refreshToken = jwt.sign(payload, process.env.JWT_SECRET || "fallback_secret", {

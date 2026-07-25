@@ -37,12 +37,12 @@ class OtpService {
       this.store.set(email, { otp, expiresAt });
       try {
         const mailOptions = {
-          from: process.env.SMTP_FROM || `"ParkPal" <noreply@parkpal.com>`,
+          from: process.env.SMTP_FROM || `"Grocery Mart" <noreply@grocerymart.com>`,
           to: email,
-          subject: `${purpose} OTP - ParkPal`,
+          subject: `${purpose} OTP - Grocery Mart`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-              <h2 style="color: #1a1a2e; text-align: center;">ParkPal ${purpose}</h2>
+              <h2 style="color: #1a1a2e; text-align: center;">Grocery Mart ${purpose}</h2>
               <p>Hello,</p>
               <p>Your One-Time Password (OTP) for ${purpose.toLowerCase()} is:</p>
               <div style="background: #f4f4f4; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #e94560;">
@@ -50,7 +50,7 @@ class OtpService {
               </div>
               <p>This OTP is valid for 15 minutes. Please do not share this code.</p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-              <p style="font-size: 12px; color: #888; text-align: center;">© 2026 ParkPal Inc.</p>
+              <p style="font-size: 12px; color: #888; text-align: center;">© 2026 Grocery Mart Inc.</p>
             </div>
           `,
         };

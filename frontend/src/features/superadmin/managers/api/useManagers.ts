@@ -93,3 +93,22 @@ export const useUpdateManagerPassword = () => {
     },
   });
 };
+
+export const useUpdateManagerProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<CreateManagerPayload> }) => {
+      const { data } = await api.put(`/admin/managers/${id}`, payload);
+      return data.data as StoreManager;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      toast.success('Store manager profile updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update manager profile');
+    },
+  });
+};

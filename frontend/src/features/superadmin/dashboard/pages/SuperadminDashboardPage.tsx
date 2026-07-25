@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import {
   TrendingUp, Users, Award,
   AlertTriangle, Calendar,
-  Activity, DollarSign, Target, Shield
+  Activity, DollarSign, Target, Shield, X
 } from "lucide-react";
 import { PageLoadingSkeleton } from "@/components/ui/PageLoadingSkeleton";
 import { useSuperadminDashboardStats } from "../api/useSuperadminDashboard";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 import {
   FilterContainer,
-  FilterDate,
   FilterReset
 } from "@/components/ui/filter-controls";
 
@@ -36,77 +36,41 @@ const getDaysRemaining = (expiryStr: string | null) => {
   return Math.max(Math.ceil(diff / (1000 * 60 * 60 * 24)), 0);
 };
 
-function CustomKpiCard({ title, value, subtitle, icon, glowColor }: {
+function CustomKpiCard({ title, value, subtitle, icon, colorClass = "bg-primary-500", iconColorClass = "text-white bg-white/20" }: {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: React.ReactNode;
-  glowColor: 'blue' | 'emerald' | 'indigo' | 'purple' | 'amber' | 'rose';
+  colorClass?: string;
+  iconColorClass?: string;
 }) {
-  const colorMap = {
-    blue: {
-      bar: "from-blue-400/30 via-blue-500 to-blue-600/30",
-      glow: "bg-blue-500/5 dark:bg-blue-500/10",
-      iconBg: "bg-blue-50/70 dark:bg-blue-500/5 text-blue-500 dark:text-blue-400"
-    },
-    emerald: {
-      bar: "from-emerald-400/30 via-emerald-500 to-emerald-600/30",
-      glow: "bg-emerald-500/5 dark:bg-emerald-500/10",
-      iconBg: "bg-emerald-50/70 dark:bg-emerald-500/5 text-emerald-500 dark:text-emerald-400"
-    },
-    indigo: {
-      bar: "from-indigo-400/30 via-indigo-500 to-indigo-600/30",
-      glow: "bg-indigo-500/5 dark:bg-indigo-500/10",
-      iconBg: "bg-indigo-50/70 dark:bg-indigo-500/5 text-indigo-500 dark:text-indigo-400"
-    },
-    purple: {
-      bar: "from-purple-400/30 via-purple-500 to-purple-600/30",
-      glow: "bg-purple-500/5 dark:bg-purple-500/10",
-      iconBg: "bg-purple-50/70 dark:bg-purple-500/5 text-purple-500 dark:text-purple-400"
-    },
-    amber: {
-      bar: "from-amber-400/30 via-amber-500 to-amber-600/30",
-      glow: "bg-amber-500/5 dark:bg-amber-500/10",
-      iconBg: "bg-amber-50/70 dark:bg-amber-500/5 text-amber-500 dark:text-amber-400"
-    },
-    rose: {
-      bar: "from-rose-400/30 via-rose-500 to-rose-600/30",
-      glow: "bg-rose-500/5 dark:bg-rose-500/10",
-      iconBg: "bg-rose-50/70 dark:bg-rose-500/5 text-rose-500 dark:text-rose-400"
-    }
-  };
-
-  const colors = colorMap[glowColor];
-
   return (
-    <div className="transition-all duration-300 relative overflow-hidden group bg-card border border-slate-200/60 dark:border-white/5 rounded-lg shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-slate-300 dark:hover:border-white/10 p-3 sm:p-3.5 flex flex-col justify-between min-h-[110px] w-full">
-      {/* Accent Bar */}
-      <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${colors.bar} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
-
-      {/* Glow effect */}
-      <div className={`absolute -right-8 -bottom-8 w-24 h-24 ${colors.glow} rounded-full blur-2xl group-hover:scale-110 transition-all duration-500`}></div>
+    <div className={`transition-all duration-300 relative overflow-hidden rounded-md shadow-sm hover:shadow-md border border-white/10 p-3 sm:p-4 flex flex-col justify-between min-h-[85px] w-full text-white group ${colorClass}`}>
+      {/* Decorative Background Shapes */}
+      <div className="absolute -right-4 -top-10 w-24 h-24 rounded-full bg-white/20 blur-xl group-hover:bg-white/30 transition-all duration-500"></div>
+      <div className="absolute -left-6 -bottom-6 w-32 h-32 rounded-full bg-black/10 blur-2xl group-hover:bg-black/20 transition-all duration-500"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[10px] border-white/5 rounded-full mix-blend-overlay opacity-50 pointer-events-none scale-150"></div>
 
       <div className="relative z-10 flex flex-col justify-between h-full flex-1 min-w-0">
-        <div className="min-w-0">
-          <div className="flex items-center justify-between gap-1.5 mb-2.5">
-            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500 select-none truncate block">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/80 select-none truncate block">
               {title}
             </span>
-            <div className={`p-1.5 rounded-lg transition-all duration-300 flex items-center justify-center shrink-0 ${colors.iconBg} group-hover:scale-105`}>
-              {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: 'w-3.5 h-3.5' }) : icon}
+            <div className="flex items-baseline min-w-0 mt-0.5">
+              <span className="text-lg sm:text-xl font-black tracking-tight font-display truncate block w-full text-white drop-shadow-sm" title={value.toString()}>
+                {value}
+              </span>
             </div>
           </div>
-
-          <div className="flex items-baseline min-w-0">
-            <span className="text-base sm:text-lg lg:text-base xl:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display truncate block w-full" title={value.toString()}>
-              {value}
-            </span>
+          <div className={`p-2 rounded flex items-center justify-center shrink-0 transition-colors backdrop-blur-sm shadow-sm ${iconColorClass}`}>
+            {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: 'w-3.5 h-3.5 sm:w-4 sm:h-4' }) : icon}
           </div>
         </div>
-
+        
         {subtitle && (
-          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-white/5 min-w-0">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block truncate" title={subtitle}>
+          <div className="mt-auto min-w-0 pt-1.5 border-t border-white/20">
+            <span className="text-[8px] sm:text-[9px] font-semibold text-white/70 block truncate" title={subtitle}>
               {subtitle}
             </span>
           </div>
@@ -187,87 +151,73 @@ export default function SuperadminDashboardPage() {
   const commOffset = donutCircumference - (commPct / 100) * donutCircumference;
 
   return (
-    <div className="min-h-screen bg-background text-slate-900 dark:text-slate-200">
+    <div className="min-h-screen text-slate-900 dark:text-slate-200">
 
-      {/* Header Section */}
-      <PageHeader
-        icon={Shield}
-        title="Superadmin Dashboard"
-        subtitle="Global analytics, revenues, and partner commission tracking"
-      />
+      <div className="w-full max-w-[1600px] mx-auto px-2 sm:px-4 py-4 space-y-8">
 
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-        {/* Filters Panel */}
-        <FilterContainer>
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest mr-2">
-            <Activity className="w-4 h-4 text-primary-500" />
-            FILTERS:
+        {/* ── Page Header & Grid ── */}
+        <div className="mb-6">
+          {/* Clean Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                Welcome back, Superadmin <span className="inline-block animate-bounce-slow text-2xl lg:text-3xl">👋</span>
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs sm:text-sm flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                GroceryMart Platform • Live overview
+              </p>
+            </div>
           </div>
 
-          <FilterDate
-            label="FROM"
-            value={fromDate}
-            onChange={(val) => setFromDate(val)}
-            wrapperClassName="w-full sm:w-48 shrink-0"
-          />
-
-          <FilterDate
-            label="TO"
-            value={toDate}
-            onChange={(val) => setToDate(val)}
-            wrapperClassName="w-full sm:w-44 shrink-0"
-          />
-
-          {hasFilters && (
-            <FilterReset onClick={clearFilters} />
-          )}
-        </FilterContainer>
-
-        {/* ── Summary KPI Cards ── */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <CustomKpiCard
-            title="Total Revenue"
-            value={formatCurrency(summary.total_revenue)}
-            icon={<DollarSign className="w-5 h-5" />}
-            subtitle="Gross Platform Volume"
-            glowColor="indigo"
-          />
-          <CustomKpiCard
-            title="Net Profit"
-            value={formatCurrency(summary.net_profit)}
-            icon={<TrendingUp className="w-5 h-5" />}
-            subtitle="Platform Earnings"
-            glowColor="emerald"
-          />
-          <CustomKpiCard
-            title="Platform Users"
-            value={summary.total_users}
-            icon={<Users className="w-5 h-5" />}
-            subtitle="Total Registered Users"
-            glowColor="blue"
-          />
-          <CustomKpiCard
-            title="Sales Partners"
-            value={summary.sales_partners}
-            icon={<Award className="w-5 h-5" />}
-            subtitle="Active Affiliates"
-            glowColor="purple"
-          />
-          <CustomKpiCard
-            title="Active Tenants"
-            value={summary.active_businesses}
-            icon={<Activity className="w-5 h-5" />}
-            subtitle="Paying Businesses"
-            glowColor="amber"
-          />
-          <CustomKpiCard
-            title="Pending Payouts"
-            value={formatCurrency(summary.commissions_pending)}
-            icon={<AlertTriangle className="w-5 h-5" />}
-            subtitle="Commissions Due"
-            glowColor="rose"
-          />
+          {/* The Grid of Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            <CustomKpiCard
+              title="Total Revenue"
+              value={formatCurrency(summary.total_revenue)}
+              icon={<DollarSign className="w-5 h-5" />}
+              subtitle="Gross Platform Volume"
+              colorClass="bg-gradient-to-br from-indigo-500 to-indigo-600"
+            />
+            <CustomKpiCard
+              title="Net Profit"
+              value={formatCurrency(summary.net_profit)}
+              icon={<TrendingUp className="w-5 h-5" />}
+              subtitle="Platform Earnings"
+              colorClass="bg-gradient-to-br from-emerald-500 to-emerald-600"
+            />
+            <CustomKpiCard
+              title="Platform Users"
+              value={summary.total_users}
+              icon={<Users className="w-5 h-5" />}
+              subtitle="Total Registered Users"
+              colorClass="bg-gradient-to-br from-pink-500 to-pink-600"
+            />
+            <CustomKpiCard
+              title="Sales Partners"
+              value={summary.sales_partners}
+              icon={<Award className="w-5 h-5" />}
+              subtitle="Active Affiliates"
+              colorClass="bg-gradient-to-br from-amber-500 to-orange-500"
+            />
+            <CustomKpiCard
+              title="Active Tenants"
+              value={summary.active_businesses}
+              icon={<Activity className="w-5 h-5" />}
+              subtitle="Paying Businesses"
+              colorClass="bg-gradient-to-br from-blue-500 to-blue-600"
+            />
+            <CustomKpiCard
+              title="Pending Payouts"
+              value={formatCurrency(summary.commissions_pending)}
+              icon={<AlertTriangle className="w-5 h-5" />}
+              subtitle="Commissions Due"
+              colorClass="bg-gradient-to-br from-rose-500 to-rose-600"
+            />
+          </div>
         </div>
 
         {/* ── Analytics Visualizations ── */}
@@ -276,18 +226,49 @@ export default function SuperadminDashboardPage() {
           {/* Revenue & Profit Area Chart */}
           <div className="lg:col-span-2 bg-card border border-slate-200/60 dark:border-white/5 rounded-xl p-5 shadow-sm relative flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-300">
-                  Revenue & Profit Trend
+                  Financial Performance Over Time
                 </h2>
-                <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-primary-500"></span>
-                    <span className="text-slate-500 dark:text-zinc-400">Revenue</span>
+                <div className="flex items-center gap-4">
+                  {/* Inline Filter */}
+                  <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-300 dark:border-slate-600 p-0.5 shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div className="w-[90px] h-7 [&_button]:h-full [&_button]:text-[10px] [&_button]:font-bold [&_span]:!text-slate-800 dark:[&_span]:!text-slate-100 [&_button]:rounded-full [&_svg]:w-3 [&_svg]:h-3 [&_svg]:text-primary-600 dark:[&_svg]:text-primary-400 [&_button]:px-2 hover:[&_button]:bg-white dark:hover:[&_button]:bg-slate-700 transition-colors">
+                      <CustomDatePicker
+                        value={fromDate}
+                        onChange={(val) => setFromDate(val)}
+                        placeholder="From"
+                      />
+                    </div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest px-0.5 shrink-0">-</span>
+                    <div className="w-[90px] h-7 [&_button]:h-full [&_button]:text-[10px] [&_button]:font-bold [&_span]:!text-slate-800 dark:[&_span]:!text-slate-100 [&_button]:rounded-full [&_svg]:w-3 [&_svg]:h-3 [&_svg]:text-primary-600 dark:[&_svg]:text-primary-400 [&_button]:px-2 hover:[&_button]:bg-white dark:hover:[&_button]:bg-slate-700 transition-colors">
+                      <CustomDatePicker
+                        value={toDate}
+                        onChange={(val) => setToDate(val)}
+                        placeholder="To"
+                      />
+                    </div>
+                    {hasFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="w-5 h-5 mr-0.5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center hover:bg-rose-200 transition-colors shrink-0"
+                        title="Clear Filters"
+                      >
+                        <X className="w-2.5 h-2.5 stroke-[3]" />
+                      </button>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <span className="text-slate-500 dark:text-zinc-400">Profit</span>
+
+                  {/* Chart Legend */}
+                  <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary-500"></span>
+                      <span className="text-slate-500 dark:text-zinc-400">Revenue</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                      <span className="text-slate-500 dark:text-zinc-400">Profit</span>
+                    </div>
                   </div>
                 </div>
               </div>

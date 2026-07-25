@@ -4,7 +4,7 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Parking Lot Super-Admin API",
+      title: "Grocery Mart API",
       version: "1.0.0",
       description: "Production-ready Modular REST API documentation using Swagger and Zod Validation",
     },

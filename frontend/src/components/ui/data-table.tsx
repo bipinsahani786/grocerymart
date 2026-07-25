@@ -24,6 +24,7 @@ interface DataTableProps<T> {
   searchKeys?: (keyof T | ((item: T) => string))[];
   itemsPerPage?: number;
   onRowClick?: (item: T) => void;
+  headerActions?: React.ReactNode;
 
   // Server-side pagination parameters
   serverSide?: boolean;
@@ -47,6 +48,7 @@ export function DataTable<T>({
   searchKeys = [],
   itemsPerPage = 10,
   onRowClick,
+  headerActions,
   serverSide = false,
   totalItems = 0,
   page = 1,
@@ -188,17 +190,25 @@ export function DataTable<T>({
     <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden flex flex-col w-full">
 
       {/* Header Controls */}
-      {searchable && (
-        <div className="p-4 border-b border-slate-200 dark:border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="w-full sm:w-72 ml-auto">
-            <Input
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              icon={<Search className="w-4 h-4" />}
-              className="h-9 text-sm"
-            />
-          </div>
+      {(searchable || headerActions) && (
+        <div className="p-4 border-b border-slate-200 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {searchable && (
+            <div className="w-full sm:w-72">
+              <Input
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder={searchPlaceholder}
+                icon={<Search className="w-4 h-4" />}
+                className="h-9 text-sm"
+              />
+            </div>
+          )}
+          
+          {headerActions && (
+            <div className="w-full sm:w-auto ml-auto flex items-center gap-2">
+              {headerActions}
+            </div>
+          )}
         </div>
       )}
 
@@ -283,16 +293,43 @@ export function DataTable<T>({
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <span>Show</span>
-              <select
-                value={pageSize}
-                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="h-8 py-0 pl-2 pr-6 rounded border border-slate-200 dark:border-white/10 bg-transparent text-slate-700 dark:text-slate-300 text-xs cursor-pointer focus:ring-0 focus:border-slate-300"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dropdown = document.getElementById('page-size-dropdown');
+                    if (dropdown) dropdown.classList.toggle('hidden');
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      const dropdown = document.getElementById('page-size-dropdown');
+                      if (dropdown) dropdown.classList.add('hidden');
+                    }, 150);
+                  }}
+                  className="flex items-center justify-between gap-2 h-8 px-2.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                >
+                  {pageSize}
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+                <div 
+                  id="page-size-dropdown"
+                  className="hidden absolute bottom-full left-0 mb-1 w-16 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-md shadow-lg z-50 overflow-hidden"
+                >
+                  {[5, 10, 25, 50].map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => {
+                        handlePageSizeChange(size);
+                        const dropdown = document.getElementById('page-size-dropdown');
+                        if (dropdown) dropdown.classList.add('hidden');
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-white/5 transition-colors ${pageSize === size ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 font-semibold' : 'text-slate-700 dark:text-slate-300'}`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <span>entries</span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
