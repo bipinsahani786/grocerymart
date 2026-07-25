@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -30,7 +31,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '2x
     }
   };
 
-  return (
+  return createPortal(
     <div 
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
       onClick={handleOverlayClick}
@@ -63,6 +64,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '2x
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

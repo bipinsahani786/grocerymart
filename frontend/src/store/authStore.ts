@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'mobilecrm-auth', // localStorage key
+      name: 'grocerymart-auth', // localStorage key
     }
   )
 );

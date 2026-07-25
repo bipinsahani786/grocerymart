@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Search, RotateCcw, ChevronDown } from 'lucide-react';
+import { Search, RotateCcw, ChevronDown, X, Filter } from 'lucide-react';
+import { CustomDatePicker } from './custom-date-picker';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
 
@@ -230,16 +231,15 @@ export function FilterDate({
       <span className="h-full px-2.5 flex items-center bg-slate-50 dark:bg-white/5 border-r border-slate-200 dark:border-zinc-800 text-xs font-bold tracking-wider text-slate-500 dark:text-zinc-400 uppercase select-none">
         {label}
       </span>
-      <input
-        type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "flex-1 bg-transparent border-0 pl-2.5 pr-1 py-1 focus:outline-none focus:ring-0 text-xs text-slate-700 dark:text-slate-200 uppercase",
-          className
-        )}
-        {...props}
-      />
+      <div className="flex-1 h-full">
+        <CustomDatePicker
+          value={value}
+          onChange={onChange}
+          placeholder="Select Date"
+          disabled={props.disabled}
+          className={cn("h-full", className)}
+        />
+      </div>
     </div>
   );
 }

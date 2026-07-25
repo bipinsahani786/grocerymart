@@ -23,7 +23,7 @@ const router = express.Router();
  *       - in: query
  *         name: referenceType
  *         schema: { type: string }
- *         example: "booking"
+ *         example: "order"
  *     responses:
  *       200:
  *         description: Ledger retrieved successfully

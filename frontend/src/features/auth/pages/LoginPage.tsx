@@ -3,6 +3,14 @@ import { useThemeStore } from "@/store/themeStore";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { LoginForm } from "../components/AuthForms";
 
+const defaultLightPalette = {
+  '--color-primary-50': '#f0f8fb', '--color-primary-100': '#dbeff6', '--color-primary-200': '#bde0ee', '--color-primary-300': '#90cbe3', '--color-primary-400': '#5dafd5', '--color-primary-500': '#277da1', '--color-primary-600': '#226487', '--color-primary-700': '#1d526f', '--color-primary-800': '#19455c', '--color-primary-900': '#183a4e', '--color-primary-950': '#102635',
+} as React.CSSProperties;
+
+const defaultDarkPalette = {
+  '--color-primary-50': '#f4f9f1', '--color-primary-100': '#e5f2e0', '--color-primary-200': '#cde4c1', '--color-primary-300': '#abd29a', '--color-primary-400': '#a3cb85', '--color-primary-500': '#90be6d', '--color-primary-600': '#719e4f', '--color-primary-700': '#577a3d', '--color-primary-800': '#466133', '--color-primary-900': '#3a512b', '--color-primary-950': '#1d2c14',
+} as React.CSSProperties;
+
 export default function LoginPage() {
   const { appName, appLogo } = useAppStore();
   const { theme } = useThemeStore();
@@ -10,7 +18,9 @@ export default function LoginPage() {
   const isDark = theme === "dark" || theme === "semi-dark";
 
   return (
-    <div className={`flex min-h-screen w-screen flex-col overflow-hidden font-sans selection:bg-brand-accent selection:text-brand-on-accent lg:flex-row transition-colors duration-300 ${
+    <div 
+      style={isDark ? defaultDarkPalette : defaultLightPalette}
+      className={`flex min-h-screen w-screen flex-col overflow-hidden font-sans selection:bg-brand-accent selection:text-brand-on-accent lg:flex-row transition-colors duration-300 ${
       isDark ? "bg-brand-panel text-white" : "bg-cerulean text-white"
     }`}>
       
@@ -87,7 +97,7 @@ export default function LoginPage() {
                 r="8"
                 fill="currentColor"
                 className={`animate-pulse transition-colors duration-300 ${
-                  isDark ? "text-seagrass" : "text-dark-cyan"
+                  isDark ? "text-willow-green" : "text-cerulean"
                 }`}
               />
               <circle cx="30" cy="30" r="3.5" fill="currentColor" />
@@ -174,7 +184,7 @@ export default function LoginPage() {
                   r="8"
                   fill="currentColor"
                   className={`animate-pulse transition-colors duration-300 ${
-                    isDark ? "text-seagrass" : "text-dark-cyan"
+                    isDark ? "text-willow-green" : "text-cerulean"
                   }`}
                 />
                 <circle cx="30" cy="30" r="3.5" fill="currentColor" />
@@ -244,7 +254,7 @@ export default function LoginPage() {
               ) : (
                 <svg
                   viewBox="0 0 100 100"
-                  className="w-14 h-14 text-willow-green animate-[spin_60s_linear_infinite]"
+                  className={`w-14 h-14 animate-[spin_60s_linear_infinite] transition-colors duration-300 ${isDark ? 'text-willow-green' : 'text-cerulean'}`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
@@ -260,7 +270,7 @@ export default function LoginPage() {
                   <circle cx="85" cy="50" r="4" fill="currentColor" />
                   <circle cx="50" cy="85" r="4" fill="currentColor" />
                   <circle cx="15" cy="50" r="4" fill="currentColor" />
-                  <circle cx="50" cy="50" r="7" fill="currentColor" className="text-seagrass animate-pulse" />
+                  <circle cx="50" cy="50" r="7" fill="currentColor" className={`animate-pulse transition-colors duration-300 ${isDark ? 'text-willow-green' : 'text-cerulean'}`} />
                 </svg>
               )}
             </div>

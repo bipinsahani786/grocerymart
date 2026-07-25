@@ -17,6 +17,7 @@ export interface SearchableSelectProps {
   error?: string;
   creatable?: boolean;
   onCreate?: (inputValue: string) => void | Promise<void>;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export function SearchableSelect({
@@ -29,6 +30,7 @@ export function SearchableSelect({
   error,
   creatable = false,
   onCreate,
+  onOpenChange,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -46,6 +48,7 @@ export function SearchableSelect({
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        onOpenChange?.(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -64,6 +67,8 @@ export function SearchableSelect({
   const handleSelect = (val: string | number) => {
     onChange(val);
     setIsOpen(false);
+    onOpenChange?.(false);
+    setSearch("");
   };
 
   const handleCreate = async () => {
@@ -73,6 +78,7 @@ export function SearchableSelect({
       await onCreate(search);
       setSearch('');
       setIsOpen(false);
+      onOpenChange?.(false);
     } finally {
       setIsCreating(false);
     }
@@ -83,7 +89,12 @@ export function SearchableSelect({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen(!isOpen);
+            onOpenChange?.(!isOpen);
+          }
+        }}
         className={cn(
           "flex h-11 w-full items-center justify-between rounded-xl border border-border bg-input-bg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all text-left shadow-sm font-medium",
           error && "border-rose-500 focus:ring-rose-500/10 focus:border-rose-500",

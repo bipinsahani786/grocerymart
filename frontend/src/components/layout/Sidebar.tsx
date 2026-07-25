@@ -301,20 +301,18 @@ export function Sidebar({ className }: { className?: string }) {
 
       <div
         className={cn(
-          "fixed lg:static inset-y-0 left-0 h-screen border-r flex-col z-50 shrink-0 transition-all duration-200 ease-out flex",
-          isDark ? "dark bg-slate-900 border-slate-700/50" : "bg-white border-slate-200",
+          "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-card border-r border-slate-200 dark:border-slate-700/80 flex-col z-50 shrink-0 transition-all duration-200 ease-out flex shadow-[4px_0_24px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)]",
           isSidebarCollapsed
-            ? "w-[220px] lg:w-[56px] -translate-x-full lg:translate-x-0"
-            : "w-[220px] translate-x-0",
+            ? "w-[190px] lg:w-[56px] -translate-x-full lg:translate-x-0"
+            : "w-[190px] translate-x-0",
           className,
         )}
       >
         {/* ── Brand ── */}
         <div
           className={cn(
-            "h-14 flex items-center border-b shrink-0 overflow-hidden",
-            isSidebarCollapsed ? "justify-center px-0" : "px-4",
-            isDark ? "border-slate-800" : "border-slate-200"
+            "h-14 flex items-center border-b border-slate-200 dark:border-slate-800 shrink-0 overflow-hidden",
+            isSidebarCollapsed ? "justify-center px-0" : "px-4"
           )}
         >
           <div className={cn("flex items-center gap-2 min-w-0", isSidebarCollapsed && "justify-center")}>
@@ -328,7 +326,7 @@ export function Sidebar({ className }: { className?: string }) {
               </div>
             )}
             {!isSidebarCollapsed && (
-              <span className={cn("text-sm font-semibold tracking-tight truncate", isDark ? "text-white" : "text-slate-900")}>
+              <span className={cn("text-[17px] font-extrabold tracking-tight truncate transition-colors duration-300", isDark ? "text-primary-400" : "text-primary-600")}>
                 {appName}
               </span>
             )}
@@ -339,7 +337,7 @@ export function Sidebar({ className }: { className?: string }) {
         {!isSidebarCollapsed && (
           <div className={cn("px-3 py-2 border-b shrink-0", isDark ? "border-slate-700/50" : "border-slate-200")}>
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <Search className={cn("absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5", isDark ? "text-slate-300" : "text-slate-400")} />
               <input
                 type="text"
                 placeholder="Search..."
@@ -347,7 +345,7 @@ export function Sidebar({ className }: { className?: string }) {
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 className={cn(
                   "w-full h-7 pl-7 pr-2 text-xs rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary-500/30 transition-colors",
-                  isDark ? "bg-slate-800 text-slate-200 placeholder:text-slate-500" : "bg-slate-100 text-slate-700 placeholder:text-slate-400"
+                  isDark ? "bg-slate-800 text-white placeholder:text-slate-400" : "bg-slate-100 text-slate-700 placeholder:text-slate-400"
                 )}
               />
             </div>
@@ -364,7 +362,7 @@ export function Sidebar({ className }: { className?: string }) {
               {!isSidebarCollapsed && (
                 <div className={cn(
                   "px-4 pt-3 pb-1 text-[10px] font-semibold tracking-wider uppercase select-none",
-                  isDark ? "text-slate-500" : "text-slate-400"
+                  isDark ? "text-slate-300" : "text-slate-500"
                 )}>
                   {group.title}
                 </div>
@@ -383,7 +381,7 @@ export function Sidebar({ className }: { className?: string }) {
                             : "h-8 px-2.5 gap-2.5",
                           isActive
                             ? cn(isDark ? "bg-primary-500/15 text-primary-400" : "bg-primary-50 text-primary-700 font-semibold")
-                            : cn(isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50")
+                            : cn(isDark ? "text-slate-300 hover:text-white hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50")
                         )}
                       >
                         {isActive && !isSidebarCollapsed && (
@@ -395,7 +393,7 @@ export function Sidebar({ className }: { className?: string }) {
                             "shrink-0 h-4 w-4",
                             isActive
                               ? cn(isDark ? "text-primary-400" : "text-primary-600")
-                              : cn(isDark ? "text-slate-500" : "text-slate-400")
+                              : cn(isDark ? "text-slate-400" : "text-slate-500")
                           )}
                         />
                         {!isSidebarCollapsed && (

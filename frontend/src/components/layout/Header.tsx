@@ -381,7 +381,7 @@ export function Header({ className }: { className?: string }) {
   return (
     <header className={cn("h-14 flex items-center justify-between px-4 bg-card dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors duration-300", className)}>
       <div className="flex items-center flex-1 gap-3 min-w-0">
-        <button onClick={toggleSidebar} className="p-2 -ml-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5 shrink-0">
+        <button onClick={toggleSidebar} className="p-2 -ml-2 text-slate-400 dark:text-slate-300 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5 shrink-0">
           {isSidebarCollapsed ? <ArrowRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
 
@@ -396,7 +396,7 @@ export function Header({ className }: { className?: string }) {
       <div className="flex items-center gap-3">
         {/* Real-time DateTime Display */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-sm border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] shadow-sm ml-2 mr-2">
-          <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 tracking-wider">
+          <div className="text-[11px] font-bold text-slate-700 dark:text-slate-200 tracking-wider">
             {currentDateTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
           </div>
           <div className="w-1 h-1 rounded-full bg-primary-500 mx-1"></div>
@@ -406,7 +406,7 @@ export function Header({ className }: { className?: string }) {
         </div>
 
         {/* Fullscreen Toggle */}
-        <button onClick={handleFullscreen} className="p-2 text-slate-400 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5" title="Toggle Fullscreen">
+        <button onClick={handleFullscreen} className="p-2 text-slate-400 dark:text-slate-300 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5" title="Toggle Fullscreen">
           {isFullscreen ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
         </button>
 

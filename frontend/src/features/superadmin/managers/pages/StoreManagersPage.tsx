@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Badge } from '@/components/ui/badge';
 import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
@@ -13,6 +14,7 @@ import { Modal } from '@/components/ui/modal';
 import { useStores } from '../../stores/api/useStores';
 import { useCreateManager, useManagers, useUpdateManagerStatus, useUpdateManagerPassword, type CreateManagerPayload, type StoreManager } from '../api/useManagers';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const defaultForm: CreateManagerPayload = {
   name: '',
@@ -24,10 +26,11 @@ const defaultForm: CreateManagerPayload = {
 
 export default function StoreManagersPage() {
   const [showForm, setShowForm] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [form, setForm] = useState<CreateManagerPayload>(defaultForm);
   const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; managerId: string; managerName: string }>({ isOpen: false, managerId: '', managerName: '' });
   const [newPassword, setNewPassword] = useState('');
-  
+
   const { data: managers = [], isLoading: managersLoading } = useManagers();
   const { data: storesResponse, isLoading: storesLoading } = useStores();
   const stores = storesResponse?.data || [];
@@ -218,17 +221,20 @@ export default function StoreManagersPage() {
               value={form.password}
               onChange={(event) => updateForm('password', event.target.value)}
             />
-            <div className="sm:col-span-2">
-              <Select
+            <div className={cn("sm:col-span-2 transition-all duration-300", isDropdownOpen ? "pb-60" : "pb-0")}>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Assign Store
+              </label>
+              <SearchableSelect
                 value={form.storeId || ''}
-                onChange={(event) => updateForm('storeId', event.target.value || null)}
-                icon={<Store className="h-4 w-4" />}
-              >
-                <option value="">Assign store later</option>
-                {stores.map((store) => (
-                  <option key={store.id} value={store.id}>{store.name}</option>
-                ))}
-              </Select>
+                onChange={(val) => updateForm('storeId', val === '' ? null : String(val))}
+                onOpenChange={setIsDropdownOpen}
+                options={[
+                  { label: 'Assign store later', value: '' },
+                  ...stores.map(store => ({ label: store.name, value: store.id }))
+                ]}
+                placeholder="Search and select a store..."
+              />
             </div>
             <div className="sm:col-span-2 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-white/5 mt-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} className="h-8 text-[12px]">Cancel</Button>
