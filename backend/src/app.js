@@ -45,10 +45,6 @@ const apiLimiter = rateLimit({
   },
 });
 
-
-// Enforce token-bucket quota limitation strictly across programmatic routes
-app.use("/api", apiLimiter);
-
 // OpenAPI Interactive Documentation Interface viewable via web clients
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

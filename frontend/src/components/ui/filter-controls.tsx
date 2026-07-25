@@ -49,7 +49,7 @@ export function FilterSearch({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          "flex-1 bg-transparent border-0 pl-3 focus:outline-none focus:ring-0 text-[11px] tracking-wider placeholder:text-[10px] placeholder:font-medium placeholder:tracking-wider text-slate-900 dark:text-white uppercase placeholder:uppercase",
+          "flex-1 bg-transparent border-0 pl-3 focus:outline-none focus:ring-0 text-xs placeholder:text-xs placeholder:font-medium text-slate-900 dark:text-white",
           className
         )}
         {...props}

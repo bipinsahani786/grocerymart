@@ -301,7 +301,7 @@ export function Sidebar({ className }: { className?: string }) {
 
       <div
         className={cn(
-          "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-card border-r border-slate-200 dark:border-slate-700/80 flex-col z-50 shrink-0 transition-all duration-200 ease-out flex shadow-[4px_0_24px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)]",
+          "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-card border-r border-slate-200 dark:border-slate-700/80 flex-col z-50 shrink-0 transition-all duration-200 ease-out flex shadow-[4px_0_24px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_24px_rgba(255,255,255,0.06)]",
           isSidebarCollapsed
             ? "w-[190px] lg:w-[56px] -translate-x-full lg:translate-x-0"
             : "w-[190px] translate-x-0",
@@ -311,7 +311,7 @@ export function Sidebar({ className }: { className?: string }) {
         {/* ── Brand ── */}
         <div
           className={cn(
-            "h-14 flex items-center border-b border-slate-200 dark:border-slate-800 shrink-0 overflow-hidden",
+            "h-14 flex items-center border-b border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden",
             isSidebarCollapsed ? "justify-center px-0" : "px-4"
           )}
         >
@@ -335,7 +335,7 @@ export function Sidebar({ className }: { className?: string }) {
 
         {/* ── Search ── */}
         {!isSidebarCollapsed && (
-          <div className={cn("px-3 py-2 border-b shrink-0", isDark ? "border-slate-700/50" : "border-slate-200")}>
+          <div className={cn("px-3 py-2 border-b shrink-0", isDark ? "border-slate-600" : "border-slate-200")}>
             <div className="relative">
               <Search className={cn("absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5", isDark ? "text-slate-300" : "text-slate-400")} />
               <input
@@ -344,8 +344,8 @@ export function Sidebar({ className }: { className?: string }) {
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 className={cn(
-                  "w-full h-7 pl-7 pr-2 text-xs rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary-500/30 transition-colors",
-                  isDark ? "bg-slate-800 text-white placeholder:text-slate-400" : "bg-slate-100 text-slate-700 placeholder:text-slate-400"
+                  "w-full h-7 pl-7 pr-2 text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500/30 transition-colors border",
+                  isDark ? "bg-slate-800/80 border-slate-600 text-white placeholder:text-slate-400" : "bg-slate-100 border-transparent text-slate-700 placeholder:text-slate-400"
                 )}
               />
             </div>

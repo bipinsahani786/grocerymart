@@ -36,40 +36,41 @@ const getDaysRemaining = (expiryStr: string | null) => {
   return Math.max(Math.ceil(diff / (1000 * 60 * 60 * 24)), 0);
 };
 
-function CustomKpiCard({ title, value, subtitle, icon, colorClass = "bg-gradient-to-br from-primary-500 to-primary-600 shadow-primary-500/30" }: {
+function CustomKpiCard({ title, value, subtitle, icon, colorClass = "bg-primary-500", iconColorClass = "text-white bg-white/20" }: {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: React.ReactNode;
   colorClass?: string;
+  iconColorClass?: string;
 }) {
   return (
-    <div className={`transition-all duration-300 relative overflow-hidden group rounded-md sm:rounded-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 p-2.5 sm:p-3 flex flex-col justify-between min-h-[65px] sm:min-h-[80px] w-full text-white border border-white/20 ${colorClass}`}>
-      {/* Decorative Circles inside the card */}
-      <div className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-white/20 blur-2xl group-hover:bg-white/30 transition-all duration-500"></div>
-      <div className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full bg-white/10 blur-3xl group-hover:bg-white/20 transition-all duration-500"></div>
+    <div className={`transition-all duration-300 relative overflow-hidden rounded-md shadow-sm hover:shadow-md border border-white/10 p-3 sm:p-4 flex flex-col justify-between min-h-[85px] w-full text-white group ${colorClass}`}>
+      {/* Decorative Background Shapes */}
+      <div className="absolute -right-4 -top-10 w-24 h-24 rounded-full bg-white/20 blur-xl group-hover:bg-white/30 transition-all duration-500"></div>
+      <div className="absolute -left-6 -bottom-6 w-32 h-32 rounded-full bg-black/10 blur-2xl group-hover:bg-black/20 transition-all duration-500"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[10px] border-white/5 rounded-full mix-blend-overlay opacity-50 pointer-events-none scale-150"></div>
 
       <div className="relative z-10 flex flex-col justify-between h-full flex-1 min-w-0">
-        <div className="min-w-0">
-          <div className="flex items-center justify-between gap-1 mb-1">
-            <span className="text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.1em] text-white/90 select-none truncate block">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/80 select-none truncate block">
               {title}
             </span>
-            <div className="p-1 rounded-full transition-all duration-300 flex items-center justify-center shrink-0 bg-white/20 text-white backdrop-blur-md group-hover:bg-white/30 shadow-sm border border-white/10">
-              {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: 'w-3 h-3' }) : icon}
+            <div className="flex items-baseline min-w-0 mt-0.5">
+              <span className="text-lg sm:text-xl font-black tracking-tight font-display truncate block w-full text-white drop-shadow-sm" title={value.toString()}>
+                {value}
+              </span>
             </div>
           </div>
-
-          <div className="flex items-baseline min-w-0 mt-0.5">
-            <span className="text-xl sm:text-2xl lg:text-xl xl:text-3xl font-black tracking-tighter font-display truncate block w-full text-white drop-shadow-md" title={value.toString()}>
-              {value}
-            </span>
+          <div className={`p-2 rounded flex items-center justify-center shrink-0 transition-colors backdrop-blur-sm shadow-sm ${iconColorClass}`}>
+            {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: 'w-3.5 h-3.5 sm:w-4 sm:h-4' }) : icon}
           </div>
         </div>
-
+        
         {subtitle && (
-          <div className="mt-1 pt-1 min-w-0 border-t border-white/10">
-            <span className="text-[7px] sm:text-[8px] font-bold uppercase tracking-wider text-white/70 block truncate" title={subtitle}>
+          <div className="mt-auto min-w-0 pt-1.5 border-t border-white/20">
+            <span className="text-[8px] sm:text-[9px] font-semibold text-white/70 block truncate" title={subtitle}>
               {subtitle}
             </span>
           </div>
@@ -150,80 +151,71 @@ export default function SuperadminDashboardPage() {
   const commOffset = donutCircumference - (commPct / 100) * donutCircumference;
 
   return (
-    <div className="min-h-screen bg-background text-slate-900 dark:text-slate-200">
+    <div className="min-h-screen text-slate-900 dark:text-slate-200">
 
       <div className="w-full max-w-[1600px] mx-auto px-2 sm:px-4 py-4 space-y-8">
 
-        {/* ── Floating Banner & Colorful Cards ── */}
-        <div className="mb-2 -mt-6">
-          {/* Background Banner */}
-          <div className="relative w-full h-[150px] sm:h-[190px] bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-600 shadow-xl overflow-hidden flex flex-col justify-center px-6 sm:px-12 pb-10 sm:pb-12 rounded-none -mx-2 sm:-mx-4 w-[calc(100%+1rem)] sm:w-[calc(100%+2rem)]">
-            {/* Decorative glows and shapes inside banner */}
-            <div className="absolute -top-10 -left-10 w-64 h-64 border-[30px] border-white/5 rounded-full mix-blend-overlay pointer-events-none"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border-[2px] border-white/5 rounded-full mix-blend-overlay pointer-events-none border-dashed"></div>
-            <div className="absolute top-20 left-1/4 w-32 h-32 bg-white/10 rounded-2xl rotate-45 blur-lg mix-blend-overlay pointer-events-none"></div>
-
-            {/* Banner Title */}
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between w-full">
-              <div>
-                <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight drop-shadow-md">
-                  Welcome back, Superadmin <span className="inline-block animate-bounce-slow">👋</span>
-                </h1>
-                <p className="text-white/80 font-medium mt-1.5 flex items-center gap-2 text-xs sm:text-sm">
-                  GroceryMart Platform • Live overview
-                </p>
-              </div>
-            </div>
-
-            {/* Business Overview Tab */}
-            <div className="absolute bottom-0 left-6 sm:left-12 inline-flex items-center px-4 py-2 bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-200 rounded-t-xl text-[9px] font-extrabold uppercase tracking-[0.1em] shadow-lg border-t border-x border-white/20 dark:border-white/5 z-10">
-              Business Overview
+        {/* ── Page Header & Grid ── */}
+        <div className="mb-6">
+          {/* Clean Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                Welcome back, Superadmin <span className="inline-block animate-bounce-slow text-2xl lg:text-3xl">👋</span>
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs sm:text-sm flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                GroceryMart Platform • Live overview
+              </p>
             </div>
           </div>
 
-          {/* The Grid of Cards floating over the bottom boundary */}
-          <div className="relative z-20 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-2 px-1.5 sm:px-3 -mt-6 sm:-mt-8 pb-2">
+          {/* The Grid of Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             <CustomKpiCard
               title="Total Revenue"
               value={formatCurrency(summary.total_revenue)}
               icon={<DollarSign className="w-5 h-5" />}
               subtitle="Gross Platform Volume"
-              colorClass="bg-gradient-to-br from-indigo-500 to-purple-600 shadow-[0_8px_30px_rgba(99,102,241,0.3)]"
+              colorClass="bg-gradient-to-br from-indigo-500 to-indigo-600"
             />
             <CustomKpiCard
               title="Net Profit"
               value={formatCurrency(summary.net_profit)}
               icon={<TrendingUp className="w-5 h-5" />}
               subtitle="Platform Earnings"
-              colorClass="bg-gradient-to-br from-emerald-400 to-teal-500 shadow-[0_8px_30px_rgba(16,185,129,0.3)]"
+              colorClass="bg-gradient-to-br from-emerald-500 to-emerald-600"
             />
             <CustomKpiCard
               title="Platform Users"
               value={summary.total_users}
               icon={<Users className="w-5 h-5" />}
               subtitle="Total Registered Users"
-              colorClass="bg-gradient-to-br from-pink-500 to-rose-500 shadow-[0_8px_30px_rgba(236,72,153,0.3)]"
+              colorClass="bg-gradient-to-br from-pink-500 to-pink-600"
             />
             <CustomKpiCard
               title="Sales Partners"
               value={summary.sales_partners}
               icon={<Award className="w-5 h-5" />}
               subtitle="Active Affiliates"
-              colorClass="bg-gradient-to-br from-orange-400 to-amber-500 shadow-[0_8px_30px_rgba(245,158,11,0.3)]"
+              colorClass="bg-gradient-to-br from-amber-500 to-orange-500"
             />
             <CustomKpiCard
               title="Active Tenants"
               value={summary.active_businesses}
               icon={<Activity className="w-5 h-5" />}
               subtitle="Paying Businesses"
-              colorClass="bg-gradient-to-br from-blue-500 to-indigo-600 shadow-[0_8px_30px_rgba(59,130,246,0.3)]"
+              colorClass="bg-gradient-to-br from-blue-500 to-blue-600"
             />
             <CustomKpiCard
               title="Pending Payouts"
               value={formatCurrency(summary.commissions_pending)}
               icon={<AlertTriangle className="w-5 h-5" />}
               subtitle="Commissions Due"
-              colorClass="bg-gradient-to-br from-fuchsia-500 to-purple-600 shadow-[0_8px_30px_rgba(217,70,239,0.3)]"
+              colorClass="bg-gradient-to-br from-rose-500 to-rose-600"
             />
           </div>
         </div>

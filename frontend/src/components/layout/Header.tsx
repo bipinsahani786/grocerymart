@@ -379,7 +379,7 @@ export function Header({ className }: { className?: string }) {
   }
 
   return (
-    <header className={cn("h-14 flex items-center justify-between px-4 bg-card dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors duration-300", className)}>
+    <header className={cn("h-14 flex items-center justify-between px-4 bg-white dark:bg-card border-b border-slate-200 dark:border-slate-700/80 sticky top-0 z-30 transition-colors duration-300", className)}>
       <div className="flex items-center flex-1 gap-3 min-w-0">
         <button onClick={toggleSidebar} className="p-2 -ml-2 text-slate-400 dark:text-slate-300 hover:text-primary-500 dark:hover:text-white transition-colors rounded-sm hover:bg-primary-50 dark:hover:bg-white/5 shrink-0">
           {isSidebarCollapsed ? <ArrowRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

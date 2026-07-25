@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { managersRepository } from "./managers.repository.js";
+import { AppError } from "../../utils/AppError.js";
 
 export class ManagersService {
   async getManagers(query) {
@@ -12,6 +13,11 @@ export class ManagersService {
   }
 
   async createManager(payload) {
+    const existingUser = await managersRepository.findManagerByEmail(payload.email);
+    if (existingUser) {
+      throw new AppError("A user with this email already exists.", 400);
+    }
+
     const passwordHash = await bcrypt.hash(payload.password, 10);
     const data = await managersRepository.createManager(
       {
@@ -47,6 +53,25 @@ export class ManagersService {
       success: true,
       data,
       message: "Store manager password updated successfully",
+    };
+  }
+
+  async updateManagerProfile(id, payload) {
+    // If email is being changed, check if it already exists
+    if (payload.email) {
+      const existingUser = await managersRepository.findManagerByEmail(payload.email);
+      if (existingUser && existingUser.id !== id) {
+        throw new AppError("A user with this email already exists.", 400);
+      }
+    }
+
+    const { storeId, ...userData } = payload;
+    const data = await managersRepository.updateManagerProfile(id, userData, storeId);
+
+    return {
+      success: true,
+      data,
+      message: "Store manager profile updated successfully",
     };
   }
 }

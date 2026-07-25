@@ -264,7 +264,7 @@ export default function StoreOrdersPage() {
   }, [selectedOrder, products]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-8">
+    <div className="min-h-screen bg-transparent text-foreground pb-8">
       <PageHeader
         icon={ClipboardCheck}
         title="Live Orders Queue"
@@ -312,11 +312,10 @@ export default function StoreOrdersPage() {
                   <button
                     key={type}
                     onClick={() => setTypeFilter(type)}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-                      typeFilter === type
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${typeFilter === type
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     {type === "All" ? "All Channels" : type}
                   </button>
@@ -332,11 +331,10 @@ export default function StoreOrdersPage() {
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-                    statusFilter === status
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${statusFilter === status
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   {status === "All"
                     ? "All Status"
@@ -375,11 +373,10 @@ export default function StoreOrdersPage() {
                     <div
                       key={order.id}
                       onClick={() => setSelectedOrderId(order.id)}
-                      className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
-                        selectedOrderId === order.id
+                      className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${selectedOrderId === order.id
                           ? "bg-primary-500/5 border-l-4 border-primary-500"
                           : "hover:bg-muted/30 border-l-4 border-transparent"
-                      }`}
+                        }`}
                     >
                       <div className="space-y-1 min-w-0 pr-4">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -559,49 +556,49 @@ export default function StoreOrdersPage() {
                     {["PLACED", "ACCEPTED", "PACKED", "READY"].includes(
                       selectedOrder.status,
                     ) && (
-                      <div className="space-y-3">
-                        {selectedOrder.status === "READY" &&
-                          selectedOrder.type === "Click & Collect" && (
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                Enter Customer Collection PIN (Mock:{" "}
-                                {selectedOrder.pin})
-                              </label>
-                              <Input
-                                placeholder="Enter 4-digit PIN"
-                                value={enteredPin}
-                                onChange={(e) => setEnteredPin(e.target.value)}
-                                maxLength={4}
-                                className="h-10"
-                              />
-                            </div>
-                          )}
-
-                        <Button
-                          className="w-full h-11 flex items-center justify-center gap-2"
-                          variant="brand"
-                          onClick={() =>
-                            handleUpdateStatus(
-                              selectedOrder.id,
-                              selectedOrder.status,
-                            )
-                          }
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          {selectedOrder.status === "PLACED" && "Accept Order"}
-                          {selectedOrder.status === "ACCEPTED" &&
-                            "Start Packing (Mark Packed)"}
-                          {selectedOrder.status === "PACKED" &&
-                            (selectedOrder.type === "Delivery"
-                              ? "Ship Order (Out for Delivery)"
-                              : "Mark Ready for Handover")}
+                        <div className="space-y-3">
                           {selectedOrder.status === "READY" &&
-                            (selectedOrder.type === "Click & Collect"
-                              ? "Verify PIN & Handover"
-                              : "Complete Delivery")}
-                        </Button>
-                      </div>
-                    )}
+                            selectedOrder.type === "Click & Collect" && (
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                  Enter Customer Collection PIN (Mock:{" "}
+                                  {selectedOrder.pin})
+                                </label>
+                                <Input
+                                  placeholder="Enter 4-digit PIN"
+                                  value={enteredPin}
+                                  onChange={(e) => setEnteredPin(e.target.value)}
+                                  maxLength={4}
+                                  className="h-10"
+                                />
+                              </div>
+                            )}
+
+                          <Button
+                            className="w-full h-11 flex items-center justify-center gap-2"
+                            variant="brand"
+                            onClick={() =>
+                              handleUpdateStatus(
+                                selectedOrder.id,
+                                selectedOrder.status,
+                              )
+                            }
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            {selectedOrder.status === "PLACED" && "Accept Order"}
+                            {selectedOrder.status === "ACCEPTED" &&
+                              "Start Packing (Mark Packed)"}
+                            {selectedOrder.status === "PACKED" &&
+                              (selectedOrder.type === "Delivery"
+                                ? "Ship Order (Out for Delivery)"
+                                : "Mark Ready for Handover")}
+                            {selectedOrder.status === "READY" &&
+                              (selectedOrder.type === "Click & Collect"
+                                ? "Verify PIN & Handover"
+                                : "Complete Delivery")}
+                          </Button>
+                        </div>
+                      )}
 
                     {/* Final state completed visual */}
                     {selectedOrder.status === "DELIVERED" && (

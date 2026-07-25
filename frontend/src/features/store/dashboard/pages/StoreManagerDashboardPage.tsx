@@ -154,7 +154,7 @@ export default function StoreManagerDashboardPage() {
     let feed = orders;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      feed = feed.filter(o => 
+      feed = feed.filter(o =>
         o.id.toString().toLowerCase().includes(q) ||
         o.type.toLowerCase().includes(q) ||
         o.status.toLowerCase().includes(q)
@@ -185,7 +185,7 @@ export default function StoreManagerDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-12 relative overflow-hidden">
+    <div className="min-h-screen bg-transparent text-foreground pb-12 relative overflow-hidden">
       {/* Dynamic glow circles */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none" />
@@ -234,44 +234,41 @@ export default function StoreManagerDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
           {/* Main Info Card - Glossy Poster Redesign */}
           <div
-            className={`lg:col-span-3 rounded-xl p-5 flex flex-col justify-between border relative overflow-hidden transition-all duration-300 min-h-[145px] opacity-0 animate-scale-in ${
-              isDark
-                ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-white/10 text-white shadow-xl shadow-primary-500/5"
-                : "bg-gradient-to-br from-primary-50 via-white to-indigo-50 border-primary-500/20 text-slate-900 shadow-xl shadow-primary-500/5"
-            }`}
+            className={`lg:col-span-3 rounded-xl p-5 flex flex-col justify-between border relative overflow-hidden transition-all duration-300 min-h-[145px] opacity-0 animate-scale-in ${isDark
+              ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-white/10 text-white shadow-xl shadow-primary-500/5"
+              : "bg-gradient-to-br from-primary-50 via-white to-indigo-50 border-primary-500/20 text-slate-900 shadow-xl shadow-primary-500/5"
+              }`}
           >
             {/* Grid Pattern overlay */}
             <div
-              className={`absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none ${
-                isDark ? "opacity-45 invert-0" : "opacity-35 invert"
-              }`}
+              className={`absolute inset-0 pointer-events-none ${isDark ? "opacity-[0.4]" : "opacity-[0.25] invert"}`}
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 14 14' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 0H0V14' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.4'/%3E%3C/svg%3E")`,
+                backgroundSize: '14px 14px'
+              }}
             />
 
             {/* Dynamic Glass Highlight Sheen */}
             <div className="absolute top-0 left-[-40%] w-[100%] h-full bg-gradient-to-r from-transparent via-white/15 to-transparent -skew-x-12 pointer-events-none" />
 
             {/* Background design glow shapes */}
-            <div className={`absolute right-[-10%] top-[-30%] w-[240px] h-[240px] rounded-full blur-2xl pointer-events-none ${
-              isDark ? 'bg-amber-400/20' : 'bg-amber-400/35'
-            }`} />
-            <div className={`absolute right-[20%] bottom-[-60%] w-[180px] h-[180px] rounded-full blur-2xl pointer-events-none ${
-              isDark ? 'bg-rose-500/20' : 'bg-rose-500/30'
-            }`} />
+            <div className={`absolute right-[-10%] top-[-30%] w-[240px] h-[240px] rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-amber-400/20' : 'bg-amber-400/35'
+              }`} />
+            <div className={`absolute right-[20%] bottom-[-60%] w-[180px] h-[180px] rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-rose-500/20' : 'bg-rose-500/30'
+              }`} />
 
             {/* Rotated background sheet decoration */}
             <div
-              className={`absolute left-[40%] top-[-35%] w-32 h-32 border rounded-xl rotate-12 pointer-events-none transition-colors ${
-                isDark
-                  ? "border-white/15 bg-white/[0.05]"
-                  : "border-primary-500/25 bg-primary-500/[0.05]"
-              }`}
+              className={`absolute left-[40%] top-[-35%] w-32 h-32 border rounded-xl rotate-12 pointer-events-none transition-colors ${isDark
+                ? "border-white/15 bg-white/[0.05]"
+                : "border-primary-500/25 bg-primary-500/[0.05]"
+                }`}
             />
 
             {/* Double outline rings */}
             <div
-              className={`absolute right-4 top-4 w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${
-                isDark ? "border-white/10" : "border-primary-500/25"
-              }`}
+              className={`absolute right-4 top-4 w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${isDark ? "border-white/10" : "border-primary-500/25"
+                }`}
             >
               <div
                 className={`w-10 h-10 rounded-full border transition-colors ${isDark ? "border-white/15" : "border-primary-500/30"}`}
@@ -280,20 +277,18 @@ export default function StoreManagerDashboardPage() {
 
             <div className="space-y-0.5 z-10">
               <Badge
-                className={`border-none font-black text-[8px] uppercase tracking-widest mb-1.5 px-2 py-0.5 ${
-                  isDark
-                    ? "bg-white/20 text-white"
-                    : "bg-primary-500/10 text-primary-600"
-                }`}
+                className={`border-none font-black text-[8px] uppercase tracking-widest mb-1.5 px-2 py-0.5 ${isDark
+                  ? "bg-white/20 text-white"
+                  : "bg-primary-500/10 text-primary-600"
+                  }`}
               >
                 Operational Terminal
               </Badge>
               <h2
-                className={`text-3xl lg:text-4xl font-black font-display tracking-tight flex items-center gap-2 drop-shadow-sm ${
-                  isDark
-                    ? "text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300"
-                    : "text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-primary-950 to-indigo-950"
-                }`}
+                className={`text-3xl lg:text-4xl font-black font-display tracking-tight flex items-center gap-2 drop-shadow-sm ${isDark
+                  ? "text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300"
+                  : "text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-primary-950 to-indigo-950"
+                  }`}
               >
                 <Store className="h-7 w-7 text-amber-300 shrink-0" />
                 {formattedStoreName}
@@ -306,9 +301,8 @@ export default function StoreManagerDashboardPage() {
             </div>
 
             <div
-              className={`flex flex-wrap items-center justify-between gap-2.5 pt-3 z-10 border-t mt-3 ${
-                isDark ? "border-white/10" : "border-slate-200"
-              }`}
+              className={`flex flex-wrap items-center justify-between gap-2.5 pt-3 z-10 border-t mt-3 ${isDark ? "border-white/10" : "border-slate-200"
+                }`}
             >
               <div className="flex items-center gap-1.5">
                 <ShieldCheck
@@ -329,27 +323,28 @@ export default function StoreManagerDashboardPage() {
           {/* Quick command dock */}
           <div className="lg:col-span-2 rounded-xl border border-border bg-card/60 backdrop-blur-lg p-6 flex flex-col justify-between shadow-sm opacity-0 animate-scale-in [animation-delay:100ms] relative overflow-hidden">
             {/* Grid Pattern overlay */}
-            <div className={`absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none ${
-              isDark ? 'opacity-25' : 'opacity-15 invert'
-            }`} />
-            
+            <div
+              className={`absolute inset-0 pointer-events-none ${isDark ? "opacity-[0.35]" : "opacity-[0.15] invert"}`}
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 14 14' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 0H0V14' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.4'/%3E%3C/svg%3E")`,
+                backgroundSize: '14px 14px'
+              }}
+            />
+
             {/* Glass Highlight Sheen */}
             <div className="absolute top-0 left-[-30%] w-[60%] h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 pointer-events-none" />
-            
+
             {/* Background design glow shapes */}
-            <div className={`absolute right-[-15%] top-[-25%] w-[180px] h-[180px] rounded-full blur-2xl pointer-events-none ${
-              isDark ? 'bg-primary-500/10' : 'bg-primary-500/25'
-            }`} />
-            
+            <div className={`absolute right-[-15%] top-[-25%] w-[180px] h-[180px] rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-primary-500/10' : 'bg-primary-500/25'
+              }`} />
+
             {/* Rotated background sheet decoration */}
-            <div className={`absolute left-[5%] bottom-[-25%] w-[110px] h-[110px] border-2 rounded-xl rotate-45 pointer-events-none transition-colors ${
-              isDark ? 'border-white/10 bg-white/[0.03]' : 'border-primary-500/20 bg-primary-500/[0.05]'
-            }`} />
+            <div className={`absolute left-[5%] bottom-[-25%] w-[110px] h-[110px] border-2 rounded-xl rotate-45 pointer-events-none transition-colors ${isDark ? 'border-white/10 bg-white/[0.03]' : 'border-primary-500/20 bg-primary-500/[0.05]'
+              }`} />
 
             {/* Double outline rings */}
-            <div className={`absolute right-[-20px] bottom-[-20px] w-24 h-24 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${
-              isDark ? 'border-white/5' : 'border-primary-500/15'
-            }`}>
+            <div className={`absolute right-[-20px] bottom-[-20px] w-24 h-24 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${isDark ? 'border-white/5' : 'border-primary-500/15'
+              }`}>
               <div className={`w-16 h-16 rounded-full border transition-colors ${isDark ? 'border-white/10' : 'border-primary-500/20'}`}></div>
             </div>
 
@@ -410,17 +405,14 @@ export default function StoreManagerDashboardPage() {
             {/* Glass Sheen */}
             <div className="absolute top-0 left-[-30%] w-[60%] h-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-12 pointer-events-none" />
             {/* Glow circle */}
-            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${
-              isDark ? 'bg-emerald-500/15' : 'bg-emerald-500/30'
-            }`} />
+            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-emerald-500/15' : 'bg-emerald-500/30'
+              }`} />
             {/* Rotated background card shape */}
-            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${
-              isDark ? 'border-emerald-500/15 bg-emerald-500/[0.03]' : 'border-emerald-500/25 bg-emerald-500/[0.05]'
-            }`} />
+            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${isDark ? 'border-emerald-500/15 bg-emerald-500/[0.03]' : 'border-emerald-500/25 bg-emerald-500/[0.05]'
+              }`} />
             {/* Double outline rings */}
-            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${
-              isDark ? 'border-emerald-500/10' : 'border-emerald-500/20'
-            }`}>
+            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${isDark ? 'border-emerald-500/10' : 'border-emerald-500/20'
+              }`}>
               <div className={`w-10 h-10 rounded-full border transition-colors ${isDark ? 'border-emerald-500/15' : 'border-emerald-500/25'}`}></div>
             </div>
 
@@ -448,17 +440,14 @@ export default function StoreManagerDashboardPage() {
             {/* Glass Sheen */}
             <div className="absolute top-0 left-[-30%] w-[60%] h-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-12 pointer-events-none" />
             {/* Glow circle */}
-            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${
-              isDark ? 'bg-blue-500/15' : 'bg-blue-500/30'
-            }`} />
+            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-blue-500/15' : 'bg-blue-500/30'
+              }`} />
             {/* Rotated background card shape */}
-            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${
-              isDark ? 'border-blue-500/15 bg-blue-500/[0.03]' : 'border-blue-500/25 bg-blue-500/[0.05]'
-            }`} />
+            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${isDark ? 'border-blue-500/15 bg-blue-500/[0.03]' : 'border-blue-500/25 bg-blue-500/[0.05]'
+              }`} />
             {/* Double outline rings */}
-            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${
-              isDark ? 'border-blue-500/10' : 'border-blue-500/20'
-            }`}>
+            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${isDark ? 'border-blue-500/10' : 'border-blue-500/20'
+              }`}>
               <div className={`w-10 h-10 rounded-full border transition-colors ${isDark ? 'border-blue-500/15' : 'border-blue-500/25'}`}></div>
             </div>
 
@@ -486,17 +475,14 @@ export default function StoreManagerDashboardPage() {
             {/* Glass Sheen */}
             <div className="absolute top-0 left-[-30%] w-[60%] h-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-12 pointer-events-none" />
             {/* Glow circle */}
-            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${
-              isDark ? 'bg-emerald-500/15' : 'bg-emerald-500/30'
-            }`} />
+            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-emerald-500/15' : 'bg-emerald-500/30'
+              }`} />
             {/* Rotated background card shape */}
-            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${
-              isDark ? 'border-emerald-500/15 bg-emerald-500/[0.03]' : 'border-emerald-500/25 bg-emerald-500/[0.05]'
-            }`} />
+            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${isDark ? 'border-emerald-500/15 bg-emerald-500/[0.03]' : 'border-emerald-500/25 bg-emerald-500/[0.05]'
+              }`} />
             {/* Double outline rings */}
-            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${
-              isDark ? 'border-emerald-500/10' : 'border-emerald-500/20'
-            }`}>
+            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${isDark ? 'border-emerald-500/10' : 'border-emerald-500/20'
+              }`}>
               <div className={`w-10 h-10 rounded-full border transition-colors ${isDark ? 'border-emerald-500/15' : 'border-emerald-500/25'}`}></div>
             </div>
 
@@ -533,17 +519,14 @@ export default function StoreManagerDashboardPage() {
             {/* Glass Sheen */}
             <div className="absolute top-0 left-[-30%] w-[60%] h-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-12 pointer-events-none" />
             {/* Glow circle */}
-            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${
-              isDark ? 'bg-purple-500/15' : 'bg-purple-500/30'
-            }`} />
+            <div className={`absolute right-[-15%] top-[-25%] w-[140px] h-[140px] rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-purple-500/15' : 'bg-purple-500/30'
+              }`} />
             {/* Rotated background card shape */}
-            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${
-              isDark ? 'border-purple-500/15 bg-purple-500/[0.03]' : 'border-purple-500/25 bg-purple-500/[0.05]'
-            }`} />
+            <div className={`absolute left-[-20px] bottom-[-20px] w-20 h-20 border-2 rounded-xl rotate-12 pointer-events-none transition-colors ${isDark ? 'border-purple-500/15 bg-purple-500/[0.03]' : 'border-purple-500/25 bg-purple-500/[0.05]'
+              }`} />
             {/* Double outline rings */}
-            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${
-              isDark ? 'border-purple-500/10' : 'border-purple-500/20'
-            }`}>
+            <div className={`absolute right-[-15px] bottom-[-15px] w-16 h-16 rounded-full border-2 flex items-center justify-center pointer-events-none transition-colors ${isDark ? 'border-purple-500/10' : 'border-purple-500/20'
+              }`}>
               <div className={`w-10 h-10 rounded-full border transition-colors ${isDark ? 'border-purple-500/15' : 'border-purple-500/25'}`}></div>
             </div>
 
@@ -570,11 +553,10 @@ export default function StoreManagerDashboardPage() {
                 <div
                   key={s.id}
                   title={`${s.name} (${s.role})`}
-                  className={`h-5 w-5 rounded-full ring-2 ring-background flex items-center justify-center text-[8px] font-black uppercase ${
-                    s.clockedIn
-                      ? "bg-emerald-500 text-white"
-                      : "bg-slate-200 dark:bg-slate-800 text-muted-foreground"
-                  }`}
+                  className={`h-5 w-5 rounded-full ring-2 ring-background flex items-center justify-center text-[8px] font-black uppercase ${s.clockedIn
+                    ? "bg-emerald-500 text-white"
+                    : "bg-slate-200 dark:bg-slate-800 text-muted-foreground"
+                    }`}
                 >
                   {s.name.charAt(0)}
                 </div>
@@ -683,11 +665,10 @@ export default function StoreManagerDashboardPage() {
 
           {/* Scrolling Monospace Terminal for Live Activity feed */}
           <Card className="flex flex-col h-full border border-border shadow-sm rounded-xl opacity-0 animate-fade-slide-up [animation-delay:400ms]">
-            <CardHeader className={`pb-4 rounded-t-xl transition-colors border-b ${
-              isDark 
-                ? 'bg-slate-900 text-white border-white/5' 
-                : 'bg-slate-100 text-slate-900 border-slate-200'
-            }`}>
+            <CardHeader className={`pb-4 rounded-t-xl transition-colors border-b ${isDark
+              ? 'bg-slate-900 text-white border-white/5'
+              : 'bg-slate-100 text-slate-900 border-slate-200'
+              }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
@@ -695,9 +676,8 @@ export default function StoreManagerDashboardPage() {
                     Live Activity Terminal
                   </CardTitle>
                 </div>
-                <Badge className={`border-none text-[9px] ${
-                  isDark ? 'bg-white/10 text-white' : 'bg-slate-200 text-slate-800'
-                }`}>
+                <Badge className={`border-none text-[9px] ${isDark ? 'bg-white/10 text-white' : 'bg-slate-200 text-slate-800'
+                  }`}>
                   LIVE LOGS
                 </Badge>
               </div>
@@ -729,11 +709,10 @@ export default function StoreManagerDashboardPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className={`p-4 flex-1 h-full min-h-0 font-mono text-[10px] space-y-3.5 overflow-y-auto rounded-b-xl select-none transition-colors duration-300 ${
-              isDark 
-                ? 'bg-slate-950 text-emerald-400' 
-                : 'bg-zinc-50 text-emerald-700 border-t border-slate-200/50'
-            }`}>
+            <CardContent className={`p-4 flex-1 h-full min-h-0 font-mono text-[10px] space-y-3.5 overflow-y-auto rounded-b-xl select-none transition-colors duration-300 ${isDark
+              ? 'bg-slate-950 text-emerald-400'
+              : 'bg-zinc-50 text-emerald-700 border-t border-slate-200/50'
+              }`}>
               {/* Terminal Logs list */}
               {recentFeed.map((order, idx) => {
                 const hour = new Date(order.createdAt).toLocaleTimeString([], {
@@ -759,9 +738,8 @@ export default function StoreManagerDashboardPage() {
                 );
               })}
 
-              <div className={`pt-2 italic text-[9px] border-t ${
-                isDark ? 'text-slate-500 border-white/5' : 'text-slate-400 border-slate-200'
-              }`}>
+              <div className={`pt-2 italic text-[9px] border-t ${isDark ? 'text-slate-500 border-white/5' : 'text-slate-400 border-slate-200'
+                }`}>
                 *** Listening on store channel events... ***
               </div>
             </CardContent>
