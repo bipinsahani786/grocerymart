@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'
+type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info'
 
 const variantClasses: Record<BadgeVariant, string> = {
   default:     'bg-slate-900 text-slate-50 dark:bg-slate-50 dark:text-slate-900',
@@ -10,6 +10,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   outline:     'border border-slate-200 text-slate-950 dark:border-slate-700 dark:text-slate-50',
   success:     'bg-green-500/15 text-green-700 dark:text-green-400',
   warning:     'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  info:        'bg-blue-500/15 text-blue-700 dark:text-blue-400',
 }
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {

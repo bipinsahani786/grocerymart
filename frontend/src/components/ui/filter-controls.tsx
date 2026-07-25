@@ -1,5 +1,6 @@
+import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import * as React from 'react';
-import { Search, RotateCcw, ChevronDown, X, Filter } from 'lucide-react';
+
 import { CustomDatePicker } from './custom-date-picker';
 import { cn } from '@/lib/utils';
 import { Button } from './button';

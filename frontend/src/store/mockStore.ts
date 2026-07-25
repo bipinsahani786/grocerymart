@@ -500,7 +500,7 @@ const defaultSettings: StoreSettings = {
 
 export const useMockStore = create<MockStoreState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       products: defaultProducts,
       categories: defaultCategories,
       orders: defaultOrders,
@@ -539,7 +539,7 @@ export const useMockStore = create<MockStoreState>()(
         };
       }),
 
-      adjustStock: (id, delta, reason) => set((state) => ({
+      adjustStock: (id, delta) => set((state) => ({
         products: state.products.map(p => p.id === id ? { ...p, stock: Math.max(0, p.stock + delta) } : p)
       })),
 

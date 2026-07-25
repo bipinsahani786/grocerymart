@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Store as StoreIcon, Building2, MapPin, Phone, Mail, User, Shield, Loader2, Save, ShoppingBag, Truck, CheckSquare } from 'lucide-react';
+import { Store as StoreIcon, Building2, MapPin, Phone,   Shield, Loader2, Save, ShoppingBag, Truck, CheckSquare } from 'lucide-react';
 
 import { PageHeader } from '@/components/ui/page-header';
 import { SectionCard } from '@/components/ui/section-card';
@@ -23,7 +23,7 @@ export default function EditStorePage() {
   const updateStore = useUpdateStore();
 
   const form = useForm<StoreFormValues>({
-    resolver: zodResolver(storeSchema),
+    resolver: zodResolver(storeSchema) as any,
     defaultValues: {
       name: '',
       address: '',
@@ -109,7 +109,7 @@ export default function EditStorePage() {
         onBack={() => navigate('/stores')}
       />
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full px-4 sm:px-6 py-4 space-y-6 pb-12">
+      <form onSubmit={form.handleSubmit(onSubmit as any)} className="w-full px-4 sm:px-6 py-4 space-y-6 pb-12">
         {/* ── Store Details ── */}
         <SectionCard title="Franchise Store Details" icon={<Building2 />}>
           <div className="space-y-5">

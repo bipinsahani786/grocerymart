@@ -7,11 +7,9 @@ import {
   Printer, 
   Power,
   Save,
-  CheckCircle
-} from 'lucide-react';
+  } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMockStore } from '@/store/mockStore';

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Construction, Wrench, ShieldAlert, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Construction,  ShieldAlert, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

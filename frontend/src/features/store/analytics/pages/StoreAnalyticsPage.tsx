@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   TrendingUp, 
   ShoppingCart, 
@@ -7,12 +7,10 @@ import {
   PieChart as PieIcon, 
   Clock, 
   Award,
-  Calendar
-} from 'lucide-react';
+  } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
-import { Badge } from '@/components/ui/badge';
 import { useMockStore } from '@/store/mockStore';
 import { 
   ResponsiveContainer, 
@@ -34,7 +32,7 @@ type ActiveTab = 'sales' | 'products' | 'payments' | 'staff';
 const COLORS = ['var(--primary-500)', 'var(--willow-green)', 'var(--carrot-orange)', 'var(--strawberry-red)', 'var(--coral-glow)'];
 
 export default function StoreAnalyticsPage() {
-  const { orders, products, staff } = useMockStore();
+  const { orders, staff } = useMockStore();
   const [activeTab, setActiveTab] = useState<ActiveTab>('sales');
 
   // 1. Calculations for General Stats Cards
@@ -291,7 +289,7 @@ export default function StoreAnalyticsPage() {
                         paddingAngle={3}
                         dataKey="value"
                       >
-                        {paymentSplitData.map((entry, index) => (
+                        {paymentSplitData.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>

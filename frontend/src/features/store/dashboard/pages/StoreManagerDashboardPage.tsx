@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   BadgeIndianRupee,
   ShoppingCart,
@@ -7,17 +7,10 @@ import {
   AlertTriangle,
   Plus,
   TrendingUp,
-  ArrowRight,
   Tv,
-  Settings,
   Clock,
-  Sparkles,
-  Zap,
-  Activity,
-  Layers,
   ArrowUpRight,
   ShieldCheck,
-  PackageOpen,
   Search,
   Trash2,
 } from "lucide-react";
@@ -32,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
-import { useMockStore, type Order } from "@/store/mockStore";
+import { useMockStore } from "@/store/mockStore";
 import { useThemeStore } from "@/store/themeStore";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
@@ -60,7 +53,6 @@ export default function StoreManagerDashboardPage() {
       .replace(/\bsk\b/gi, "SK");
   }, [store]);
 
-  const [time, setTime] = useState(new Date());
   const [chartMetric, setChartMetric] = useState<"revenue" | "volume">(
     "revenue",
   );
@@ -70,12 +62,7 @@ export default function StoreManagerDashboardPage() {
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [dismissedProductIds, setDismissedProductIds] = useState<number[]>([]);
 
-  // Digital Clock HMR hook
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
+  
   // 1. Calculate dashboard metrics
   const stats = useMemo(() => {
     const todayStr = new Date().toISOString().split("T")[0];
@@ -549,7 +536,7 @@ export default function StoreManagerDashboardPage() {
 
             {/* Mock avatars group */}
             <div className="mt-4 flex -space-x-1.5 overflow-hidden z-10">
-              {staff.map((s, idx) => (
+              {staff.map((s) => (
                 <div
                   key={s.id}
                   title={`${s.name} (${s.role})`}
@@ -714,7 +701,7 @@ export default function StoreManagerDashboardPage() {
               : 'bg-zinc-50 text-emerald-700 border-t border-slate-200/50'
               }`}>
               {/* Terminal Logs list */}
-              {recentFeed.map((order, idx) => {
+              {recentFeed.map((order) => {
                 const hour = new Date(order.createdAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
