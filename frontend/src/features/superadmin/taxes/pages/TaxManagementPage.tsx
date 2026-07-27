@@ -1,20 +1,24 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Percent, CalendarClock, Box, CheckCircle2 } from 'lucide-react';
+import { Plus, Percent, CalendarClock, Box, CheckCircle2, Edit, Trash2 } from 'lucide-react';
 
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 
 import { useTaxes } from '../api/useTaxes';
 import type { TaxClass } from '../schemas/taxSchemas';
 import { CreateTaxModal } from '../components/CreateTaxModal';
+import { EditTaxModal } from '../components/EditTaxModal';
 import { ScheduleRateModal } from '../components/ScheduleRateModal';
 
 export function TaxManagementPage() {
-  const { taxes, isLoading } = useTaxes();
+  const { taxes, isLoading, deleteTaxClass } = useTaxes();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingTaxClass, setEditingTaxClass] = useState<TaxClass | null>(null);
+  const [taxToDelete, setTaxToDelete] = useState<TaxClass | null>(null);
   const [selectedTaxForRate, setSelectedTaxForRate] = useState<TaxClass | null>(null);
 
   // Compute Metrics
@@ -143,7 +147,7 @@ export function TaxManagementPage() {
       header: 'Actions',
       className: 'text-right',
       cell: (tax) => (
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-1.5">
           <Button
             variant="outline"
             size="sm"
@@ -152,6 +156,28 @@ export function TaxManagementPage() {
           >
             <CalendarClock className="w-3.5 h-3.5" />
             Schedule Rate
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0 text-slate-600 dark:text-slate-300 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/40 border-slate-200 dark:border-zinc-800 cursor-pointer"
+            title="Edit Tax Profile"
+            onClick={() => setEditingTaxClass(tax)}
+          >
+            <Edit className="w-3.5 h-3.5" />
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-slate-200 dark:border-zinc-800 cursor-pointer"
+            title="Delete Tax Profile"
+            onClick={() => setTaxToDelete(tax)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       ),
@@ -242,6 +268,12 @@ export function TaxManagementPage() {
         onClose={() => setIsCreateModalOpen(false)}
       />
 
+      <EditTaxModal
+        isOpen={!!editingTaxClass}
+        taxClass={editingTaxClass}
+        onClose={() => setEditingTaxClass(null)}
+      />
+
       {selectedTaxForRate && (
         <ScheduleRateModal
           isOpen={true}
@@ -249,6 +281,22 @@ export function TaxManagementPage() {
           onClose={() => setSelectedTaxForRate(null)}
         />
       )}
+
+      {/* ── Delete Confirm Modal ── */}
+      <DeleteConfirmModal
+        isOpen={!!taxToDelete}
+        onClose={() => setTaxToDelete(null)}
+        onConfirm={() => {
+          if (taxToDelete) {
+            deleteTaxClass.mutate(taxToDelete.id, {
+              onSuccess: () => setTaxToDelete(null),
+            });
+          }
+        }}
+        title="Delete Tax Profile"
+        description="Are you sure you want to delete this tax profile? This action cannot be undone."
+        itemName={taxToDelete?.name}
+      />
     </div>
   );
 }

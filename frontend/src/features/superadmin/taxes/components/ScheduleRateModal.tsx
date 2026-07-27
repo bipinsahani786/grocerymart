@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { CustomDateTimePicker } from '@/components/ui/custom-date-time-picker';
 import { Plus, Trash2, CalendarClock } from 'lucide-react';
 import { useTaxes } from '../api/useTaxes';
 import type { TaxClass } from '../schemas/taxSchemas';
@@ -60,12 +61,13 @@ export function ScheduleRateModal({ isOpen, onClose, taxClass }: { isOpen: boole
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Effective From</label>
-            <Input
-              required
-              type="datetime-local"
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Effective From (Date & Time) <span className="text-rose-500">*</span>
+            </label>
+            <CustomDateTimePicker
               value={effectiveFrom}
-              onChange={(e) => setEffectiveFrom(e.target.value)}
+              onChange={setEffectiveFrom}
+              placeholder="Select date & time"
             />
           </div>
           <p className="text-xs text-slate-500">The exact date and time when this new rate will automatically become active.</p>

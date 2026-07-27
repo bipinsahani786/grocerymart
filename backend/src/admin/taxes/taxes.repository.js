@@ -16,6 +16,21 @@ export class TaxesRepository {
     });
   }
 
+  async getTaxClassById(id) {
+    return await prisma.taxClass.findUnique({
+      where: { id },
+      include: {
+        rates: {
+          include: { components: true },
+          orderBy: { effectiveFrom: 'desc' }
+        },
+        _count: {
+          select: { products: true }
+        }
+      }
+    });
+  }
+
   async createTaxClass(data, initialRateData) {
     return await prisma.$transaction(async (tx) => {
       const taxClass = await tx.taxClass.create({
@@ -41,6 +56,32 @@ export class TaxesRepository {
         where: { id: taxClass.id },
         include: { rates: { include: { components: true } } }
       });
+    });
+  }
+
+  async updateTaxClass(id, data) {
+    return await prisma.taxClass.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+      },
+      include: {
+        rates: {
+          include: { components: true },
+          orderBy: { effectiveFrom: 'desc' }
+        },
+        _count: {
+          select: { products: true }
+        }
+      }
+    });
+  }
+
+  async deleteTaxClass(id) {
+    return await prisma.taxClass.delete({
+      where: { id }
     });
   }
 

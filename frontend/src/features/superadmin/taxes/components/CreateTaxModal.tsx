@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { CustomDateTimePicker } from '@/components/ui/custom-date-time-picker';
 import { Plus, Trash2 } from 'lucide-react';
 import { useTaxes } from '../api/useTaxes';
 
@@ -85,11 +86,13 @@ export function CreateTaxModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Effective From</label>
-            <Input
-              type="datetime-local"
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Effective From (Date & Time)
+            </label>
+            <CustomDateTimePicker
               value={effectiveFrom}
-              onChange={(e) => setEffectiveFrom(e.target.value)}
+              onChange={setEffectiveFrom}
+              placeholder="Select effective date & time"
             />
           </div>
 

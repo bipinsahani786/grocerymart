@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { TaxClass, TaxRate } from '../schemas/taxSchemas';
+import { toast } from 'sonner';
 
 export function useTaxes() {
   const queryClient = useQueryClient();
@@ -26,7 +27,49 @@ export function useTaxes() {
       return data.data as TaxClass;
     },
     onSuccess: () => {
+      toast.success('Tax profile created successfully');
       queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to create tax profile');
+    },
+  });
+
+  const updateTaxClass = useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: {
+        name?: string;
+        description?: string | null;
+        isActive?: boolean;
+      };
+    }) => {
+      const { data } = await api.put(`/admin/taxes/${id}`, payload);
+      return data.data as TaxClass;
+    },
+    onSuccess: () => {
+      toast.success('Tax profile updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to update tax profile');
+    },
+  });
+
+  const deleteTaxClass = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(`/admin/taxes/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Tax profile deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to delete tax profile');
     },
   });
 
@@ -45,7 +88,11 @@ export function useTaxes() {
       return data.data as TaxRate;
     },
     onSuccess: () => {
+      toast.success('Tax rate scheduled successfully');
       queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to schedule tax rate');
     },
   });
 
@@ -55,6 +102,8 @@ export function useTaxes() {
     isError: taxesQuery.isError,
     error: taxesQuery.error,
     createTaxClass,
+    updateTaxClass,
+    deleteTaxClass,
     scheduleTaxRate,
   };
 }
