@@ -21,11 +21,9 @@ export function FilterContainer({ className, children, ...props }: FilterContain
   );
 }
 
-export interface FilterSearchProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
-  value: string;
-  onChange: (value: string) => void;
-  wrapperClassName?: string;
-}
+import { SearchBar, type SearchBarProps } from './SearchBar';
+
+export interface FilterSearchProps extends SearchBarProps {}
 
 export function FilterSearch({
   value,
@@ -36,26 +34,14 @@ export function FilterSearch({
   ...props
 }: FilterSearchProps) {
   return (
-    <div
-      className={cn(
-        "relative flex items-center w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all overflow-hidden h-8 pr-3",
-        wrapperClassName
-      )}
-    >
-      <div className="h-8 w-8 flex items-center justify-center bg-primary-50 dark:bg-primary-500/10 border-r border-slate-200 dark:border-zinc-800 text-primary-500 dark:text-primary-400 shrink-0">
-        <Search className="w-3.5 h-3.5" />
-      </div>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={cn(
-          "flex-1 bg-transparent border-0 pl-3 focus:outline-none focus:ring-0 text-xs placeholder:text-xs placeholder:font-medium text-slate-900 dark:text-white",
-          className
-        )}
-        {...props}
-      />
-    </div>
+    <SearchBar
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={className}
+      wrapperClassName={wrapperClassName}
+      {...props}
+    />
   );
 }
 

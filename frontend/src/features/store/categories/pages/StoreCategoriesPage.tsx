@@ -17,10 +17,12 @@ import { Input } from '@/components/ui/input';
 import { useMockStore } from '@/store/mockStore';
 import { toast } from 'sonner';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { SearchBar } from '@/components/ui/SearchBar';
 
 export default function StoreCategoriesPage() {
   const { categories, addCategory, deleteCategory, editCategory, products } = useMockStore();
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [newCatName, setNewCatName] = useState('');
   const [parentId, setParentId] = useState<string>('');
   
@@ -36,14 +38,18 @@ export default function StoreCategoriesPage() {
 
   // 1. Calculate active product counts per category dynamically from current products list
   const categoriesWithLiveCounts = useMemo(() => {
-    return categories.map(cat => {
-      const liveCount = products.filter(p => p.categoryId === cat.id).length;
-      return {
-        ...cat,
-        productCount: liveCount
-      };
-    });
-  }, [categories, products]);
+    return categories
+      .map(cat => {
+        const liveCount = products.filter(p => p.categoryId === cat.id).length;
+        return {
+          ...cat,
+          productCount: liveCount
+        };
+      })
+      .filter(cat =>
+        searchQuery ? cat.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+      );
+  }, [categories, products, searchQuery]);
 
   // 2. Submit new category
   const handleAddCategory = (e: React.FormEvent) => {
@@ -104,12 +110,21 @@ export default function StoreCategoriesPage() {
           
           {/* Left Column: Categories List */}
           <Card className="min-h-[500px]">
-            <CardHeader>
-              <CardTitle className="text-base font-black flex items-center gap-2">
-                <FolderTree className="h-5 w-5 text-primary-500" />
-                Active Categories ({categoriesWithLiveCounts.length})
-              </CardTitle>
-              <CardDescription>Hierarchical list of catalog categories and current product counts</CardDescription>
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-base font-black flex items-center gap-2">
+                  <FolderTree className="h-5 w-5 text-primary-500" />
+                  Active Categories ({categoriesWithLiveCounts.length})
+                </CardTitle>
+                <CardDescription>Hierarchical list of catalog categories and current product counts</CardDescription>
+              </div>
+              <div className="w-full sm:w-64">
+                <SearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Search categories..."
+                />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border">

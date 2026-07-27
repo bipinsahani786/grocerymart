@@ -6,6 +6,8 @@ const router = express.Router();
 // Master Categories
 router.get('/categories', catalogController.getMasterCategories);
 router.post('/categories', catalogController.createMasterCategory);
+router.put('/categories/:id', catalogController.updateMasterCategory);
+router.delete('/categories/:id', catalogController.deleteMasterCategory);
 
 // Master Products
 router.get('/products', catalogController.getMasterProducts);

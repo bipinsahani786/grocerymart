@@ -5,7 +5,7 @@ export const masterCategorySchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   parentId: z.string().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
-  sortOrder: z.number().default(0),
+  sortOrder: z.number().optional().default(0),
 });
 
 export type MasterCategory = z.infer<typeof masterCategorySchema> & {

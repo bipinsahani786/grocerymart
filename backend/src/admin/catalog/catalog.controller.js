@@ -13,6 +13,16 @@ export class CatalogController {
     res.status(201).json(result);
   });
 
+  updateMasterCategory = catchAsync(async (req, res) => {
+    const result = await catalogService.updateMasterCategory(req.params.id, req.body);
+    res.status(200).json(result);
+  });
+
+  deleteMasterCategory = catchAsync(async (req, res) => {
+    const result = await catalogService.deleteMasterCategory(req.params.id);
+    res.status(200).json(result);
+  });
+
   // --- Master Products ---
   getMasterProducts = catchAsync(async (req, res) => {
     const filters = req.query; // can have categoryId, type, search

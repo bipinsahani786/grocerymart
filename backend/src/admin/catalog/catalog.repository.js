@@ -20,6 +20,24 @@ export class CatalogRepository {
     });
   }
 
+  async updateMasterCategory(id, data) {
+    return await prisma.masterCategory.update({
+      where: { id },
+      data: {
+        name: data.name,
+        parentId: data.parentId !== undefined ? (data.parentId || null) : undefined,
+        imageUrl: data.imageUrl !== undefined ? data.imageUrl : undefined,
+        sortOrder: data.sortOrder !== undefined ? data.sortOrder : undefined,
+      }
+    });
+  }
+
+  async deleteMasterCategory(id) {
+    return await prisma.masterCategory.delete({
+      where: { id }
+    });
+  }
+
   async getMasterProducts(filters) {
     const where = {};
     if (filters?.categoryId) {

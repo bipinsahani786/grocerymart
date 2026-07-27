@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Building2, Plus, User, Power, Edit, MapPin, Phone, Users, Trash2 } from 'lucide-react';
+import { Store, Building2, Plus, User, Power, Edit, MapPin, Phone, Users, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,66 +7,15 @@ import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/comp
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/ui/skeleton-loaders';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
+import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { useStores, useUpdateStoreStatus, usePrefetchStore, useDeleteStore, getStoreSlug } from '../api/useStores';
-import type { Store } from '../types';
+import type { Store as StoreType } from '../types';
 import { STORE_STATUS_OPTIONS, STORE_MODULE_OPTIONS } from '@/constants/options';
-import React from 'react';
-
-function CustomKpiCard({ title, value, subtitle, icon, colorClass = "bg-primary-500", iconColorClass = "text-white bg-white/20" }: {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: React.ReactNode;
-  colorClass?: string;
-  iconColorClass?: string;
-}) {
-  return (
-    <div className={`transition-all duration-300 relative overflow-hidden rounded-md shadow-sm hover:shadow-md border border-white/10 p-3 sm:p-4 flex flex-col justify-between min-h-[85px] w-full text-white group ${colorClass}`}>
-      {/* Decorative Background Shapes */}
-      <div className="absolute right-2 top-2 w-16 h-16 bg-white/20 rotate-45 rounded-xl mix-blend-overlay pointer-events-none group-hover:bg-white/30 transition-all duration-500"></div>
-      <div className="absolute -left-4 bottom-0 w-20 h-20 bg-black/10 rounded-full mix-blend-overlay pointer-events-none group-hover:bg-black/20 transition-all duration-500"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[2px] border-white/10 rounded-none mix-blend-overlay opacity-30 pointer-events-none rotate-12 scale-150"></div>
-
-      <div className="relative z-10 flex flex-col justify-between h-full flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <div className="flex-1 min-w-0">
-            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/80 select-none truncate block">
-              {title}
-            </span>
-            <div className="flex items-baseline min-w-0 mt-0.5">
-              <span className="text-lg sm:text-xl font-black tracking-tight font-display truncate block w-full text-white drop-shadow-sm" title={value.toString()}>
-                {value}
-              </span>
-            </div>
-          </div>
-          <div className={`p-2 rounded flex items-center justify-center shrink-0 transition-colors backdrop-blur-sm shadow-sm ${iconColorClass}`}>
-            {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: 'w-3.5 h-3.5 sm:w-4 sm:h-4' }) : icon}
-          </div>
-        </div>
-        
-        {subtitle && (
-          <div className="mt-auto min-w-0 pt-1.5 border-t border-white/20">
-            <span className="text-[8px] sm:text-[9px] font-semibold text-white/70 block truncate" title={subtitle}>
-              {subtitle}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 const EmptyStoreIllustration = () => (
-  <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 dark:text-slate-600 mb-2">
-    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" strokeWidth="1" fill="currentColor" fillOpacity="0.1" />
-    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    <path d="M12 9v4" />
-    <path d="M12 17h.01" />
-    <path d="M6 13h.01" />
-    <path d="M6 17h.01" />
-    <path d="M18 13h.01" />
-    <path d="M18 17h.01" />
-  </svg>
+  <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 flex items-center justify-center text-primary-500 shadow-sm mb-3">
+    <Store className="w-8 h-8 stroke-[1.75]" />
+  </div>
 );
 
 export default function StoreDashboardPage() {
@@ -74,7 +23,7 @@ export default function StoreDashboardPage() {
   const prefetchStore = usePrefetchStore();
   const deleteStore = useDeleteStore();
 
-  const [storeToDelete, setStoreToDelete] = useState<Store | null>(null);
+  const [storeToDelete, setStoreToDelete] = useState<StoreType | null>(null);
 
   // Filters State
   const [search, setSearch] = useState('');
@@ -98,7 +47,7 @@ export default function StoreDashboardPage() {
 
   const updateStatus = useUpdateStoreStatus();
 
-  const handleToggleStatus = (store: Store) => {
+  const handleToggleStatus = (store: StoreType) => {
     updateStatus.mutate({ id: store.id, isActive: !store.isActive });
   };
 
@@ -116,7 +65,7 @@ export default function StoreDashboardPage() {
   const inactiveCount = stores.filter(s => !s.isActive).length;
   const totalStaffCount = stores.reduce((acc, curr) => acc + (curr._count?.users || 0), 0);
 
-  const columns: ColumnDef<Store>[] = useMemo(() => [
+  const columns: ColumnDef<StoreType>[] = useMemo(() => [
     {
       header: 'Franchise Store',
       accessorKey: 'name',
@@ -192,14 +141,12 @@ export default function StoreDashboardPage() {
             handleToggleStatus(store);
           }}
           disabled={updateStatus.isPending}
-          className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500 focus:ring-offset-1 disabled:opacity-50 ${
-            store.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
-          }`}
+          className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500 focus:ring-offset-1 disabled:opacity-50 ${store.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+            }`}
         >
           <span
-            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-              store.isActive ? 'translate-x-3.5' : 'translate-x-0.5'
-            }`}
+            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${store.isActive ? 'translate-x-3.5' : 'translate-x-0.5'
+              }`}
           />
         </button>
       ),
@@ -243,7 +190,7 @@ export default function StoreDashboardPage() {
   return (
     <div className="min-h-screen text-slate-900 dark:text-slate-200">
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-4 space-y-4">
-        
+
         {/* ── Analytics Row ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <CustomKpiCard
@@ -298,7 +245,7 @@ export default function StoreDashboardPage() {
             options={STORE_MODULE_OPTIONS}
           />
           <FilterReset onClick={handleResetFilters} />
-          
+
           <div className="ml-auto">
             <Button size="sm" onClick={() => navigate('/stores/create')} className="bg-primary-600 hover:bg-primary-700 text-white shadow-sm h-9 px-4 text-xs font-bold tracking-wide rounded-md transition-colors shrink-0">
               <Plus className="h-4 w-4 mr-1.5" />

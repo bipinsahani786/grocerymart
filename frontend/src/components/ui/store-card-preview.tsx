@@ -21,7 +21,7 @@ export interface StoreCardPreviewProps {
   className?: string;
 }
 
-type CardThemeKey = 'emerald' | 'sapphire' | 'gold' | 'ruby' | 'violet';
+type CardThemeKey = 'emerald' | 'sapphire' | 'gold' | 'ruby' | 'violet' | 'silver' | 'pearl';
 
 interface CardTheme {
   id: CardThemeKey;
@@ -33,13 +33,14 @@ interface CardTheme {
   swatchBg: string;
   pdfGradient: string;
   pdfBorder: string;
+  isLight?: boolean;
 }
 
 const CARD_THEMES: CardTheme[] = [
   {
     id: 'emerald',
     label: 'Titanium Emerald',
-    cardGradient: 'from-slate-950 via-slate-900 to-emerald-950',
+    cardGradient: 'from-slate-950 via-slate-900 to-emerald-950 text-white',
     borderColor: 'border-amber-500/30',
     glowColor: 'bg-emerald-500/20',
     brandGradient: 'from-emerald-400 via-teal-200 to-cyan-400',
@@ -50,7 +51,7 @@ const CARD_THEMES: CardTheme[] = [
   {
     id: 'sapphire',
     label: 'Midnight Sapphire',
-    cardGradient: 'from-slate-950 via-slate-900 to-blue-950',
+    cardGradient: 'from-slate-950 via-slate-900 to-blue-950 text-white',
     borderColor: 'border-cyan-400/40',
     glowColor: 'bg-blue-500/20',
     brandGradient: 'from-cyan-400 via-sky-200 to-indigo-400',
@@ -61,7 +62,7 @@ const CARD_THEMES: CardTheme[] = [
   {
     id: 'gold',
     label: 'Obsidian Gold',
-    cardGradient: 'from-black via-zinc-950 to-amber-950',
+    cardGradient: 'from-black via-zinc-950 to-amber-950 text-white',
     borderColor: 'border-amber-400/60',
     glowColor: 'bg-amber-500/20',
     brandGradient: 'from-amber-300 via-yellow-200 to-orange-400',
@@ -72,7 +73,7 @@ const CARD_THEMES: CardTheme[] = [
   {
     id: 'ruby',
     label: 'Ruby Quartz',
-    cardGradient: 'from-slate-950 via-slate-900 to-rose-950',
+    cardGradient: 'from-slate-950 via-slate-900 to-rose-950 text-white',
     borderColor: 'border-rose-400/40',
     glowColor: 'bg-rose-500/20',
     brandGradient: 'from-rose-400 via-pink-200 to-purple-400',
@@ -83,13 +84,37 @@ const CARD_THEMES: CardTheme[] = [
   {
     id: 'violet',
     label: 'Violet Dusk',
-    cardGradient: 'from-slate-950 via-slate-900 to-purple-950',
+    cardGradient: 'from-slate-950 via-slate-900 to-purple-950 text-white',
     borderColor: 'border-violet-400/40',
     glowColor: 'bg-purple-500/20',
     brandGradient: 'from-purple-400 via-fuchsia-200 to-indigo-400',
     swatchBg: 'bg-gradient-to-tr from-purple-600 to-fuchsia-400',
     pdfGradient: 'linear-gradient(135deg, #090d16 0%, #0f172a 40%, #581c87 80%, #3b0764 100%)',
     pdfBorder: '2px solid rgba(192, 132, 252, 0.5)',
+  },
+  {
+    id: 'silver',
+    label: 'Silver Titanium',
+    cardGradient: 'from-slate-100 via-slate-200 to-slate-300 text-slate-900',
+    borderColor: 'border-slate-400/80',
+    glowColor: 'bg-primary-500/10',
+    brandGradient: 'from-slate-900 via-slate-800 to-primary-700',
+    swatchBg: 'bg-gradient-to-tr from-slate-400 to-slate-200',
+    pdfGradient: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+    pdfBorder: '2px solid rgba(100, 116, 139, 0.6)',
+    isLight: true,
+  },
+  {
+    id: 'pearl',
+    label: 'Gold Pearl',
+    cardGradient: 'from-amber-50 via-yellow-100 to-amber-200 text-amber-950',
+    borderColor: 'border-amber-400/80',
+    glowColor: 'bg-amber-400/20',
+    brandGradient: 'from-amber-900 via-amber-800 to-yellow-800',
+    swatchBg: 'bg-gradient-to-tr from-yellow-400 to-amber-200',
+    pdfGradient: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%)',
+    pdfBorder: '2px solid rgba(245, 158, 11, 0.7)',
+    isLight: true,
   },
 ];
 
@@ -335,7 +360,7 @@ export function StoreCardPreview({
 
       {/* Dynamic Colored ATM Card Container */}
       <div
-        className={`w-full aspect-[1.586/1] rounded-2xl bg-gradient-to-br ${currentTheme.cardGradient} p-4 sm:p-5 text-white shadow-2xl border ${currentTheme.borderColor} relative overflow-hidden flex flex-col justify-between group transition-all duration-500`}
+        className={`w-full aspect-[1.586/1] rounded-2xl bg-gradient-to-br ${currentTheme.cardGradient} p-4 sm:p-5 shadow-2xl border ${currentTheme.borderColor} relative overflow-hidden flex flex-col justify-between group transition-all duration-500`}
       >
         {/* Diagonal Holographic Gloss Sheen Line */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none opacity-40 transform -skew-x-12" />
@@ -351,7 +376,7 @@ export function StoreCardPreview({
               <div className="w-3 h-2 rounded-[2px] border border-slate-900/30 bg-amber-300/40" />
             </div>
             {/* Contactless Wifi Icon */}
-            <div className="text-amber-300/80 font-bold text-xs flex items-center">
+            <div className="text-amber-500 font-bold text-xs flex items-center">
               📡
             </div>
           </div>
@@ -363,7 +388,7 @@ export function StoreCardPreview({
             >
               GROCERYMART
             </span>
-            <span className="block text-[7px] tracking-widest text-slate-400 uppercase font-bold -mt-0.5">
+            <span className={`block text-[7px] tracking-widest uppercase font-bold -mt-0.5 ${currentTheme.isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               FRANCHISE CARD
             </span>
           </div>
@@ -371,31 +396,31 @@ export function StoreCardPreview({
 
         {/* Middle Row: Store Name & Address */}
         <div className="my-auto relative z-10 space-y-0.5">
-          <h3 className="font-mono tracking-widest text-sm sm:text-base font-bold text-white uppercase drop-shadow-md truncate">
+          <h3 className={`font-mono tracking-widest text-sm sm:text-base font-bold uppercase drop-shadow-md truncate ${currentTheme.isLight ? 'text-slate-900' : 'text-white'}`}>
             {name || 'NEW FRANCHISE STORE'}
           </h3>
-          <p className="text-[10px] text-slate-300/90 font-medium truncate flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+          <p className={`text-[10px] font-medium truncate flex items-center gap-1 ${currentTheme.isLight ? 'text-slate-700' : 'text-slate-300/90'}`}>
+            <MapPin className="w-3 h-3 text-emerald-500 shrink-0" />
             {address || 'Address pending entry...'}
           </p>
         </div>
 
         {/* Bottom Row: Metadata & Active Modules */}
-        <div className="pt-2 border-t border-white/10 flex items-end justify-between relative z-10 text-[9px]">
+        <div className={`pt-2 border-t flex items-end justify-between relative z-10 text-[9px] ${currentTheme.isLight ? 'border-slate-400/30' : 'border-white/10'}`}>
           <div>
-            <span className="text-[7px] text-amber-400/90 font-extrabold tracking-widest uppercase block">
+            <span className={`text-[7px] font-extrabold tracking-widest uppercase block ${currentTheme.isLight ? 'text-amber-700' : 'text-amber-400/90'}`}>
               STORE MANAGER
             </span>
-            <span className="font-bold text-slate-100 uppercase truncate max-w-[100px] block">
+            <span className={`font-bold uppercase truncate max-w-[100px] block ${currentTheme.isLight ? 'text-slate-900' : 'text-slate-100'}`}>
               {managerName || 'UNASSIGNED'}
             </span>
           </div>
 
           <div>
-            <span className="text-[7px] text-amber-400/90 font-extrabold tracking-widest uppercase block">
+            <span className={`text-[7px] font-extrabold tracking-widest uppercase block ${currentTheme.isLight ? 'text-amber-700' : 'text-amber-400/90'}`}>
               HOURS & RADIUS
             </span>
-            <span className="font-bold text-slate-100">
+            <span className={`font-bold ${currentTheme.isLight ? 'text-slate-900' : 'text-slate-100'}`}>
               {openingTime}-{closingTime} | {radiusKm || 0}KM
             </span>
           </div>
