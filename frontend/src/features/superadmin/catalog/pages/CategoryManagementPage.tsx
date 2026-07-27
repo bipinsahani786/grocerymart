@@ -20,7 +20,6 @@ export function CategoryManagementPage() {
     createCategory,
     updateCategory,
     deleteCategory,
-    uploadImage,
   } = useMasterCatalog();
 
   // Modal State
@@ -84,21 +83,63 @@ export function CategoryManagementPage() {
     setImageUrl('');
   };
 
-  // Image Upload Handler
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image Upload Handler (Failsafe Canvas Compression & Data URL Generation)
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    try {
-      setIsUploading(true);
-      const url = await uploadImage.mutateAsync(file);
-      setImageUrl(url);
-      toast.success('Category image uploaded successfully');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to upload image');
-    } finally {
+    setIsUploading(true);
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = Math.round(width);
+        canvas.height = Math.round(height);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+          setImageUrl(compressedDataUrl);
+          toast.success('Category image uploaded successfully');
+        } else {
+          setImageUrl(event.target?.result as string);
+        }
+        setIsUploading(false);
+      };
+
+      img.onerror = () => {
+        setImageUrl(event.target?.result as string);
+        setIsUploading(false);
+      };
+
+      img.src = event.target?.result as string;
+    };
+
+    reader.onerror = () => {
       setIsUploading(false);
-    }
+      toast.error('Failed to read image file');
+    };
+
+    reader.readAsDataURL(file);
   };
 
   // Form Submit Handler (Create & Update)
