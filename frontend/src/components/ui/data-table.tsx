@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, FolderSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { cn } from '@/lib/utils';
 
 export interface ColumnDef<T> {
@@ -193,13 +193,11 @@ export function DataTable<T>({
       {(searchable || headerActions) && (
         <div className="p-4 border-b border-slate-200 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           {searchable && (
-            <div className="w-full sm:w-72">
-              <Input
+            <div className="w-full sm:w-80">
+              <SearchBar
                 value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={handleSearchChange}
                 placeholder={searchPlaceholder}
-                icon={<Search className="w-4 h-4" />}
-                className="h-9 text-sm"
               />
             </div>
           )}
@@ -263,8 +261,14 @@ export function DataTable<T>({
               <tr>
                 <td colSpan={columns.length} className="px-4 py-16 text-center text-slate-500">
                   <div className="flex flex-col items-center justify-center">
-                    {emptyIcon && <div className="mb-3 opacity-30">{emptyIcon}</div>}
-                    <p className="text-sm font-medium">{emptyMessage}</p>
+                    {emptyIcon ? (
+                      <div className="mb-1">{emptyIcon}</div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/60 flex items-center justify-center text-slate-400 dark:text-zinc-500 shadow-xs mb-3">
+                        <FolderSearch className="w-7 h-7 stroke-[1.75]" />
+                      </div>
+                    )}
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-200">{emptyMessage}</h4>
                   </div>
                 </td>
               </tr>

@@ -22,6 +22,43 @@ export class CatalogService {
     }
   }
 
+  async updateMasterCategory(id, data) {
+    try {
+      const result = await catalogRepository.updateMasterCategory(id, data);
+      return {
+        success: true,
+        data: result,
+        message: 'Master category updated successfully'
+      };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new AppError('Master category with this name already exists', 400);
+      }
+      if (error.code === 'P2025') {
+        throw new AppError('Master category not found', 404);
+      }
+      throw error;
+    }
+  }
+
+  async deleteMasterCategory(id) {
+    try {
+      await catalogRepository.deleteMasterCategory(id);
+      return {
+        success: true,
+        message: 'Master category deleted successfully'
+      };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new AppError('Master category not found', 404);
+      }
+      if (error.code === 'P2003') {
+        throw new AppError('Cannot delete category with active child categories or products', 400);
+      }
+      throw error;
+    }
+  }
+
   async getMasterProducts(filters) {
     return await catalogRepository.getMasterProducts(filters);
   }

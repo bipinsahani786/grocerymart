@@ -321,7 +321,10 @@ export function Sidebar({ className }: { className?: string }) {
 
       <div
         className={cn(
-          "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-card border-r border-slate-200 dark:border-slate-700/80 flex-col z-50 shrink-0 transition-all duration-200 ease-out flex shadow-[4px_0_24px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_24px_rgba(255,255,255,0.06)]",
+          "fixed lg:static inset-y-0 left-0 h-screen flex-col z-50 shrink-0 transition-all duration-200 ease-out flex shadow-[4px_0_24px_rgba(0,0,0,0.08)]",
+          isDark
+            ? "bg-[#1e293b] text-slate-100 border-r border-slate-700/80 shadow-[4px_0_24px_rgba(0,0,0,0.4)]"
+            : "bg-white text-slate-900 border-r border-slate-200",
           isSidebarCollapsed
             ? "w-[190px] lg:w-[56px] -translate-x-full lg:translate-x-0"
             : "w-[190px] translate-x-0",

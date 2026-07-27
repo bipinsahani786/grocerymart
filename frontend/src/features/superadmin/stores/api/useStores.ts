@@ -4,6 +4,16 @@ import api from '@/lib/api';
 import type { Store, CreateStorePayload } from '../types';
 import { API_ENDPOINTS } from '@/constants/api';
 
+export const getStoreSlug = (store: { id: string; name: string }) => {
+  if (!store || !store.name) return store?.id || '';
+  const slugName = store.name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+  return slugName || store.id;
+};
+
 interface StoreQueryParams {
   page?: number;
   limit?: number;
@@ -102,6 +112,34 @@ export const useUpdateStoreStatus = () => {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to update status');
+    },
+  });
+};
+
+export const useDeleteStore = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(API_ENDPOINTS.STORE_DETAIL(id));
+      return { id, data };
+    },
+    onSuccess: ({ id }) => {
+      // Zero-delay instant UI update
+      queryClient.setQueriesData({ queryKey: ['admin', 'stores'] }, (old: any) => {
+        if (!old || !old.data) return old;
+        return {
+          ...old,
+          data: old.data.filter((s: Store) => s.id !== id),
+          meta: old.meta ? { ...old.meta, total: Math.max(0, old.meta.total - 1) } : old.meta,
+        };
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.refetchQueries({ queryKey: ['admin', 'stores'] });
+      toast.success('Store deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete store');
     },
   });
 };

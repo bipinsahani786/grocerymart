@@ -96,7 +96,7 @@ export function SearchableSelect({
           }
         }}
         className={cn(
-          "flex h-11 w-full items-center justify-between rounded-xl border border-border bg-input-bg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all text-left shadow-sm font-medium",
+          "flex h-8 w-full items-center justify-between rounded-lg border border-border bg-input-bg px-3 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all text-left shadow-sm font-medium",
           error && "border-rose-500 focus:ring-rose-500/10 focus:border-rose-500",
           className
         )}

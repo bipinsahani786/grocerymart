@@ -49,6 +49,26 @@ export function useMasterCatalog() {
     },
   });
 
+  const updateCategory = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<MasterCategory> }) => {
+      const { data } = await api.put(`/admin/catalog/categories/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-categories'] });
+    },
+  });
+
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(`/admin/catalog/categories/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-categories'] });
+    },
+  });
+
   const createProduct = useMutation({
     mutationFn: async (payload: MasterProduct) => {
       const { data } = await api.post('/admin/catalog/products', payload);
@@ -81,6 +101,8 @@ export function useMasterCatalog() {
     isLoadingProducts: productsQuery.isLoading,
 
     createCategory,
+    updateCategory,
+    deleteCategory,
     createProduct,
     uploadImage,
   };

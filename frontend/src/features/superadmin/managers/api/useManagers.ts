@@ -112,3 +112,28 @@ export const useUpdateManagerProfile = () => {
     },
   });
 };
+
+export const useDeleteManager = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(`/admin/managers/${id}`);
+      return { id, data };
+    },
+    onSuccess: ({ id }) => {
+      // Zero-delay instant UI update
+      queryClient.setQueriesData({ queryKey: ['admin', 'managers'] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((m: StoreManager) => m.id !== id);
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.refetchQueries({ queryKey: ['admin', 'managers'] });
+      toast.success('Store manager deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete store manager');
+    },
+  });
+};

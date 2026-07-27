@@ -115,4 +115,6 @@ router.put("/:id", validate(storeValidation.updateStore), storesController.updat
  */
 router.patch("/:id/status", validate(storeValidation.updateStatus), storesController.updateStoreStatus);
 
+router.delete("/:id", storesController.deleteStore);
+
 export default router;

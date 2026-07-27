@@ -45,8 +45,8 @@ export interface CreateStorePayload {
   posEnabled: boolean;
   deliveryEnabled: boolean;
   clickCollectEnabled: boolean;
-  managerName: string;
-  managerEmail: string;
-  managerPhone: string;
-  managerPassword: string;
+  managerName?: string | null;
+  managerEmail?: string | null;
+  managerPhone?: string | null;
+  managerPassword?: string | null;
 }
