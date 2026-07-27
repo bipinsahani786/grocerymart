@@ -181,6 +181,59 @@ model Store {
 }
 
 // ─── CATALOG ────────────────────────────────────────────────────────────────
+
+model MasterCategory {
+  id        String           @id @default(uuid())
+  name      String           @unique
+  parentId  String?          @map("parent_id")
+  parent    MasterCategory?  @relation("MasterCatTree", fields: [parentId], references: [id])
+  children  MasterCategory[] @relation("MasterCatTree")
+  imageUrl  String?
+  sortOrder Int              @default(0)
+  products  MasterProduct[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@map("master_categories")
+}
+
+model MasterProduct {
+  id              String                 @id @default(uuid())
+  name            String
+  sku             String?                @unique
+  barcode         String?                @unique
+  brand           String?
+  description     String?
+  categoryId      String                 @map("category_id")
+  category        MasterCategory         @relation(fields: [categoryId], references: [id])
+  productType     String                 @default("simple") @map("product_type") // simple, variant, loose
+  unit            String                 @default("pcs")
+  basePrice       Float                  @default(0) @map("base_price")
+  mrp             Float?
+  taxClassId      String?                @map("tax_class_id")
+  taxClass        TaxClass?              @relation(fields: [taxClassId], references: [id])
+  hsnCode         String?                @map("hsn_code")
+  imageUrls       String[]               @default([]) @map("image_urls")
+  isActive        Boolean                @default(true) @map("is_active")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  variants        MasterProductVariant[]
+  
+  @@map("master_products")
+}
+
+model MasterProductVariant {
+  id          String         @id @default(uuid())
+  productId   String         @map("product_id")
+  product     MasterProduct  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name        String         // "500ml", "Red-L"
+  barcode     String?        @unique
+  price       Float
+  mrp         Float?
+  imageUrl    String?        @map("image_url")
+
+  @@map("master_product_variants")
+}
 model Category {
   id        String    @id @default(uuid())
   storeId   String    @map("store_id")
@@ -226,6 +279,9 @@ model Product {
   salesCount            Int              @default(0) // for popularity sort
   isActive              Boolean          @default(true)
   createdAt             DateTime         @default(now())
+  
+  masterProductId       String?          @map("master_product_id")
+
   variants              ProductVariant[]
   inventory             StoreInventory[]
   orderItems            OrderItem[]
@@ -526,6 +582,7 @@ model TaxClass {
   isActive    Boolean   @default(true) @map("is_active")
   
   products    Product[]
+  masterProducts MasterProduct[]
   rates       TaxRate[]
   
   createdAt   DateTime  @default(now()) @map("created_at")

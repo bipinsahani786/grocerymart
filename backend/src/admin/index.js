@@ -8,7 +8,7 @@ import dashboardRoutes from "./dashboard/dashboard.routes.js";
 import storesRoutes from "./stores/stores.routes.js";
 import managersRoutes from "./managers/managers.routes.js";
 import taxesRoutes from "./taxes/taxes.routes.js";
-
+import catalogRoutes from "./catalog/catalog.routes.js";
 const router = express.Router();
 
 // All admin routes require JWT authentication + admin role verification
@@ -20,7 +20,7 @@ router.use("/users", usersRoutes);
 router.use("/stores", storesRoutes);
 router.use("/managers", managersRoutes);
 router.use("/taxes", taxesRoutes);
-
+router.use("/catalog", catalogRoutes);
 
 router.use("/settings", settingsRoutes);
 router.use("/logs/transactions", ledgerRoutes);

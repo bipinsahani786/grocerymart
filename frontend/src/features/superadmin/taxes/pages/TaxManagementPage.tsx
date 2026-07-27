@@ -99,6 +99,37 @@ export function TaxManagementPage() {
                         ) : (
                           <span className="text-xs font-medium text-amber-600">No active rate</span>
                         )}
+
+                        {/* Display Scheduled Future Rates */}
+                        {(() => {
+                          const futureRates = tax.rates.filter(r => new Date(r.effectiveFrom) > new Date());
+                          if (futureRates.length === 0) return null;
+                          return (
+                            <div className="mt-3 space-y-1.5">
+                              <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
+                                <CalendarClock className="w-3 h-3" />
+                                Scheduled
+                              </div>
+                              {futureRates.map(fr => {
+                                const total = fr.components.reduce((sum, c) => sum + c.rate, 0);
+                                return (
+                                  <div key={fr.id} className="text-xs flex flex-col p-2 bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/10 rounded-md">
+                                    <span className="text-indigo-900 dark:text-indigo-300 font-semibold mb-1">
+                                      {total}% <span className="text-indigo-600/70 dark:text-indigo-400/70 font-normal">from {new Date(fr.effectiveFrom).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                    </span>
+                                    <div className="flex flex-wrap gap-1">
+                                      {fr.components.map(c => (
+                                        <span key={c.id} className="text-[9px] font-medium text-indigo-700 dark:text-indigo-400 bg-white dark:bg-indigo-500/10 px-1.5 py-0.5 rounded-sm border border-indigo-100/50 dark:border-indigo-500/20">
+                                          {c.name}: {c.rate}%
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-4 px-4 align-top text-center">
                         <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300">

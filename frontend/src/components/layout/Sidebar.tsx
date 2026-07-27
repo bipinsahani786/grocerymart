@@ -18,6 +18,7 @@ import {
   Settings,
   Search,
   ShieldAlert,
+  FolderTree,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -166,6 +167,25 @@ export const superadminMenuGroups = [
         icon: FileText,
         permission: "view_dashboard",
         subtitle: "Manage dynamic tax rules and HSN tax classes",
+      },
+    ],
+  },
+  {
+    title: "CATALOG",
+    items: [
+      {
+        name: "Master Categories",
+        href: "/superadmin/catalog/categories",
+        icon: FolderTree,
+        permission: "view_dashboard",
+        subtitle: "Global category tree for the platform",
+      },
+      {
+        name: "Master Products",
+        href: "/superadmin/catalog/products",
+        icon: Package,
+        permission: "view_dashboard",
+        subtitle: "Global products available for store import",
       },
     ],
   },
