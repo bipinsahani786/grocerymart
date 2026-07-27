@@ -95,6 +95,12 @@ export class StoresRepository {
       data: { isActive },
     });
   }
+
+  async deleteStore(id) {
+    return await prisma.store.delete({
+      where: { id },
+    });
+  }
 }
 
 export const storesRepository = new StoresRepository();

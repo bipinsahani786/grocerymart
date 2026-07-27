@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Building2, Plus,  User, Power, Edit, MapPin, Phone, Users } from 'lucide-react';
+import { Building2, Plus, User, Power, Edit, MapPin, Phone, Users, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/ui/skeleton-loaders';
-import { useStores, useUpdateStoreStatus, usePrefetchStore } from '../api/useStores';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
+import { useStores, useUpdateStoreStatus, usePrefetchStore, useDeleteStore, getStoreSlug } from '../api/useStores';
 import type { Store } from '../types';
 import { STORE_STATUS_OPTIONS, STORE_MODULE_OPTIONS } from '@/constants/options';
 import React from 'react';
@@ -71,6 +72,9 @@ const EmptyStoreIllustration = () => (
 export default function StoreDashboardPage() {
   const navigate = useNavigate();
   const prefetchStore = usePrefetchStore();
+  const deleteStore = useDeleteStore();
+
+  const [storeToDelete, setStoreToDelete] = useState<Store | null>(null);
 
   // Filters State
   const [search, setSearch] = useState('');
@@ -208,14 +212,28 @@ export default function StoreDashboardPage() {
           <Button
             variant="outline"
             size="sm"
-            className="h-7 w-7 p-0 text-slate-500 hover:text-primary-600 hover:bg-primary-50"
+            className="h-7 w-7 p-0 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/40"
+            title="Edit Store"
             onMouseEnter={() => prefetchStore(store.id)}
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/stores/edit/${store.id}`);
+              navigate(`/stores/edit/${getStoreSlug(store)}`);
             }}
           >
             <Edit className="w-3.5 h-3.5" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+            title="Delete Store"
+            onClick={(e) => {
+              e.stopPropagation();
+              setStoreToDelete(store);
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       ),
@@ -306,6 +324,21 @@ export default function StoreDashboardPage() {
             emptyMessage="No stores found matching your filters."
           />
         </div>
+
+        {/* ── Confirm Delete Store Modal (Direct Confirm / Cancel) ── */}
+        <DeleteConfirmModal
+          isOpen={!!storeToDelete}
+          onClose={() => setStoreToDelete(null)}
+          onConfirm={() => {
+            if (storeToDelete) {
+              deleteStore.mutate(storeToDelete.id);
+            }
+          }}
+          title="Delete Franchise Store"
+          description="Are you sure you want to delete this store? This action cannot be undone."
+          itemName={storeToDelete?.name}
+        />
+
       </div>
     </div>
   );

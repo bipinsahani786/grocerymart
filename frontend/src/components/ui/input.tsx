@@ -5,13 +5,45 @@ import { Eye, EyeOff } from "lucide-react"
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   icon?: React.ReactNode;
+  allowNegative?: boolean;
+  disableArrowKeys?: boolean;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, error, icon, ...props }, ref) => {
+  ({ className, type, error, icon, allowNegative = false, disableArrowKeys = true, onWheel, onKeyDown, onChange, min, ...props }, ref) => {
     const [showPassword, setShowPassword] = React.useState(false);
     const isPassword = type === "password";
+    const isNumber = type === "number";
     const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
+    const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+      if (isNumber) {
+        e.currentTarget.blur();
+      }
+      if (onWheel) onWheel(e);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (isNumber) {
+        if (disableArrowKeys && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+          e.preventDefault();
+        }
+        if (!allowNegative && (e.key === '-' || e.key === 'e' || e.key === 'E')) {
+          e.preventDefault();
+        }
+      }
+      if (onKeyDown) onKeyDown(e);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (isNumber && !allowNegative && e.target.value !== '') {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val) && val < 0) {
+          e.target.value = Math.abs(val).toString();
+        }
+      }
+      if (onChange) onChange(e);
+    };
 
     return (
       <div className="w-full">
@@ -23,8 +55,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             type={inputType}
+            min={isNumber && !allowNegative ? (min ?? 0) : min}
+            onWheel={handleWheel}
+            onKeyDown={handleKeyDown}
+            onChange={handleChange}
             className={cn(
               "block w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md text-sm text-foreground placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors",
+              isNumber && "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]",
               icon ? "pl-9" : "pl-3",
               isPassword ? "pr-9" : "pr-3",
               error && "border-red-400 focus:ring-red-500/20 focus:border-red-500",

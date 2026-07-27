@@ -44,7 +44,7 @@ export default function StoreManagerDashboardPage() {
   const store = user?.store;
   const { products, orders, staff } = useMockStore();
   const { theme } = useThemeStore();
-  const isDark = theme === "dark" || theme === "semi-dark";
+  const isDark = theme === "dark";
 
   const formattedStoreName = useMemo(() => {
     const rawName = store?.name || "Sector 62 Super Store";

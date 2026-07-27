@@ -74,6 +74,15 @@ export class ManagersService {
       message: "Store manager profile updated successfully",
     };
   }
+
+  async deleteManager(id) {
+    const data = await managersRepository.deleteManager(id);
+    return {
+      success: true,
+      data,
+      message: "Store manager deleted successfully",
+    };
+  }
 }
 
 export const managersService = new ManagersService();

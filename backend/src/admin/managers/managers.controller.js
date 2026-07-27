@@ -31,6 +31,12 @@ export class ManagersController {
     const result = await managersService.updateManagerProfile(id, req.body);
     res.json(result);
   });
+
+  deleteManager = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const result = await managersService.deleteManager(id);
+    res.json(result);
+  });
 }
 
 export const managersController = new ManagersController();

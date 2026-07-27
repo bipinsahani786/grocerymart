@@ -133,6 +133,15 @@ export class StoresService {
       message: "Franchise Store and Manager created successfully",
     };
   }
+
+  async deleteStore(id) {
+    const data = await storesRepository.deleteStore(id);
+    return {
+      success: true,
+      data,
+      message: "Store deleted successfully",
+    };
+  }
 }
 
 export const storesService = new StoresService();

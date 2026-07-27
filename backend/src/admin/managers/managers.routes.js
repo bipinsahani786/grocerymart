@@ -134,4 +134,6 @@ router.put("/:id", validate(updateManagerProfileSchema), managersController.upda
  */
 router.patch("/:id/password", validate(updateManagerPasswordSchema), managersController.updateManagerPassword);
 
+router.delete("/:id", managersController.deleteManager);
+
 export default router;

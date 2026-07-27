@@ -12,6 +12,7 @@ interface DeleteConfirmModalProps {
   description: string;
   confirmText?: string;
   itemName?: string;
+  requireTyping?: boolean;
 }
 
 export function DeleteConfirmModal({
@@ -22,6 +23,7 @@ export function DeleteConfirmModal({
   description,
   confirmText = 'DELETE',
   itemName,
+  requireTyping = false,
 }: DeleteConfirmModalProps) {
   const [inputValue, setInputValue] = useState('');
 
@@ -33,13 +35,13 @@ export function DeleteConfirmModal({
   }, [isOpen]);
 
   const handleConfirm = () => {
-    if (inputValue === confirmText) {
+    if (!requireTyping || inputValue === confirmText) {
       onConfirm();
       onClose();
     }
   };
 
-  const isConfirmed = inputValue === confirmText;
+  const isConfirmed = !requireTyping || inputValue === confirmText;
 
   const footer = (
     <div className="flex justify-end gap-3 w-full">
@@ -95,18 +97,20 @@ export function DeleteConfirmModal({
           </div>
         )}
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-            Type <span className="font-mono bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-rose-600 dark:text-rose-400 font-extrabold">{confirmText}</span> to confirm deletion
-          </label>
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={`Type ${confirmText}`}
-            className="h-10 text-sm font-medium"
-            autoFocus
-          />
-        </div>
+        {requireTyping && (
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Type <span className="font-mono bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-rose-600 dark:text-rose-400 font-extrabold">{confirmText}</span> to confirm deletion
+            </label>
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={`Type ${confirmText}`}
+              className="h-10 text-sm font-medium"
+              autoFocus
+            />
+          </div>
+        )}
       </div>
     </Modal>
   );

@@ -21,6 +21,11 @@ export class StoresController {
     const result = await storesService.updateStoreStatus(req.params.id, req.body.isActive);
     res.json(result);
   });
+
+  deleteStore = catchAsync(async (req, res) => {
+    const result = await storesService.deleteStore(req.params.id);
+    res.json(result);
+  });
 }
 
 export const storesController = new StoresController();

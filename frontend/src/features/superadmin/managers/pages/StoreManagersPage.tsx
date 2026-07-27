@@ -1,5 +1,5 @@
 import { useState, type FormEvent, useMemo } from 'react';
-import { Mail, Phone, Plus, User, Lock, Power, Users, Edit, UserCheck, UserX } from 'lucide-react';
+import { Mail, Phone, Plus, User, Lock, Power, Users, Edit, UserCheck, UserX, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { Modal } from '@/components/ui/modal';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { useStores } from '../../stores/api/useStores';
-import { useCreateManager, useManagers, useUpdateManagerStatus, useUpdateManagerPassword, useUpdateManagerProfile, type CreateManagerPayload, type StoreManager } from '../api/useManagers';
+import { useCreateManager, useManagers, useUpdateManagerStatus, useUpdateManagerPassword, useUpdateManagerProfile, useDeleteManager, type CreateManagerPayload, type StoreManager } from '../api/useManagers';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -72,6 +73,7 @@ export default function StoreManagersPage() {
 
   const [editingManager, setEditingManager] = useState<StoreManager | null>(null);
   const [editForm, setEditForm] = useState<Partial<CreateManagerPayload>>({});
+  const [managerToDelete, setManagerToDelete] = useState<StoreManager | null>(null);
 
   const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; managerId: string; managerName: string }>({ isOpen: false, managerId: '', managerName: '' });
   const [newPassword, setNewPassword] = useState('');
@@ -83,6 +85,7 @@ export default function StoreManagersPage() {
   const updateStatus = useUpdateManagerStatus();
   const updatePassword = useUpdateManagerPassword();
   const updateProfile = useUpdateManagerProfile();
+  const deleteManager = useDeleteManager();
 
   const updateForm = <K extends keyof CreateManagerPayload>(key: K, value: CreateManagerPayload[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -225,6 +228,18 @@ export default function StoreManagersPage() {
               }}
             >
               <Lock className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+              title="Delete Manager"
+              onClick={(e) => {
+                e.stopPropagation();
+                setManagerToDelete(manager);
+              }}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
         );
@@ -451,6 +466,20 @@ export default function StoreManagersPage() {
           </div>
         </form>
       </Modal>
+
+      {/* ── Confirm Delete Store Manager Modal (Direct Confirm / Cancel) ── */}
+      <DeleteConfirmModal
+        isOpen={!!managerToDelete}
+        onClose={() => setManagerToDelete(null)}
+        onConfirm={() => {
+          if (managerToDelete) {
+            deleteManager.mutate(managerToDelete.id);
+          }
+        }}
+        title="Delete Store Manager"
+        description="Are you sure you want to delete this store manager account? This action cannot be undone."
+        itemName={managerToDelete?.name || managerToDelete?.email || 'Store Manager'}
+      />
     </div>
   );
 }

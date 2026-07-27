@@ -102,7 +102,7 @@ function App() {
     const root = window.document.documentElement;
     // Handle theme class
     root.classList.remove('light', 'dark', 'semi-dark');
-    if (theme === 'dark' || theme === 'semi-dark') {
+    if (theme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.add('light');
@@ -138,7 +138,7 @@ function App() {
             <Route path="/dashboard" element={<SuperadminRoute><SuperadminDashboard /></SuperadminRoute>} />
             <Route path="/stores" element={<SuperadminRoute><StoreDashboard /></SuperadminRoute>} />
             <Route path="/stores/create" element={<SuperadminRoute><CreateStorePage /></SuperadminRoute>} />
-            <Route path="/stores/edit/:id" element={<SuperadminRoute><EditStorePage /></SuperadminRoute>} />
+            <Route path="/stores/edit/:slugOrId" element={<SuperadminRoute><EditStorePage /></SuperadminRoute>} />
             <Route path="/store-managers" element={<SuperadminRoute><StoreManagers /></SuperadminRoute>} />
             <Route path="/superadmin/taxes" element={<SuperadminRoute><TaxManagementPage /></SuperadminRoute>} />
             <Route path="/superadmin/catalog/categories" element={<SuperadminRoute><CategoryManagementPage /></SuperadminRoute>} />

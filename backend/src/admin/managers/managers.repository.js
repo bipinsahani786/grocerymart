@@ -133,6 +133,12 @@ export class ManagersRepository {
       });
     });
   }
+
+  async deleteManager(id) {
+    return await prisma.user.delete({
+      where: { id },
+    });
+  }
 }
 
 export const managersRepository = new ManagersRepository();

@@ -15,7 +15,7 @@ export default function LoginPage() {
   const { appName, appLogo } = useAppStore();
   const { theme } = useThemeStore();
 
-  const isDark = theme === "dark" || theme === "semi-dark";
+  const isDark = theme === "dark";
 
   return (
     <div 
