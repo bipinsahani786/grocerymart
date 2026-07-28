@@ -18,19 +18,18 @@ export default function LoginPage() {
   const isDark = theme === "dark";
 
   return (
-    <div 
+    <div
       style={isDark ? defaultDarkPalette : defaultLightPalette}
-      className={`flex min-h-screen w-screen flex-col overflow-hidden font-sans selection:bg-brand-accent selection:text-brand-on-accent lg:flex-row transition-colors duration-300 ${
-      isDark ? "bg-brand-panel text-white" : "bg-cerulean text-white"
-    }`}>
-      
+      className={`flex min-h-screen w-screen flex-col overflow-hidden font-sans selection:bg-brand-accent selection:text-brand-on-accent lg:flex-row transition-colors duration-300 ${isDark ? "bg-brand-panel text-white" : "bg-cerulean text-white"
+        }`}>
+
       {/* Theme Toggle Button in top-right */}
       <div className="absolute top-6 right-6 z-50 animate-in fade-in duration-700">
         <ModeToggle />
       </div>
 
       {/* Left Panel: Redesigned Premium Brand Section */}
-      <div 
+      <div
         className="relative hidden lg:flex flex-col items-center justify-between text-foreground px-12 py-20 lg:w-[35%] lg:min-h-screen z-10 bg-white"
       >
         {/* Premium C-shaped curved divider extending rightwards */}
@@ -56,9 +55,8 @@ export default function LoginPage() {
           ) : (
             <svg
               viewBox="0 0 100 100"
-              className={`w-9 h-9 animate-[spin_45s_linear_infinite] transition-colors duration-300 ${
-                isDark ? "text-willow-green" : "text-cerulean"
-              }`}
+              className={`w-9 h-9 animate-[spin_45s_linear_infinite] transition-colors duration-300 ${isDark ? "text-willow-green" : "text-cerulean"
+                }`}
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
@@ -96,9 +94,8 @@ export default function LoginPage() {
                 cy="50"
                 r="8"
                 fill="currentColor"
-                className={`animate-pulse transition-colors duration-300 ${
-                  isDark ? "text-willow-green" : "text-cerulean"
-                }`}
+                className={`animate-pulse transition-colors duration-300 ${isDark ? "text-willow-green" : "text-cerulean"
+                  }`}
               />
               <circle cx="30" cy="30" r="3.5" fill="currentColor" />
               <circle cx="70" cy="30" r="3.5" fill="currentColor" />
@@ -112,10 +109,10 @@ export default function LoginPage() {
                 key={idx}
                 className={
                   idx % 2 === 1
-                    ? (isDark 
-                        ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1.5 animate-pulse" 
-                        : "bg-clip-text bg-gradient-to-r from-cerulean to-dark-cyan text-transparent ml-1.5"
-                      )
+                    ? (isDark
+                      ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1.5 animate-pulse"
+                      : "bg-clip-text bg-gradient-to-r from-cerulean to-dark-cyan text-transparent ml-1.5"
+                    )
                     : "text-zinc-900"
                 }
               >
@@ -130,10 +127,9 @@ export default function LoginPage() {
           {/* Customized Spiral Network Logo with rotating ring effect */}
           <div className="relative mb-8 flex h-44 w-44 items-center justify-center rounded-full p-3 shadow-2xl border border-zinc-200/60 bg-zinc-50/50 group">
             {/* Pulsing gradient glow behind logo */}
-            <div className={`absolute inset-0 rounded-full opacity-10 blur-xl group-hover:opacity-20 transition-all duration-300 bg-gradient-to-tr ${
-              isDark ? "from-willow-green to-seagrass" : "from-cerulean to-dark-cyan"
-            }`} />
-            
+            <div className={`absolute inset-0 rounded-full opacity-10 blur-xl group-hover:opacity-20 transition-all duration-300 bg-gradient-to-tr ${isDark ? "from-willow-green to-seagrass" : "from-cerulean to-dark-cyan"
+              }`} />
+
             {appLogo ? (
               <img
                 src={appLogo}
@@ -143,9 +139,8 @@ export default function LoginPage() {
             ) : (
               <svg
                 viewBox="0 0 100 100"
-                className={`w-32 h-32 animate-[spin_45s_linear_infinite] transition-colors duration-300 ${
-                  isDark ? "text-willow-green" : "text-cerulean"
-                }`}
+                className={`w-32 h-32 animate-[spin_45s_linear_infinite] transition-colors duration-300 ${isDark ? "text-willow-green" : "text-cerulean"
+                  }`}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
@@ -183,9 +178,8 @@ export default function LoginPage() {
                   cy="50"
                   r="8"
                   fill="currentColor"
-                  className={`animate-pulse transition-colors duration-300 ${
-                    isDark ? "text-willow-green" : "text-cerulean"
-                  }`}
+                  className={`animate-pulse transition-colors duration-300 ${isDark ? "text-willow-green" : "text-cerulean"
+                    }`}
                 />
                 <circle cx="30" cy="30" r="3.5" fill="currentColor" />
                 <circle cx="70" cy="30" r="3.5" fill="currentColor" />
@@ -203,10 +197,10 @@ export default function LoginPage() {
                   key={idx}
                   className={
                     idx % 2 === 1
-                      ? (isDark 
-                          ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-2" 
-                          : "bg-clip-text bg-gradient-to-r from-cerulean to-dark-cyan text-transparent ml-2"
-                        )
+                      ? (isDark
+                        ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-2"
+                        : "bg-clip-text bg-gradient-to-r from-cerulean to-dark-cyan text-transparent ml-2"
+                      )
                       : "text-zinc-900"
                   }
                 >
@@ -215,7 +209,7 @@ export default function LoginPage() {
               ))}
             </h1>
           </div>
-          
+
           <p className="mt-3 text-sm font-semibold leading-relaxed text-zinc-500">
             The intelligent retail dashboard. Access real-time billing logs, analytics, and stock records.
           </p>
@@ -234,16 +228,17 @@ export default function LoginPage() {
 
       {/* Right Panel: Styled Form Section */}
       <div className="flex w-full flex-1 flex-col items-center justify-center p-4 md:p-8 lg:w-[65%] z-0">
-        <div className={`w-full max-w-md space-y-4 p-8 rounded-3xl shadow-2xl border transition-all duration-300 animate-in fade-in duration-700 ${
-          isDark 
-            ? "bg-slate-900/40 backdrop-blur-md border-white/10 text-white" 
-            : "bg-white/90 backdrop-blur-md border-white/20 text-white"
-        }`}>
-          
+        <div className={`w-full max-w-md space-y-4 p-8 rounded-3xl shadow-2xl border transition-all duration-300 animate-in fade-in duration-700 ${isDark
+            ? "bg-slate-900/90 backdrop-blur-md border-slate-800 text-white"
+            : "bg-white backdrop-blur-md border-slate-200/80 text-slate-900 shadow-slate-200/50"
+          }`}>
+
           {/* Mobile-only Brand Header (hidden on desktop) */}
           <div className="flex flex-col items-center justify-center text-center lg:hidden mb-4 animate-in fade-in slide-in-from-top-6 duration-700">
-            <div 
-              className="mb-3 flex h-20 w-20 items-center justify-center rounded-full p-1 shadow-md border border-overlay-border bg-white/10"
+            <div
+              className={`mb-3 flex h-20 w-20 items-center justify-center rounded-full p-1 shadow-md border ${
+                isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-slate-50"
+              }`}
             >
               {appLogo ? (
                 <img
@@ -254,7 +249,7 @@ export default function LoginPage() {
               ) : (
                 <svg
                   viewBox="0 0 100 100"
-                  className={`w-14 h-14 animate-[spin_60s_linear_infinite] transition-colors duration-300 ${isDark ? 'text-willow-green' : 'text-cerulean'}`}
+                  className={`w-14 h-14 animate-[spin_60s_linear_infinite] transition-colors duration-300 ${isDark ? 'text-willow-green' : 'text-primary-600'}`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
@@ -270,12 +265,26 @@ export default function LoginPage() {
                   <circle cx="85" cy="50" r="4" fill="currentColor" />
                   <circle cx="50" cy="85" r="4" fill="currentColor" />
                   <circle cx="15" cy="50" r="4" fill="currentColor" />
-                  <circle cx="50" cy="50" r="7" fill="currentColor" className={`animate-pulse transition-colors duration-300 ${isDark ? 'text-willow-green' : 'text-cerulean'}`} />
+                  <circle cx="50" cy="50" r="7" fill="currentColor" className={`animate-pulse transition-colors duration-300 ${isDark ? 'text-willow-green' : 'text-primary-600'}`} />
                 </svg>
               )}
             </div>
-            <h1 className="text-2xl font-extrabold tracking-wider text-white uppercase">
-              {appName}
+            <h1 className={`text-2xl font-black tracking-tight uppercase ${isDark ? "text-white" : "text-slate-900"}`}>
+              {appName.split(" ").map((word, idx) => (
+                <span
+                  key={idx}
+                  className={
+                    idx % 2 === 1
+                      ? (isDark 
+                          ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1.5 animate-pulse" 
+                          : "bg-clip-text bg-gradient-to-r from-primary-600 to-primary-800 text-transparent ml-1.5"
+                        )
+                      : (isDark ? "text-white" : "text-slate-900")
+                  }
+                >
+                  {word}
+                </span>
+              ))}
             </h1>
           </div>
 

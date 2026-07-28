@@ -148,16 +148,40 @@ export class AuthService {
     };
   }
 
+  verifyUserAndStoreActiveStatus(user) {
+    if (!user) throw new AppError("Account not found", 404);
+
+    if ((user.status && user.status !== "active") || user.isActive === false) {
+      throw new AppError(`Your account is currently ${user.status || 'inactive'}. Access denied.`, 403);
+    }
+
+    const isSuperAdmin = 
+      user.role?.roleName === "super_admin" || 
+      user.role?.roleName === "admin" || 
+      user.role?.role === "SUPER_ADMIN" || 
+      user.role?.role === "ADMIN";
+
+    if (!isSuperAdmin) {
+      const assignedStore = user.managedStore || user.store;
+      if (assignedStore && assignedStore.isActive === false) {
+        throw new AppError(`Your franchise store "${assignedStore.name}" is currently inactive. Access denied.`, 403);
+      }
+    }
+  }
+
   async sendLoginOtp({ phone, email }) {
-    const identifier = phone || email;
-    const user = phone
-      ? await authRepository.findUserByPhone(phone)
-      : await authRepository.findUserByEmail(email);
+    const cleanPhone = phone ? phone.trim() : null;
+    const cleanEmail = email ? email.toLowerCase().trim() : null;
+    const identifier = cleanPhone || cleanEmail;
+
+    const user = cleanPhone
+      ? await authRepository.findUserByPhone(cleanPhone)
+      : await authRepository.findUserByEmail(cleanEmail);
 
     if (!user) throw new AppError("Account not found with this identifier", 404);
-    if (user.status === "banned") throw new AppError("Your account is banned", 403);
+    this.verifyUserAndStoreActiveStatus(user);
 
-    await otpService.sendOtp({ phone, email, purpose: "Login" });
+    await otpService.sendOtp({ phone: cleanPhone, email: cleanEmail, purpose: "Login" });
 
     return {
       success: true,
@@ -167,15 +191,18 @@ export class AuthService {
   }
 
   async verifyLoginOtp({ phone, email, otp }) {
-    const identifier = phone || email;
+    const cleanPhone = phone ? phone.trim() : null;
+    const cleanEmail = email ? email.toLowerCase().trim() : null;
+    const identifier = cleanPhone || cleanEmail;
+
     otpService.verifyOtp({ identifier, inputOtp: otp });
 
-    const user = phone
-      ? await authRepository.findUserByPhone(phone)
-      : await authRepository.findUserByEmail(email);
+    const user = cleanPhone
+      ? await authRepository.findUserByPhone(cleanPhone)
+      : await authRepository.findUserByEmail(cleanEmail);
 
     if (!user) throw new AppError("User not found", 404);
-    if (user.status !== "active") throw new AppError(`Account is ${user.status}`, 403);
+    this.verifyUserAndStoreActiveStatus(user);
 
     const tokens = this.generateTokens(user);
 
@@ -189,7 +216,7 @@ export class AuthService {
           phone: user.phone,
           avatar: user.avatar,
           role: user.role?.roleName || "user",
-          store: user.store || null,
+          store: user.managedStore || user.store || null,
         },
         ...tokens,
       },
@@ -198,14 +225,15 @@ export class AuthService {
   }
 
   async loginPassword({ email, password }) {
-    const user = await authRepository.findUserByEmail(email);
+    const cleanEmail = email ? email.toLowerCase().trim() : "";
+    const user = await authRepository.findUserByEmail(cleanEmail);
     if (!user) throw new AppError("Invalid email or password", 401);
-    if (user.status !== "active") throw new AppError(`Account is ${user.status}`, 403);
-
     if (!user.passwordHash) throw new AppError("Password not set for this account. Use OTP login.", 401);
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) throw new AppError("Invalid email or password", 401);
+
+    this.verifyUserAndStoreActiveStatus(user);
 
     const tokens = this.generateTokens(user);
 
@@ -219,7 +247,7 @@ export class AuthService {
           phone: user.phone,
           avatar: user.avatar,
           role: user.role?.roleName || "user",
-          store: user.store || null,
+          store: user.managedStore || user.store || null,
         },
         ...tokens,
       },
@@ -239,9 +267,7 @@ export class AuthService {
         throw new AppError("User not found", 404);
       }
 
-      if (user.status !== "active") {
-        throw new AppError(`Account is ${user.status}`, 403);
-      }
+      this.verifyUserAndStoreActiveStatus(user);
 
       const tokens = this.generateTokens(user);
 
@@ -261,6 +287,7 @@ export class AuthService {
   async getUserProfile(id) {
     const user = await authRepository.getUserProfile(id);
     if (!user) return null;
+    this.verifyUserAndStoreActiveStatus(user);
 
     return {
       id: user.id,
@@ -270,7 +297,7 @@ export class AuthService {
       avatar: user.avatar,
       status: user.status,
       role: user.role?.roleName || "user",
-      store: user.store || null,
+      store: user.managedStore || user.store || null,
     };
   }
 
