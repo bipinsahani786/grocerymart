@@ -47,6 +47,26 @@ export class StorePanelController {
     res.status(201).json(result);
   });
 
+  updateProduct = catchAsync(async (req, res) => {
+    const result = await storePanelService.updateProduct(req.user, req.query.storeId, req.params.id, req.body);
+    res.json(result);
+  });
+
+  deleteProduct = catchAsync(async (req, res) => {
+    const result = await storePanelService.deleteProduct(req.user, req.query.storeId, req.params.id);
+    res.json(result);
+  });
+
+  importMasterCategories = catchAsync(async (req, res) => {
+    const result = await storePanelService.importMasterCategories(req.user, req.query.storeId);
+    res.json(result);
+  });
+
+  importMasterProducts = catchAsync(async (req, res) => {
+    const result = await storePanelService.importMasterProducts(req.user, req.query.storeId);
+    res.json(result);
+  });
+
   adjustInventory = catchAsync(async (req, res) => {
     const result = await storePanelService.adjustInventory(req.user, req.query.storeId, req.params.productId, req.body.delta);
     res.json(result);

@@ -210,6 +210,171 @@ export class StorePanelRepository {
     }
   }
 
+  async updateProduct(storeId, productId, payload) {
+    return await prisma.$transaction(async (tx) => {
+      let categoryId = payload.categoryId;
+
+      if (!categoryId && payload.categoryName) {
+        const category = await tx.category.upsert({
+          where: { storeId_name: { storeId, name: payload.categoryName } },
+          update: {},
+          create: { storeId, name: payload.categoryName },
+        });
+        categoryId = category.id;
+      }
+
+      const productData = {
+        ...(payload.name ? { name: payload.name } : {}),
+        ...(categoryId ? { categoryId } : {}),
+        ...(payload.sku !== undefined ? { sku: payload.sku } : {}),
+        ...(payload.barcode !== undefined ? { barcode: payload.barcode } : {}),
+        ...(payload.brand !== undefined ? { brand: payload.brand } : {}),
+        ...(payload.description !== undefined ? { description: payload.description } : {}),
+        ...(payload.productType !== undefined ? { productType: payload.productType } : {}),
+        ...(payload.unit !== undefined ? { unit: payload.unit } : {}),
+        ...(payload.basePrice !== undefined ? { basePrice: parseFloat(payload.basePrice) } : {}),
+        ...(payload.mrp !== undefined ? { mrp: payload.mrp ? parseFloat(payload.mrp) : null } : {}),
+        ...(payload.imageUrls !== undefined ? { imageUrls: payload.imageUrls } : {}),
+        ...(payload.showOnApp !== undefined ? { showOnApp: payload.showOnApp } : {}),
+        ...(payload.showOnPOS !== undefined ? { showOnPOS: payload.showOnPOS } : {}),
+      };
+
+      const product = await tx.product.update({
+        where: { id: productId },
+        data: productData,
+        include: productInclude,
+      });
+
+      if (payload.quantity !== undefined || payload.lowStockAlert !== undefined) {
+        const inv = await tx.storeInventory.findFirst({
+          where: { storeId, productId },
+        });
+
+        if (inv) {
+          await tx.storeInventory.update({
+            where: { id: inv.id },
+            data: {
+              ...(payload.quantity !== undefined ? { quantity: parseInt(payload.quantity) } : {}),
+              ...(payload.lowStockAlert !== undefined ? { lowStockAt: parseInt(payload.lowStockAlert) } : {}),
+            },
+          });
+        } else {
+          await tx.storeInventory.create({
+            data: {
+              storeId,
+              productId,
+              quantity: payload.quantity !== undefined ? parseInt(payload.quantity) : 0,
+              lowStockAt: payload.lowStockAlert !== undefined ? parseInt(payload.lowStockAlert) : 10,
+            },
+          });
+        }
+      }
+
+      return product;
+    });
+  }
+
+  async deleteProduct(storeId, productId) {
+    return await prisma.product.delete({
+      where: { id: productId },
+    });
+  }
+
+  // ── Import Admin Master Data ──
+  async importMasterCategories(storeId) {
+    const masterCategories = await prisma.masterCategory.findMany({
+      orderBy: { sortOrder: "asc" },
+    });
+
+    let importedCount = 0;
+    for (const mc of masterCategories) {
+      const existing = await prisma.category.findUnique({
+        where: { storeId_name: { storeId, name: mc.name } },
+      });
+
+      if (!existing) {
+        await prisma.category.create({
+          data: {
+            storeId,
+            name: mc.name,
+            imageUrl: mc.imageUrl || null,
+            sortOrder: mc.sortOrder || 0,
+          },
+        });
+        importedCount++;
+      }
+    }
+
+    return { importedCount, totalMaster: masterCategories.length };
+  }
+
+  async importMasterProducts(storeId) {
+    const masterProducts = await prisma.masterProduct.findMany({
+      include: { category: true },
+      orderBy: { createdAt: "asc" },
+    });
+
+    let importedCount = 0;
+    for (const mp of masterProducts) {
+      const existingProduct = await prisma.product.findFirst({
+        where: {
+          storeId,
+          OR: [
+            { name: mp.name },
+            ...(mp.sku ? [{ sku: mp.sku }] : []),
+            ...(mp.barcode ? [{ barcode: mp.barcode }] : []),
+          ],
+        },
+      });
+
+      if (!existingProduct) {
+        let categoryId = null;
+        if (mp.category) {
+          const cat = await prisma.category.upsert({
+            where: { storeId_name: { storeId, name: mp.category.name } },
+            update: {},
+            create: {
+              storeId,
+              name: mp.category.name,
+              imageUrl: mp.category.imageUrl || null,
+              sortOrder: mp.category.sortOrder || 0,
+            },
+          });
+          categoryId = cat.id;
+        }
+
+        await prisma.product.create({
+          data: {
+            storeId,
+            categoryId,
+            name: mp.name,
+            sku: mp.sku || null,
+            barcode: mp.barcode || null,
+            brand: mp.brand || null,
+            description: mp.description || null,
+            productType: mp.productType || "simple",
+            unit: mp.unit || "pcs",
+            basePrice: mp.basePrice || 0,
+            mrp: mp.mrp || null,
+            imageUrls: mp.imageUrls || [],
+            showOnApp: true,
+            showOnPOS: true,
+            inventory: {
+              create: {
+                storeId,
+                quantity: 20,
+                lowStockAt: 5,
+              },
+            },
+          },
+        });
+        importedCount++;
+      }
+    }
+
+    return { importedCount, totalMaster: masterProducts.length };
+  }
+
   // ── Orders ──
   async orders(storeId, filters = {}) {
     return await prisma.order.findMany({

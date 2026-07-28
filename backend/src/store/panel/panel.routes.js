@@ -15,11 +15,15 @@ router.put("/settings", storePanelController.updateSettings);
 
 router.get("/categories", storePanelController.getCategories);
 router.post("/categories", storePanelController.createCategory);
+router.post("/categories/import-master", storePanelController.importMasterCategories);
 router.patch("/categories/:id", storePanelController.updateCategory);
 router.delete("/categories/:id", storePanelController.deleteCategory);
 
 router.get("/inventory", storePanelController.getInventory);
 router.post("/inventory", storePanelController.createProduct);
+router.post("/inventory/import-master", storePanelController.importMasterProducts);
+router.patch("/inventory/:id", storePanelController.updateProduct);
+router.delete("/inventory/:id", storePanelController.deleteProduct);
 router.patch("/inventory/:productId/adjust", storePanelController.adjustInventory);
 
 router.get("/orders", storePanelController.getOrders);
