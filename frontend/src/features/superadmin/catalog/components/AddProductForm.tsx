@@ -28,7 +28,7 @@ interface AddProductFormProps {
 }
 
 export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductFormProps) {
-  const { flatCategories, createProduct, uploadImage } = useMasterCatalog();
+  const { flatCategories, createProduct, updateProduct, uploadImage } = useMasterCatalog();
   const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState<Partial<MasterProduct>>({
@@ -111,12 +111,30 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
       return;
     }
 
-    createProduct.mutate(formData as MasterProduct, {
-      onSuccess: () => {
-        toast.success('Master product created successfully!');
-        onSuccess();
-      },
-    });
+    if (initialData?.id) {
+      updateProduct.mutate(
+        { id: initialData.id, payload: formData as MasterProduct },
+        {
+          onSuccess: () => {
+            toast.success('Master product updated successfully!');
+            onSuccess();
+          },
+          onError: (err: any) => {
+            toast.error(err.response?.data?.message || 'Failed to update master product');
+          },
+        }
+      );
+    } else {
+      createProduct.mutate(formData as MasterProduct, {
+        onSuccess: () => {
+          toast.success('Master product created successfully!');
+          onSuccess();
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to create master product');
+        },
+      });
+    }
   };
 
   return (
@@ -508,7 +526,7 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
         </Button>
         <Button
           type="submit"
-          isLoading={createProduct.isPending}
+          isLoading={createProduct.isPending || updateProduct.isPending}
           disabled={isUploading}
           className="bg-primary-600 hover:bg-primary-700 text-white font-semibold text-xs h-10 px-6 cursor-pointer shadow-sm"
         >

@@ -12,6 +12,8 @@ router.delete('/categories/:id', catalogController.deleteMasterCategory);
 // Master Products
 router.get('/products', catalogController.getMasterProducts);
 router.post('/products', catalogController.createMasterProduct);
+router.put('/products/:id', catalogController.updateMasterProduct);
+router.delete('/products/:id', catalogController.deleteMasterProduct);
 
 import { uploadMemoryMiddleware } from '../../middleware/upload.middleware.js';
 router.post('/upload', uploadMemoryMiddleware.single('file'), catalogController.uploadImage);

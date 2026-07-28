@@ -53,6 +53,10 @@ export default function StoreManagersPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!form.phone || !form.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
     createManager.mutate(form, {
       onSuccess: () => {
         setForm(defaultForm);
@@ -271,7 +275,8 @@ export default function StoreManagersPage() {
               icon={<Mail className="h-4 w-4" />}
             />
             <Input
-              placeholder="Phone"
+              required
+              placeholder="Phone (10 digits)"
               value={form.phone}
               onChange={(event) => updateForm('phone', event.target.value)}
               icon={<Phone className="h-4 w-4" />}

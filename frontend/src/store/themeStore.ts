@@ -18,7 +18,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'semi-dark',
+      theme: 'light',
       primaryColor: 'blue',
       fontFamily: 'inter',
       setTheme: (theme) => set({ theme }),

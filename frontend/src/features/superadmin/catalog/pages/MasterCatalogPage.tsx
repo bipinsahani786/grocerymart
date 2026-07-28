@@ -19,7 +19,7 @@ import { ProductControlBar } from '../components/ProductControlBar';
 import { ProductGridCard } from '../components/ProductGridCard';
 
 export function MasterCatalogPage() {
-  const { products, flatCategories, isLoadingProducts } = useMasterCatalog();
+  const { products, flatCategories, isLoadingProducts, deleteProduct } = useMasterCatalog();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingProduct, setEditingProduct] = useState<MasterProduct | null>(null);
@@ -57,11 +57,18 @@ export function MasterCatalogPage() {
     setIsAdding(true);
   };
 
-  // Delete Action Handler (Placeholder for mutation when added)
+  // Delete Action Handler
   const handleConfirmDelete = () => {
-    if (!productToDelete) return;
-    toast.success(`Product "${productToDelete.name}" deleted successfully.`);
-    setProductToDelete(null);
+    if (!productToDelete?.id) return;
+    deleteProduct.mutate(productToDelete.id, {
+      onSuccess: () => {
+        toast.success(`Product "${productToDelete.name}" deleted successfully.`);
+        setProductToDelete(null);
+      },
+      onError: (err: any) => {
+        toast.error(err.response?.data?.message || 'Failed to delete product');
+      },
+    });
   };
 
   // Add / Edit Product View
@@ -75,6 +82,7 @@ export function MasterCatalogPage() {
             subtitle="Configure global product metadata available for stores to import."
           />
           <AddProductForm
+            initialData={editingProduct || undefined}
             onSuccess={() => {
               setIsAdding(false);
               setEditingProduct(null);

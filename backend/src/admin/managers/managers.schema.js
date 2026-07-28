@@ -4,7 +4,7 @@ export const createManagerSchema = z.object({
   body: z.object({
     name: z.string().min(2, "Manager name is required"),
     email: z.string().email("Valid email is required"),
-    phone: z.string().optional().nullable(),
+    phone: z.string({ required_error: "Phone number is required" }).min(10, "Phone number must be at least 10 digits"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     storeId: z.string().uuid("Select a valid store").optional().nullable(),
   }),
@@ -16,7 +16,7 @@ export const updateManagerProfileSchema = z.object({
   body: z.object({
     name: z.string().min(2, "Manager name is required").optional(),
     email: z.string().email("Valid email is required").optional(),
-    phone: z.string().optional().nullable(),
+    phone: z.string().min(10, "Phone number must be at least 10 digits").optional().nullable(),
     storeId: z.string().uuid("Select a valid store").optional().nullable(),
   }),
   params: z.object({

@@ -78,6 +78,40 @@ export class CatalogService {
       throw error;
     }
   }
+
+  async updateMasterProduct(id, data) {
+    try {
+      const result = await catalogRepository.updateMasterProduct(id, data);
+      return {
+        success: true,
+        data: result,
+        message: 'Master product updated successfully'
+      };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new AppError('Master product with this SKU or Barcode already exists', 400);
+      }
+      if (error.code === 'P2025') {
+        throw new AppError('Master product not found', 404);
+      }
+      throw error;
+    }
+  }
+
+  async deleteMasterProduct(id) {
+    try {
+      await catalogRepository.deleteMasterProduct(id);
+      return {
+        success: true,
+        message: 'Master product deleted successfully'
+      };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new AppError('Master product not found', 404);
+      }
+      throw error;
+    }
+  }
 }
 
 export const catalogService = new CatalogService();

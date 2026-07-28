@@ -13,28 +13,45 @@ export class ManagersService {
   }
 
   async createManager(payload) {
+    if (!payload.phone || !payload.phone.trim()) {
+      throw new AppError("Phone number is required to create a store manager.", 400);
+    }
+
     const existingUser = await managersRepository.findManagerByEmail(payload.email);
     if (existingUser) {
       throw new AppError("A user with this email already exists.", 400);
     }
 
-    const passwordHash = await bcrypt.hash(payload.password, 10);
-    const data = await managersRepository.createManager(
-      {
-        name: payload.name,
-        email: payload.email,
-        phone: payload.phone || null,
-        passwordHash,
-        status: "active",
-      },
-      payload.storeId || null
-    );
+    try {
+      const passwordHash = await bcrypt.hash(payload.password, 10);
+      const data = await managersRepository.createManager(
+        {
+          name: payload.name,
+          email: payload.email,
+          phone: payload.phone.trim(),
+          passwordHash,
+          status: "active",
+        },
+        payload.storeId || null
+      );
 
-    return {
-      success: true,
-      data,
-      message: "Store manager created successfully",
-    };
+      return {
+        success: true,
+        data,
+        message: "Store manager created successfully",
+      };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        const target = error.meta?.target || [];
+        if (target.includes('phone')) {
+          throw new AppError("A user with this phone number already exists.", 400);
+        }
+        if (target.includes('email')) {
+          throw new AppError("A user with this email already exists.", 400);
+        }
+      }
+      throw error;
+    }
   }
 
   async updateManagerStatus(id, status) {

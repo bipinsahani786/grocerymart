@@ -79,6 +79,45 @@ export class CatalogRepository {
       return product;
     });
   }
+
+  async updateMasterProduct(id, data) {
+    const { variants, category, taxClass, ...productData } = data;
+
+    return await prisma.$transaction(async (tx) => {
+      if (variants !== undefined) {
+        await tx.masterProductVariant.deleteMany({
+          where: { masterProductId: id }
+        });
+      }
+
+      const product = await tx.masterProduct.update({
+        where: { id },
+        data: {
+          ...productData,
+          variants: variants && variants.length > 0 ? {
+            create: variants.map(({ id: _, masterProductId: __, ...v }) => v)
+          } : undefined
+        },
+        include: {
+          category: true,
+          variants: true,
+          taxClass: true,
+        }
+      });
+      return product;
+    });
+  }
+
+  async deleteMasterProduct(id) {
+    return await prisma.$transaction(async (tx) => {
+      await tx.masterProductVariant.deleteMany({
+        where: { masterProductId: id }
+      });
+      return await tx.masterProduct.delete({
+        where: { id }
+      });
+    });
+  }
 }
 
 export const catalogRepository = new CatalogRepository();

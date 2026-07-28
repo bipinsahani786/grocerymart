@@ -38,6 +38,16 @@ export class CatalogController {
     res.status(201).json(result);
   });
 
+  updateMasterProduct = catchAsync(async (req, res) => {
+    const result = await catalogService.updateMasterProduct(req.params.id, req.body);
+    res.status(200).json(result);
+  });
+
+  deleteMasterProduct = catchAsync(async (req, res) => {
+    const result = await catalogService.deleteMasterProduct(req.params.id);
+    res.status(200).json(result);
+  });
+
   // --- Upload (100% Reliable Local Serving) ---
   uploadImage = catchAsync(async (req, res) => {
     if (!req.file) {
