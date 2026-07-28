@@ -46,6 +46,7 @@ export function useMasterCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['master-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
   });
 
@@ -56,6 +57,8 @@ export function useMasterCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['master-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['master-products'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
   });
 
@@ -66,6 +69,8 @@ export function useMasterCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['master-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['master-products'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
   });
 
@@ -76,6 +81,29 @@ export function useMasterCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['master-products'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
+    },
+  });
+
+  const updateProduct = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<MasterProduct> }) => {
+      const { data } = await api.put(`/admin/catalog/products/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-products'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
+    },
+  });
+
+  const deleteProduct = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(`/admin/catalog/products/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-products'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
   });
 
@@ -104,6 +132,8 @@ export function useMasterCatalog() {
     updateCategory,
     deleteCategory,
     createProduct,
+    updateProduct,
+    deleteProduct,
     uploadImage,
   };
 }

@@ -10,17 +10,15 @@ import {
 } from '../api/useProfile';
 import { profileSchema, passwordSchema } from '../schemas/profileSchema';
 import type { ProfileValues, PasswordValues } from '../schemas/profileSchema';
-import { AVATAR_UPLOAD_FOLDER } from '../constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ImageUpload } from '@/components/ui/image-upload';
 import { PageHeader } from '@/components/ui/page-header';
 import { SectionCard } from '@/components/ui/section-card';
 import { FormField } from '@/components/ui/form-field';
 import { toast } from 'sonner';
 import {
   User, Save, Lock, Mail, Phone, Shield,
-  Loader2, KeyRound,
+  Loader2, KeyRound, Camera, Trash2,
 } from 'lucide-react';
 import { getFileUrl } from '@/lib/utils';
 
@@ -73,13 +71,53 @@ export default function ProfilePage() {
     }
   };
 
-  const handleAvatarUpload = async (result: { path: string; public_url: string }) => {
-    try {
-      await uploadAvatar.mutateAsync(result);
-      toast.success('Avatar uploaded!');
-    } catch {
-      toast.error('Failed to save avatar');
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file.');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 160;
+        const ctx = canvas.getContext('2d');
+        let compressedDataUrl = '';
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, 160, 160);
+          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        } else {
+          compressedDataUrl = event.target?.result as string;
+        }
+
+        uploadAvatar.mutate(compressedDataUrl, {
+          onSuccess: () => {
+            toast.success('Avatar updated successfully!');
+          },
+          onError: (err: any) => {
+            toast.error(err.response?.data?.message || 'Failed to update avatar');
+          },
+        });
+      };
+
+      img.onerror = () => {
+        toast.error('Failed to process image file');
+      };
+
+      img.src = event.target?.result as string;
+    };
+
+    reader.onerror = () => {
+      toast.error('Failed to read image file');
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleRemoveAvatar = async () => {
@@ -115,19 +153,49 @@ export default function ProfilePage() {
         {/* ── Personal Information ── */}
         <SectionCard title="Personal Information" icon={<User />}>
           {/* Avatar */}
-          <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-            <ImageUpload
-              value={profile?.avatar ? getFileUrl(profile.avatar) : null}
-              onUpload={handleAvatarUpload}
-              onRemove={handleRemoveAvatar}
-              folder={AVATAR_UPLOAD_FOLDER}
-              variant="circle"
-              size="sm"
-              placeholder={profile?.name ? profile.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
-            />
-            <div>
-              <p className="text-sm font-medium text-slate-800 dark:text-white">{profile?.name || 'User'}</p>
-              <p className="text-xs text-slate-500">{profile?.email}</p>
+          <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+            <div className="relative group shrink-0">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-500 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-md">
+                {profile?.avatar ? (
+                  <img src={getFileUrl(profile.avatar)} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-extrabold text-primary-600 dark:text-primary-400 uppercase">
+                    {profile?.name ? profile.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2) : 'U'}
+                  </span>
+                )}
+              </div>
+
+              <label className="absolute bottom-0 right-0 w-6 h-6 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm cursor-pointer transition-colors" title="Change Avatar">
+                <Camera className="w-3 h-3" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadAvatar.isPending}
+                  className="hidden"
+                />
+              </label>
+
+              {uploadAvatar.isPending && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1 min-w-0">
+              <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{profile?.name || 'User'}</p>
+              <p className="text-xs text-slate-500 truncate">{profile?.email}</p>
+              {profile?.avatar && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  disabled={removeAvatar.isPending}
+                  className="text-[11px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer pt-0.5"
+                >
+                  <Trash2 className="w-3 h-3" /> Remove Photo
+                </button>
+              )}
             </div>
           </div>
 
@@ -140,8 +208,18 @@ export default function ProfilePage() {
               <FormField label="Email Address" error={profileForm.formState.errors.email?.message} required>
                 <Input {...profileForm.register('email')} type="email" placeholder="you@example.com" icon={<Mail />} />
               </FormField>
-              <FormField label="Mobile Number">
-                <Input {...profileForm.register('phone')} placeholder="+91 98765 43210" icon={<Phone />} />
+              <FormField label="Mobile Number (10 Digits)" error={profileForm.formState.errors.phone?.message}>
+                <Input
+                  {...profileForm.register('phone', {
+                    onChange: (e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      profileForm.setValue('phone', val, { shouldValidate: true, shouldDirty: true });
+                    }
+                  })}
+                  maxLength={10}
+                  placeholder="9876543210"
+                  icon={<Phone />}
+                />
               </FormField>
             </div>
 

@@ -1,37 +1,40 @@
-import { FolderTree } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FolderTree, Package } from 'lucide-react';
+import { getFileUrl } from '@/lib/utils';
 
 export interface SafeCategoryImageProps {
   src?: string | null;
   alt: string;
   className?: string;
   iconSize?: string;
+  type?: 'category' | 'product';
 }
 
 export function SafeCategoryImage({
   src,
   alt,
-  className,
+  className = '',
   iconSize = 'w-5 h-5',
+  type = 'product',
 }: SafeCategoryImageProps) {
-  // If no image src was provided by user, render clean category FolderTree icon
-  if (!src || typeof src !== 'string' || !src.trim()) {
-    return <FolderTree className={`${iconSize} text-primary-500/70`} />;
-  }
+  const [hasError, setHasError] = useState(false);
 
-  const cleanUrl = src.trim();
-  let finalSrc = cleanUrl;
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
 
-  // Resolve relative backend paths if not already absolute/data/blob
-  if (
-    !cleanUrl.startsWith('http://') &&
-    !cleanUrl.startsWith('https://') &&
-    !cleanUrl.startsWith('data:') &&
-    !cleanUrl.startsWith('blob:')
-  ) {
-    const backendOrigin = (
-      import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-    ).replace(/\/api\/?$/, '');
-    finalSrc = `${backendOrigin}${cleanUrl.startsWith('/') ? '' : '/'}${cleanUrl}`;
+  const finalSrc = getFileUrl(src);
+
+  if (!finalSrc || hasError) {
+    return (
+      <div className={`flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 ${className}`}>
+        {type === 'category' ? (
+          <FolderTree className={`${iconSize} text-primary-500/70`} />
+        ) : (
+          <Package className={`${iconSize} opacity-60 text-slate-400`} />
+        )}
+      </div>
+    );
   }
 
   return (
@@ -39,6 +42,7 @@ export function SafeCategoryImage({
       src={finalSrc}
       alt={alt}
       className={className}
+      onError={() => setHasError(true)}
     />
   );
 }

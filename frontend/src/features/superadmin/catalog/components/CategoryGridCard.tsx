@@ -23,7 +23,7 @@ export function CategoryGridCard({
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-            <SafeCategoryImage src={category.imageUrl} alt={category.name} className="w-full h-full object-cover" iconSize="w-6 h-6" />
+            <SafeCategoryImage src={category.imageUrl} alt={category.name} type="category" className="w-full h-full object-cover" iconSize="w-6 h-6" />
           </div>
 
           <div className="flex items-center gap-1.5">

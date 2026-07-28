@@ -4,35 +4,35 @@ export class AuthRepository {
   async findUserByPhone(phone) {
     return await prisma.user.findUnique({
       where: { phone },
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 
   async findUserByEmail(email) {
     return await prisma.user.findUnique({
       where: { email },
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 
   async findUserById(id) {
     return await prisma.user.findUnique({
       where: { id },
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 
   async findUserByEmailWithUsage(email) {
     return await prisma.user.findUnique({
       where: { email },
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 
   async findUserByPhoneWithUsage(phone) {
     return await prisma.user.findUnique({
       where: { phone },
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 
@@ -58,7 +58,7 @@ export class AuthRepository {
 
     return await prisma.user.create({ 
       data,
-      include: { role: true, store: true }
+      include: { role: true, store: true, managedStore: true }
     });
   }
 
@@ -66,14 +66,14 @@ export class AuthRepository {
     return await prisma.user.update({
       where: { id },
       data: { status },
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 
   async getUserProfile(id) {
     return await prisma.user.findUnique({
       where: { id },
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 
@@ -88,7 +88,7 @@ export class AuthRepository {
     return await prisma.user.update({
       where: { id },
       data,
-      include: { role: true, store: true },
+      include: { role: true, store: true, managedStore: true },
     });
   }
 }

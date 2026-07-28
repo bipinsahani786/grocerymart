@@ -131,7 +131,7 @@ export default function PartnerRegisterPage() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-16">
               {appLogo ? (
-                <div className="bg-white/10 p-2 rounded-2xl w-12 h-12">
+                <div className="bg-white/10 p-2 rounded-2xl w-12 h-12 flex items-center justify-center">
                   <img src={appLogo} alt={appName} className="max-w-full max-h-full object-contain" />
                 </div>
               ) : (

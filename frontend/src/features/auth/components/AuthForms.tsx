@@ -61,10 +61,10 @@ export const LoginForm = withSkeleton(() => {
           <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
             <User size={15} />
           </div>
-          <input 
+          <input
             id="email"
             type="email"
-            {...form.register('email', { required: 'Email is required' })} 
+            {...form.register('email', { required: 'Email is required' })}
             placeholder="admin@grocerymart.com"
             className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
           />
@@ -78,10 +78,10 @@ export const LoginForm = withSkeleton(() => {
           <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
             <Lock size={15} />
           </div>
-          <input 
+          <input
             id="password"
             type={showPassword ? "text" : "password"}
-            {...form.register('password', { required: 'Password is required' })} 
+            {...form.register('password', { required: 'Password is required' })}
             placeholder="••••••••"
             className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
           />
@@ -98,7 +98,7 @@ export const LoginForm = withSkeleton(() => {
       {/* Forgot Password */}
       <div className="flex justify-between items-center animate-in fade-in slide-in-from-bottom-4 duration-500 [animation-delay:300ms] px-1">
         <div className="flex items-center gap-2">
-          <input 
+          <input
             id="remember-me"
             type="checkbox"
             className="h-3.5 w-3.5 rounded border border-slate-300 dark:border-primary-700/35 bg-slate-100 dark:bg-primary-950/40 text-primary-500 focus:ring-primary-500 focus:ring-offset-0 focus:ring-offset-transparent cursor-pointer"
@@ -107,7 +107,7 @@ export const LoginForm = withSkeleton(() => {
             Remember Me
           </label>
         </div>
-        <button 
+        <button
           type="button"
           onClick={() => toast.info('Contact system administrator for password recovery.')}
           className="text-xs font-semibold text-primary-600 dark:text-white/70 hover:text-primary-700 dark:hover:text-white transition-colors cursor-pointer"
@@ -118,8 +118,8 @@ export const LoginForm = withSkeleton(() => {
 
       {/* Login Button */}
       <div className="pt-3 animate-in fade-in slide-in-from-bottom-6 duration-500 [animation-delay:400ms]">
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loginMutation.isPending}
           className="w-full py-2.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-400 rounded-lg transition-all shadow-[0_4px_12px_rgba(0,0,0,0.3)] shadow-primary-500/20 hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
@@ -135,7 +135,7 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
   const form = useForm({
     defaultValues: { name: '', email: '', password: '', passwordConfirmation: '' }
   });
-  
+
   const registerMutation = useRegister();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -145,9 +145,9 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
       toast.error("Passwords do not match");
       return;
     }
-    registerMutation.mutate({ 
-      name: data.name, 
-      email: data.email, 
+    registerMutation.mutate({
+      name: data.name,
+      email: data.email,
       password: data.password
     }, {
       onSuccess: () => {
@@ -167,10 +167,10 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
           <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
             <User size={15} />
           </div>
-          <input 
+          <input
             id="name"
             type="text"
-            {...form.register('name', { required: 'Name is required' })} 
+            {...form.register('name', { required: 'Name is required' })}
             placeholder="John Doe"
             className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
           />
@@ -184,10 +184,10 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
           <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
             <Mail size={15} />
           </div>
-          <input 
+          <input
             id="reg-email"
             type="email"
-            {...form.register('email', { required: 'Email is required' })} 
+            {...form.register('email', { required: 'Email is required' })}
             placeholder="name@example.com"
             className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
           />
@@ -201,10 +201,10 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
           <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
             <Lock size={15} />
           </div>
-          <input 
+          <input
             id="reg-password"
             type={showPassword ? "text" : "password"}
-            {...form.register('password', { required: 'Password is required' })} 
+            {...form.register('password', { required: 'Password is required' })}
             placeholder="••••••••"
             className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
           />
@@ -225,10 +225,10 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
           <div className="h-8 w-8 rounded-full flex items-center justify-center bg-primary-500 text-white shrink-0 shadow-md">
             <Lock size={15} />
           </div>
-          <input 
+          <input
             id="reg-confirm"
             type={showConfirmPassword ? "text" : "password"}
-            {...form.register('passwordConfirmation', { required: 'Please confirm your password' })} 
+            {...form.register('passwordConfirmation', { required: 'Please confirm your password' })}
             placeholder="••••••••"
             className="bg-transparent text-slate-900 dark:text-white border-0 focus:ring-0 focus:outline-none w-full px-3 text-sm placeholder-slate-400 dark:placeholder-white/35 font-medium"
           />
@@ -244,8 +244,8 @@ export const RegisterForm = withSkeleton(({ onOtpRequired }: { onOtpRequired: (e
 
       {/* Submit Button */}
       <div className="pt-3 animate-in fade-in slide-in-from-bottom-6 duration-500 [animation-delay:500ms]">
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={registerMutation.isPending}
           className="w-full py-2.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-400 rounded-lg transition-all shadow-[0_4px_12px_rgba(0,0,0,0.3)] shadow-primary-500/20 hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
@@ -279,12 +279,12 @@ export const RegisterOtpForm = withSkeleton(({ email }: { email: string }) => {
       <div className="space-y-2">
         <label htmlFor="otp" className="text-sm font-bold text-slate-800 dark:text-white/90 uppercase tracking-widest ml-1 cursor-pointer select-none">Secure Code</label>
         <p className="text-xs text-slate-500 dark:text-white/70 ml-1 mb-2">Sent to {email}</p>
-        <Input 
+        <Input
           id="otp"
           type="text"
           icon={<KeyRound size={20} />}
           className="py-3.5 rounded-xl text-center text-lg tracking-widest font-bold bg-slate-100/80 dark:bg-primary-950/45 text-slate-900 dark:text-white border-slate-200 dark:border-primary-700/30"
-          {...form.register('otp')} 
+          {...form.register('otp')}
           placeholder="1234"
           maxLength={4}
         />

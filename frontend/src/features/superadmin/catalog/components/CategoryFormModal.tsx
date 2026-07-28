@@ -3,9 +3,10 @@ import { UploadCloud, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import type { MasterCategory } from '../schemas/catalogSchemas';
+import { CustomDropdown } from '@/components/ui/CustomDropdown';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -83,11 +84,12 @@ export function CategoryFormModal({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Parent Category <span className="text-rose-500">*</span>
             </label>
-            <SearchableSelect
+            <CustomDropdown
               options={parentOptions}
               value={parentId}
               onChange={(val) => setParentId(String(val))}
               placeholder="-- Select Parent Category --"
+              searchable={true}
             />
           </div>
         )}
@@ -100,7 +102,7 @@ export function CategoryFormModal({
           <div className="flex items-center gap-3">
             {imageUrl ? (
               <div className="relative w-16 h-16 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 shadow-sm">
-                <SafeCategoryImage src={imageUrl} alt="Category preview" className="w-full h-full object-cover" iconSize="w-6 h-6" />
+                <SafeCategoryImage src={imageUrl} alt="Category preview" type="category" className="w-full h-full object-cover" iconSize="w-6 h-6" />
                 <button
                   type="button"
                   onClick={() => setImageUrl('')}

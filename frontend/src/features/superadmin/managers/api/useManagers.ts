@@ -53,6 +53,7 @@ export const useCreateManager = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       toast.success('Store manager created successfully');
     },
     onError: (error: any) => {
@@ -71,6 +72,7 @@ export const useUpdateManagerStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       toast.success('Manager status updated');
     },
     onError: (error: any) => {
@@ -80,12 +82,15 @@ export const useUpdateManagerStatus = () => {
 };
 
 export const useUpdateManagerPassword = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ id, password }: { id: string; password: string }) => {
       const { data } = await api.patch(`/admin/managers/${id}/password`, { password });
       return data.data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
       toast.success('Manager password updated successfully');
     },
     onError: (error: any) => {
@@ -105,6 +110,7 @@ export const useUpdateManagerProfile = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       toast.success('Store manager profile updated successfully');
     },
     onError: (error: any) => {
@@ -129,6 +135,7 @@ export const useDeleteManager = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       queryClient.refetchQueries({ queryKey: ['admin', 'managers'] });
       toast.success('Store manager deleted successfully');
     },

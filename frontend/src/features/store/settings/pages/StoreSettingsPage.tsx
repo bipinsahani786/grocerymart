@@ -12,60 +12,81 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useMockStore } from '@/store/mockStore';
+import { useAuthStore } from '@/store/authStore';
+import { useStoreSettings, useUpdateStoreSettings } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 
 type ActiveTab = 'info' | 'hours' | 'tax' | 'pos' | 'switches';
 
 export default function StoreSettingsPage() {
-  const { settings, updateSettings } = useMockStore();
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.store?.id;
+
+  const { data: settingsData } = useStoreSettings(storeId);
+  const updateSettingsMutation = useUpdateStoreSettings();
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('info');
 
-  // Load current settings into component state
   const [form, setForm] = useState({
-    name: settings.name,
-    address: settings.address,
-    phone: settings.phone,
-    gpsCoords: settings.gpsCoords,
-    openingTime: settings.openingTime,
-    closingTime: settings.closingTime,
-    gstNumber: settings.gstNumber,
-    cgstRate: settings.cgstRate,
-    sgstRate: settings.sgstRate,
-    taxInclusive: settings.taxInclusive,
-    receiptWidth: settings.receiptWidth,
-    autoPrintReceipt: settings.autoPrintReceipt,
+    name: settingsData?.name || '',
+    address: settingsData?.address || '',
+    phone: settingsData?.phone || '',
+    gpsCoords: '28.6273, 77.3725',
+    openingTime: settingsData?.openingTime || '08:00',
+    closingTime: settingsData?.closingTime || '22:00',
+    gstin: settingsData?.gstin || '',
+    gstNumber: settingsData?.gstin || '',
+    cgstRate: 9,
+    sgstRate: 9,
+    taxInclusive: true,
+    receiptWidth: '80mm',
+    autoPrintReceipt: true,
+    radiusKm: settingsData?.radiusKm || 3,
   });
 
-  const [deliveryEnabled, setDeliveryEnabled] = useState(settings.deliveryEnabled);
-  const [pickupEnabled, setPickupEnabled] = useState(settings.pickupEnabled);
+  const [deliveryEnabled, setDeliveryEnabled] = useState(settingsData?.deliveryEnabled ?? true);
+  const [pickupEnabled, setPickupEnabled] = useState(settingsData?.clickCollectEnabled ?? true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
-      ...form,
-      deliveryEnabled,
-      pickupEnabled
-    });
-    toast.success('Store settings saved successfully!');
+    updateSettingsMutation.mutate(
+      {
+        storeId,
+        payload: {
+          name: form.name,
+          address: form.address,
+          phone: form.phone,
+          openingTime: form.openingTime,
+          closingTime: form.closingTime,
+          gstin: form.gstin,
+          radiusKm: parseFloat(String(form.radiusKm)),
+          deliveryEnabled,
+          clickCollectEnabled: pickupEnabled,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Store settings saved successfully!');
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to update store settings');
+        },
+      }
+    );
   };
 
   const handleToggleChannel = (channel: 'delivery' | 'pickup') => {
     if (channel === 'delivery') {
       const nextVal = !deliveryEnabled;
       setDeliveryEnabled(nextVal);
-      updateSettings({ deliveryEnabled: nextVal });
-      toast.success(nextVal ? 'Delivery channel activated!' : 'Delivery channel suspended!', {
-        description: nextVal ? 'Online delivery orders can now be received.' : 'Online delivery orders are currently paused for this store.'
-      });
+      updateSettingsMutation.mutate({ storeId, payload: { deliveryEnabled: nextVal } });
+      toast.success(nextVal ? 'Delivery channel activated!' : 'Delivery channel suspended!');
     } else {
       const nextVal = !pickupEnabled;
       setPickupEnabled(nextVal);
-      updateSettings({ pickupEnabled: nextVal });
-      toast.success(nextVal ? 'Click & Collect channel activated!' : 'Click & Collect channel suspended!', {
-        description: nextVal ? 'Customers can now select this store for pickups.' : 'Store pickup orders are currently paused.'
-      });
+      updateSettingsMutation.mutate({ storeId, payload: { clickCollectEnabled: nextVal } });
+      toast.success(nextVal ? 'Click & Collect channel activated!' : 'Click & Collect channel suspended!');
     }
   };
 

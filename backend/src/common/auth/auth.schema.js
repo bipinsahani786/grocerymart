@@ -47,9 +47,27 @@ export const loginPasswordSchema = z.object({
   }),
 });
 
+export const updateProfileSchema = z.object({
+  body: z.object({
+    name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name is too long").optional(),
+    email: z.string().trim().email("Invalid email format").optional(),
+    phone: z.string().trim().nullable().optional(),
+    avatar: z.string().nullable().optional(),
+  }),
+});
+
 export const changePasswordSchema = z.object({
   body: z.object({
-    oldPassword: z.string().min(1, "Old password is required"),
-    newPassword: z.string().min(6, "New password must be at least 6 characters"),
+    current_password: z.string().min(1, "Current password is required").optional(),
+    oldPassword: z.string().min(1, "Old password is required").optional(),
+    new_password: z.string().min(6, "New password must be at least 6 characters").optional(),
+    newPassword: z.string().min(6, "New password must be at least 6 characters").optional(),
+    new_password_confirmation: z.string().optional(),
+  }).refine((data) => data.current_password || data.oldPassword, {
+    message: "Current password is required",
+    path: ["current_password"],
+  }).refine((data) => data.new_password || data.newPassword, {
+    message: "New password is required",
+    path: ["new_password"],
   }),
 });

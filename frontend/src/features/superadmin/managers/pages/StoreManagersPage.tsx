@@ -53,6 +53,10 @@ export default function StoreManagersPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!form.phone || !form.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
     createManager.mutate(form, {
       onSuccess: () => {
         setForm(defaultForm);
@@ -124,7 +128,7 @@ export default function StoreManagersPage() {
       header: 'Role',
       cell: (manager) => (
         <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
-          {manager.role?.roleName || 'store_manager'}
+          {typeof manager.role === 'string' ? manager.role : (manager.role?.roleName || 'store_manager')}
         </Badge>
       ),
     },
@@ -271,7 +275,8 @@ export default function StoreManagersPage() {
               icon={<Mail className="h-4 w-4" />}
             />
             <Input
-              placeholder="Phone"
+              required
+              placeholder="Phone (10 digits)"
               value={form.phone}
               onChange={(event) => updateForm('phone', event.target.value)}
               icon={<Phone className="h-4 w-4" />}

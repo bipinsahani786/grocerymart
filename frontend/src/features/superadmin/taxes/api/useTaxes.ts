@@ -29,6 +29,7 @@ export function useTaxes() {
     onSuccess: () => {
       toast.success('Tax profile created successfully');
       queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to create tax profile');
@@ -53,6 +54,7 @@ export function useTaxes() {
     onSuccess: () => {
       toast.success('Tax profile updated successfully');
       queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to update tax profile');
@@ -67,6 +69,7 @@ export function useTaxes() {
     onSuccess: () => {
       toast.success('Tax profile deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to delete tax profile');
@@ -90,6 +93,7 @@ export function useTaxes() {
     onSuccess: () => {
       toast.success('Tax rate scheduled successfully');
       queryClient.invalidateQueries({ queryKey: ['superadmin-taxes'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to schedule tax rate');

@@ -14,13 +14,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useMockStore } from '@/store/mockStore';
+import { useAuthStore } from '@/store/authStore';
+import { 
+  useStoreCategories, 
+  useCreateStoreCategory, 
+  useUpdateStoreCategory, 
+  useDeleteStoreCategory 
+} from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { SearchBar } from '@/components/ui/SearchBar';
 
 export default function StoreCategoriesPage() {
-  const { categories, addCategory, deleteCategory, editCategory, products } = useMockStore();
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.store?.id;
+
+  const { data: categoriesData } = useStoreCategories(storeId);
+  const createCategory = useCreateStoreCategory();
+  const updateCategory = useUpdateStoreCategory();
+  const deleteCategory = useDeleteStoreCategory();
+
+  const categories = categoriesData || [];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [newCatName, setNewCatName] = useState('');
@@ -32,24 +46,21 @@ export default function StoreCategoriesPage() {
   const parentCategoryOptions = useMemo(() => {
     return [
       { value: '', label: 'None (Root Category)' },
-      ...categories.filter(c => c.parentId === null).map(c => ({ value: c.id, label: c.name }))
+      ...categories.filter((c: any) => !c.parentId).map((c: any) => ({ value: c.id, label: c.name }))
     ];
   }, [categories]);
 
-  // 1. Calculate active product counts per category dynamically from current products list
+  // 1. Filtered categories list
   const categoriesWithLiveCounts = useMemo(() => {
     return categories
-      .map(cat => {
-        const liveCount = products.filter(p => p.categoryId === cat.id).length;
-        return {
-          ...cat,
-          productCount: liveCount
-        };
-      })
-      .filter(cat =>
+      .map((cat: any) => ({
+        ...cat,
+        productCount: cat._count?.products || 0,
+      }))
+      .filter((cat: any) =>
         searchQuery ? cat.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
       );
-  }, [categories, products, searchQuery]);
+  }, [categories, searchQuery]);
 
   // 2. Submit new category
   const handleAddCategory = (e: React.FormEvent) => {
@@ -59,14 +70,19 @@ export default function StoreCategoriesPage() {
       return;
     }
 
-    addCategory({
-      name: newCatName.trim(),
-      parentId: parentId || null
-    });
-
-    toast.success(`Category "${newCatName}" created!`);
-    setNewCatName('');
-    setParentId('');
+    createCategory.mutate(
+      { storeId, payload: { name: newCatName.trim() } },
+      {
+        onSuccess: () => {
+          toast.success(`Category "${newCatName}" created!`);
+          setNewCatName('');
+          setParentId('');
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to create category');
+        },
+      }
+    );
   };
 
   // 3. Edit category name inline
@@ -75,10 +91,20 @@ export default function StoreCategoriesPage() {
       toast.error('Category name cannot be empty!');
       return;
     }
-    editCategory(id, editingName.trim());
-    toast.success('Category name updated!');
-    setEditingId('');
-    setEditingName('');
+
+    updateCategory.mutate(
+      { id, storeId, payload: { name: editingName.trim() } },
+      {
+        onSuccess: () => {
+          toast.success('Category name updated!');
+          setEditingId('');
+          setEditingName('');
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to update category');
+        },
+      }
+    );
   };
 
   const handleStartEdit = (id: string, currentName: string) => {
@@ -86,15 +112,22 @@ export default function StoreCategoriesPage() {
     setEditingName(currentName);
   };
 
-  // 4. Delete category
   const handleDeleteCategory = (id: string, name: string, count: number) => {
     if (count > 0) {
-      toast.error(`Cannot delete "${name}" because it contains ${count} products! Please reassign products first.`);
+      toast.error(`Cannot delete category "${name}" because it contains ${count} active products.`);
       return;
     }
-    
-    deleteCategory(id);
-    toast.success(`Category "${name}" deleted successfully.`);
+    deleteCategory.mutate(
+      { id, storeId },
+      {
+        onSuccess: () => {
+          toast.success(`Category "${name}" deleted`);
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to delete category');
+        },
+      }
+    );
   };
 
   return (
@@ -128,8 +161,8 @@ export default function StoreCategoriesPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border">
-                {categoriesWithLiveCounts.map((cat) => {
-                  const parentName = categories.find(c => c.id === cat.parentId)?.name;
+                {categoriesWithLiveCounts.map((cat: any) => {
+                  const parentName = categories.find((c: any) => c.id === cat.parentId)?.name;
                   const isEditing = editingId === cat.id;
                   
                   return (

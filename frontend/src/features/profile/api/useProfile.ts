@@ -51,8 +51,7 @@ export const useUploadAvatar = () => {
   const updateUser = useAuthStore((s) => s.updateUser);
 
   return useMutation({
-    mutationFn: async (result: { path: string; public_url: string }) => {
-      const avatarUrl = result.public_url || result.path;
+    mutationFn: async (avatarUrl: string) => {
       const response = await api.patch('/auth/profile', { avatar: avatarUrl });
       return response.data.data;
     },

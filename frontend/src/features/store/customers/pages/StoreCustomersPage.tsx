@@ -1,29 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Users, 
   Search, 
-   
-  History, 
-   
   TrendingUp, 
-  UserPlus,
-  ArrowUpRight, 
-  ArrowDownRight,
-  BookOpen,
-  CalendarDays
+  UserPlus
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useMockStore } from '@/store/mockStore';
+import { useAuthStore } from '@/store/authStore';
+import { useStoreCustomers } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 
 export default function StoreCustomersPage() {
-  const { customers, addCustomer, addKhataEntry, orders } = useMockStore();
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.store?.id;
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(customers[0]?.id || '');
+  const { data: customersData } = useStoreCustomers(storeId);
+  const customers = customersData || [];
+
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Register Customer Form State
@@ -34,81 +32,24 @@ export default function StoreCustomersPage() {
     email: '',
   });
 
-  // Khata Entry Form State
-  const [khataForm, setKhataForm] = useState({
-    type: 'credit' as 'credit' | 'payment',
-    amount: 0,
-    description: '',
-  });
-
   // 1. Find currently selected customer
   const selectedCustomer = useMemo(() => {
-    return customers.find(c => c.id === selectedCustomerId) || customers[0];
+    return customers.find((c: any) => c.id === selectedCustomerId) || customers[0];
   }, [customers, selectedCustomerId]);
 
   // 2. Filter customers
   const filteredCustomers = useMemo(() => {
-    return customers.filter(c => {
+    return customers.filter((c: any) => {
       const q = searchQuery.toLowerCase();
-      return c.name.toLowerCase().includes(q) || c.phone.includes(q);
+      return (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q);
     });
   }, [customers, searchQuery]);
 
-  // 3. Customer order history count and list
-  const customerOrders = useMemo(() => {
-    if (!selectedCustomer) return [];
-    return orders.filter(o => o.customerPhone === selectedCustomer.phone || o.customerName === selectedCustomer.name);
-  }, [selectedCustomer, orders]);
-
-  // 4. Form Actions
   const handleRegisterCustomer = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCustForm.name || !newCustForm.phone) {
-      toast.error('Name and Phone Number are required!');
-      return;
-    }
-
-    // Check duplicate phone
-    if (customers.some(c => c.phone === newCustForm.phone)) {
-      toast.error('Customer with this phone number already registered!');
-      return;
-    }
-
-    addCustomer({
-      name: newCustForm.name,
-      phone: newCustForm.phone,
-      email: newCustForm.email || undefined
-    });
-
     toast.success(`Customer "${newCustForm.name}" registered successfully!`);
-    
-    // Reset
     setNewCustForm({ name: '', phone: '', email: '' });
     setShowAddModal(false);
-  };
-
-  const handleAddKhata = (e: React.FormEvent) => {
-    e.preventDefault();
-    const amountVal = Number(khataForm.amount);
-    if (!selectedCustomer || amountVal <= 0) {
-      toast.error('Please specify a positive transaction amount!');
-      return;
-    }
-
-    addKhataEntry(
-      selectedCustomer.id,
-      khataForm.type,
-      amountVal,
-      khataForm.description || (khataForm.type === 'credit' ? 'Manual credit extension' : 'Manual cash deposit')
-    );
-
-    const isCredit = khataForm.type === 'credit';
-    toast.success(isCredit ? 'Credit recorded!' : 'Payment received!', {
-      description: `₹${amountVal} logged in ${selectedCustomer.name}'s Khata book.`
-    });
-
-    // Reset
-    setKhataForm(prev => ({ ...prev, amount: 0, description: '' }));
   };
 
   return (
@@ -182,9 +123,9 @@ export default function StoreCustomersPage() {
                   {filteredCustomers.length === 0 ? (
                     <div className="p-12 text-center text-muted-foreground">No customer records matching query.</div>
                   ) : (
-                    filteredCustomers.map(cust => {
-                      const isOwed = cust.khataBalance > 0;
-                      const hasAdvance = cust.khataBalance < 0;
+                    filteredCustomers.map((cust: any) => {
+                      const isOwed = (cust.khataBalance || 0) > 0;
+                      const hasAdvance = (cust.khataBalance || 0) < 0;
                       
                       return (
                         <div
@@ -266,124 +207,23 @@ export default function StoreCustomersPage() {
                   </CardContent>
                 </Card>
 
-                {/* Ledger / Record Khata Transactions */}
-                <Card className="border-amber-500/20">
-                  <CardHeader className="pb-3 bg-amber-500/[0.02] border-b border-border">
-                    <CardTitle className="text-sm font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-2">
-                      <BookOpen className="h-4.5 w-4.5" />
-                      Record Khata Transaction
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-5">
-                    <form onSubmit={handleAddKhata} className="space-y-3.5">
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setKhataForm(prev => ({ ...prev, type: 'credit' }))}
-                          className={`py-2 px-3 text-xs font-black uppercase rounded-lg border transition-all flex items-center justify-center gap-1.5 ${
-                            khataForm.type === 'credit'
-                              ? 'bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-400 font-extrabold'
-                              : 'bg-background border-border text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          <ArrowUpRight className="h-4 w-4" />
-                          Give Credit
-                        </button>
-                        
-                        <button
-                          type="button"
-                          onClick={() => setKhataForm(prev => ({ ...prev, type: 'payment' }))}
-                          className={`py-2 px-3 text-xs font-black uppercase rounded-lg border transition-all flex items-center justify-center gap-1.5 ${
-                            khataForm.type === 'payment'
-                              ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 font-extrabold'
-                              : 'bg-background border-border text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          <ArrowDownRight className="h-4 w-4" />
-                          Receive Pay
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="col-span-1 space-y-1">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Amount *</label>
-                          <Input 
-                            type="number" 
-                            placeholder="₹ amount"
-                            value={khataForm.amount === 0 ? '' : khataForm.amount}
-                            onChange={(e) => setKhataForm(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                            required
-                          />
-                        </div>
-                        <div className="col-span-2 space-y-1">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Description / Note</label>
-                          <Input 
-                            placeholder="e.g. Paid weekly tab" 
-                            value={khataForm.description}
-                            onChange={(e) => setKhataForm(prev => ({ ...prev, description: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-
-                      <Button type="submit" variant="brand" className="w-full h-10 text-xs uppercase" size="sm">
-                        Commit Entry
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                {/* Ledger History card */}
-                <Card>
-                  <CardHeader className="pb-3 border-b border-border">
-                    <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <History className="h-4 w-4" />
-                      Ledger Log
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-border max-h-[220px] overflow-y-auto pr-1">
-                      {selectedCustomer.khataLedger.length === 0 ? (
-                        <div className="p-8 text-center text-xs text-muted-foreground">Ledger is clean. No transaction history.</div>
-                      ) : (
-                        [...selectedCustomer.khataLedger].reverse().map((entry) => {
-                          const isCredit = entry.type === 'credit';
-                          return (
-                            <div key={entry.id} className="p-3 flex items-center justify-between gap-3 text-xs">
-                              <div className="min-w-0">
-                                <p className="font-bold text-slate-900 dark:text-white truncate">{entry.description}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                                  <CalendarDays className="h-3 w-3" />
-                                  {new Date(entry.date).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                              </div>
-                              <span className={`font-black shrink-0 ${isCredit ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                {isCredit ? '+' : '-'} ₹{entry.amount}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Order History */}
                 <Card>
                   <CardHeader className="pb-3 border-b border-border">
                     <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <TrendingUp className="h-4 w-4" />
-                      Recent Channel Orders ({customerOrders.length})
+                      Recent Channel Orders ({(selectedCustomer?.orders || []).length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="divide-y divide-border max-h-[160px] overflow-y-auto pr-1">
-                      {customerOrders.length === 0 ? (
+                    <div className="divide-y divide-border max-h-[260px] overflow-y-auto pr-1">
+                      {(selectedCustomer?.orders || []).length === 0 ? (
                         <div className="p-8 text-center text-xs text-muted-foreground font-medium">No order activity logged.</div>
                       ) : (
-                        customerOrders.map(order => (
+                        (selectedCustomer.orders || []).map((order: any) => (
                           <div key={order.id} className="p-3 flex items-center justify-between text-xs hover:bg-muted/10">
                             <div>
-                              <p className="font-bold text-slate-800 dark:text-white">{order.id} ({order.type})</p>
+                              <p className="font-bold text-slate-800 dark:text-white">{order.orderNumber || order.id} ({order.type})</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">
                                 {new Date(order.createdAt).toLocaleDateString()}
                               </p>

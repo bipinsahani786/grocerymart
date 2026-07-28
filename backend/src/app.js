@@ -9,6 +9,7 @@ import { swaggerSpec } from "../config/swagger.js";
 import authRoutes from "./common/auth/auth.routes.js";
 import uploadRoutes from "./common/upload/upload.routes.js";
 import adminRoutes from "./admin/index.js";
+import storePanelRoutes from "./store/panel/panel.routes.js";
 
 const app = express();
 
@@ -24,8 +25,9 @@ app.use(cors({
   credentials: true
 }));
 
-// Parse structured incoming JSON payloads
-app.use(express.json());
+// Parse structured incoming JSON payloads with 50mb limit for Data URL image uploads
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Serve static files (avatars, images, etc.)
 app.use(express.static(path.join(process.cwd(), "public")));
@@ -52,6 +54,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/store", storePanelRoutes);
 
 // Platform System Readiness Check Endpoint
 app.get("/", (req, res) => {

@@ -72,6 +72,8 @@ export const useCreateStore = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       toast.success('Store created successfully');
     },
     onError: (error: any) => {
@@ -90,6 +92,8 @@ export const useUpdateStore = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       toast.success('Store updated successfully');
     },
     onError: (error: any) => {
@@ -108,6 +112,7 @@ export const useUpdateStoreStatus = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       toast.success(`Store marked as ${data.isActive ? 'Active' : 'Inactive'}`);
     },
     onError: (error: any) => {
@@ -135,6 +140,8 @@ export const useDeleteStore = () => {
         };
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'stores'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'managers'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin'] });
       queryClient.refetchQueries({ queryKey: ['admin', 'stores'] });
       toast.success('Store deleted successfully');
     },

@@ -1,6 +1,7 @@
 import { authService } from "./auth.service.js";
 import { authRepository } from "./auth.repository.js";
 import { catchAsync } from "../../utils/catchAsync.js";
+import { AppError } from "../../utils/AppError.js";
 
 export class AuthController {
   register = catchAsync(async (req, res) => {
@@ -61,9 +62,28 @@ export class AuthController {
   updateProfile = catchAsync(async (req, res) => {
     const data = req.body;
     const updateData = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.email !== undefined) updateData.email = data.email;
-    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.name !== undefined) updateData.name = data.name.trim();
+    if (data.email !== undefined) {
+      const cleanEmail = data.email.toLowerCase().trim();
+      const existing = await authRepository.findUserByEmail(cleanEmail);
+      if (existing && existing.id !== req.user.id) {
+        throw new AppError("This email address is already in use by another user account", 400);
+      }
+      updateData.email = cleanEmail;
+    }
+    if (data.phone !== undefined && data.phone !== null && data.phone !== "") {
+      const cleanPhone = String(data.phone).replace(/\D/g, "");
+      if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+        throw new AppError("Enter Valid phone number!", 400);
+      }
+      const existing = await authRepository.findUserByPhone(cleanPhone);
+      if (existing && existing.id !== req.user.id) {
+        throw new AppError("This phone number is already registered to another user account", 400);
+      }
+      updateData.phone = cleanPhone;
+    } else if (data.phone === null || data.phone === "") {
+      updateData.phone = null;
+    }
     if (data.avatar !== undefined) updateData.avatar = data.avatar;
 
     const updated = await authRepository.updateUser(req.user.id, updateData);

@@ -9,6 +9,7 @@ import {
   loginOtpVerifySchema,
   loginPasswordSchema,
   changePasswordSchema,
+  updateProfileSchema,
 } from "./auth.schema.js";
 
 const router = express.Router();
@@ -223,7 +224,8 @@ router.get("/profile", verifyToken, authController.getProfile);
  *       200:
  *         description: Profile updated
  */
-router.patch("/profile", verifyToken, authController.updateProfile);
+router.patch("/profile", verifyToken, validate(updateProfileSchema), authController.updateProfile);
+router.put("/profile", verifyToken, validate(updateProfileSchema), authController.updateProfile);
 
 /**
  * @openapi
