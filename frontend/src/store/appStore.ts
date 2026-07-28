@@ -11,7 +11,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       appName: 'Grocery Mart',
-      appLogo: null,
+      appLogo: '/logo.png',
       setSettings: (settings) => set((state) => ({ ...state, ...settings })),
     }),
     {

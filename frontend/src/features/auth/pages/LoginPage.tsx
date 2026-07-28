@@ -45,12 +45,12 @@ export default function LoginPage() {
         </div>
 
         {/* Top Title & Logo */}
-        <div className="relative z-10 self-start animate-in fade-in slide-in-from-top-6 duration-700 flex items-center gap-3 -mt-8 -ml-4">
+        <div className="relative z-10 self-start animate-in fade-in slide-in-from-top-6 duration-700 flex items-center gap-3.5 -mt-12 -ml-4">
           {appLogo ? (
             <img
               src={appLogo}
               alt={appName}
-              className="h-9 w-9 object-contain"
+              className="h-11 w-11 object-contain"
             />
           ) : (
             <svg
@@ -229,22 +229,21 @@ export default function LoginPage() {
       {/* Right Panel: Styled Form Section */}
       <div className="flex w-full flex-1 flex-col items-center justify-center p-4 md:p-8 lg:w-[65%] z-0">
         <div className={`w-full max-w-md space-y-4 p-8 rounded-3xl shadow-2xl border transition-all duration-300 animate-in fade-in duration-700 ${isDark
-            ? "bg-slate-900/90 backdrop-blur-md border-slate-800 text-white"
-            : "bg-white backdrop-blur-md border-slate-200/80 text-slate-900 shadow-slate-200/50"
+          ? "bg-slate-900/90 backdrop-blur-md border-slate-800 text-white"
+          : "bg-white backdrop-blur-md border-slate-200/80 text-slate-900 shadow-slate-200/50"
           }`}>
 
           {/* Mobile-only Brand Header (hidden on desktop) */}
           <div className="flex flex-col items-center justify-center text-center lg:hidden mb-4 animate-in fade-in slide-in-from-top-6 duration-700">
             <div
-              className={`mb-3 flex h-20 w-20 items-center justify-center rounded-full p-1 shadow-md border ${
-                isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-slate-50"
-              }`}
+              className={`mb-3 flex h-20 w-20 items-center justify-center rounded-full p-1 shadow-md border ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-slate-50"
+                }`}
             >
               {appLogo ? (
                 <img
                   src={appLogo}
                   alt={appName}
-                  className="max-h-16 max-w-16 object-contain"
+                  className={`max-h-14 max-w-14 object-contain ${isDark ? "invert brightness-200" : ""}`}
                 />
               ) : (
                 <svg
@@ -275,10 +274,10 @@ export default function LoginPage() {
                   key={idx}
                   className={
                     idx % 2 === 1
-                      ? (isDark 
-                          ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1.5 animate-pulse" 
-                          : "bg-clip-text bg-gradient-to-r from-primary-600 to-primary-800 text-transparent ml-1.5"
-                        )
+                      ? (isDark
+                        ? "bg-clip-text bg-gradient-to-r from-willow-green to-seagrass text-transparent ml-1.5 animate-pulse"
+                        : "bg-clip-text bg-gradient-to-r from-primary-600 to-primary-800 text-transparent ml-1.5"
+                      )
                       : (isDark ? "text-white" : "text-slate-900")
                   }
                 >

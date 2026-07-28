@@ -17,12 +17,19 @@ export function formatBytes(bytes: number, decimals = 2) {
 }
 
 export function getFileUrl(path: string | null | undefined): string {
-  if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  if (path.startsWith('data:')) return path;
+  if (!path || typeof path !== 'string' || !path.trim()) return '';
+  const clean = path.trim();
+  if (
+    clean.startsWith('http://') ||
+    clean.startsWith('https://') ||
+    clean.startsWith('data:') ||
+    clean.startsWith('blob:')
+  ) {
+    return clean;
+  }
   
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const baseUrl = apiUrl.replace(/\/api\/?$/, ''); // Remove trailing /api or /api/
   
-  return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+  return `${baseUrl}${clean.startsWith('/') ? '' : '/'}${clean}`;
 }

@@ -27,6 +27,20 @@ interface AddProductFormProps {
   initialData?: Partial<MasterProduct>;
 }
 
+const parseImageUrls = (urls: any): string[] => {
+  if (!urls) return [];
+  if (Array.isArray(urls)) return urls.filter(Boolean);
+  if (typeof urls === 'string') {
+    try {
+      const parsed = JSON.parse(urls);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {
+      return [urls].filter(Boolean);
+    }
+  }
+  return [];
+};
+
 export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductFormProps) {
   const { flatCategories, createProduct, updateProduct, uploadImage } = useMasterCatalog();
   const [isUploading, setIsUploading] = useState(false);
@@ -40,7 +54,7 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
     basePrice: initialData?.basePrice || 0,
     mrp: initialData?.mrp || 0,
     barcode: initialData?.barcode || '',
-    imageUrls: initialData?.imageUrls || [],
+    imageUrls: parseImageUrls(initialData?.imageUrls),
     variants: initialData?.variants || [],
   });
 
@@ -52,24 +66,73 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
     })),
   ];
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     setIsUploading(true);
-    try {
-      const url = await uploadImage.mutateAsync(files[0]);
-      setFormData((prev) => ({
-        ...prev,
-        imageUrls: [...(prev.imageUrls || []), url],
-      }));
-      toast.success('Product image uploaded successfully');
-    } catch (error) {
-      console.error('Upload failed', error);
-      toast.error('Failed to upload image. Please try again.');
-    } finally {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = Math.round(width);
+        canvas.height = Math.round(height);
+        const ctx = canvas.getContext('2d');
+        let compressedDataUrl = '';
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+        } else {
+          compressedDataUrl = event.target?.result as string;
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          imageUrls: [...parseImageUrls(prev.imageUrls), compressedDataUrl],
+        }));
+        toast.success('Product image added successfully');
+        setIsUploading(false);
+      };
+
+      img.onerror = () => {
+        const fallbackUrl = event.target?.result as string;
+        if (fallbackUrl) {
+          setFormData((prev) => ({
+            ...prev,
+            imageUrls: [...parseImageUrls(prev.imageUrls), fallbackUrl],
+          }));
+        }
+        setIsUploading(false);
+      };
+
+      img.src = event.target?.result as string;
+    };
+
+    reader.onerror = () => {
       setIsUploading(false);
-    }
+      toast.error('Failed to read image file');
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const addVariantRow = () => {
@@ -99,10 +162,34 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.categoryId) {
-      toast.error('Please select a master category.');
+    if (!formData.name || !formData.name.trim()) {
+      toast.error('Product Title is required.');
       return;
     }
+    if (!formData.brand || !formData.brand.trim()) {
+      toast.error('Brand Name is required.');
+      return;
+    }
+    if (!formData.categoryId) {
+      toast.error('Please select a Master Category.');
+      return;
+    }
+
+    if (formData.productType === 'simple' || formData.productType === 'loose') {
+      if (!formData.unit || !formData.unit.trim()) {
+        toast.error('Measuring Unit is required.');
+        return;
+      }
+      if (formData.basePrice === undefined || formData.basePrice === null || Number(formData.basePrice) <= 0) {
+        toast.error('Base Price (₹) is required and must be greater than 0.');
+        return;
+      }
+      if (formData.mrp === undefined || formData.mrp === null || Number(formData.mrp) <= 0) {
+        toast.error('MRP (Maximum Retail Price) is required and must be greater than 0.');
+        return;
+      }
+    }
+
     if (
       formData.productType === 'variant' &&
       (!formData.variants || formData.variants.length === 0)
@@ -167,16 +254,17 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Aashirvaad Whole Wheat Atta"
+              placeholder="e.g. Misti Dahi"
               icon={<Package className="w-4 h-4 text-slate-400" />}
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              Brand Name
+              Brand Name <span className="text-rose-500">*</span>
             </label>
             <Input
+              required
               value={formData.brand || ''}
               onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
               placeholder="e.g. ITC / Fortune"
@@ -192,7 +280,7 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
               options={categoryOptions}
               value={formData.categoryId || ''}
               onChange={(val) => setFormData({ ...formData, categoryId: String(val) })}
-              placeholder="Select Category"
+              placeholder="Select Category (e.g. Dahi)"
             />
           </div>
         </div>
@@ -317,10 +405,11 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                MRP (Maximum Retail Price)
+                MRP (Maximum Retail Price) <span className="text-rose-500">*</span>
               </label>
               <Input
                 type="number"
+                required
                 min="0"
                 step="0.01"
                 value={formData.mrp || ''}

@@ -81,12 +81,12 @@ export class CatalogRepository {
   }
 
   async updateMasterProduct(id, data) {
-    const { variants, category, taxClass, ...productData } = data;
+    const { variants, category, taxClass, id: _, createdAt: __, updatedAt: ___, ...productData } = data;
 
     return await prisma.$transaction(async (tx) => {
       if (variants !== undefined) {
         await tx.masterProductVariant.deleteMany({
-          where: { masterProductId: id }
+          where: { productId: id }
         });
       }
 
@@ -95,7 +95,7 @@ export class CatalogRepository {
         data: {
           ...productData,
           variants: variants && variants.length > 0 ? {
-            create: variants.map(({ id: _, masterProductId: __, ...v }) => v)
+            create: variants.map(({ id: _, masterProductId: __, productId: ___, ...v }) => v)
           } : undefined
         },
         include: {
@@ -111,7 +111,7 @@ export class CatalogRepository {
   async deleteMasterProduct(id) {
     return await prisma.$transaction(async (tx) => {
       await tx.masterProductVariant.deleteMany({
-        where: { masterProductId: id }
+        where: { productId: id }
       });
       return await tx.masterProduct.delete({
         where: { id }

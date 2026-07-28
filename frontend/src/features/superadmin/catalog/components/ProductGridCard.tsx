@@ -10,7 +10,7 @@ interface ProductGridCardProps {
 }
 
 export function ProductGridCard({ product, onEdit, onDelete }: ProductGridCardProps) {
-  const imageUrl = product.imageUrls?.[0] || '';
+  const imageUrl = Array.isArray(product.imageUrls) ? product.imageUrls[0] : (typeof product.imageUrls === 'string' ? product.imageUrls : '');
   const discountPercent =
     product.mrp && product.mrp > product.basePrice
       ? Math.round(((product.mrp - product.basePrice) / product.mrp) * 100)
@@ -24,6 +24,7 @@ export function ProductGridCard({ product, onEdit, onDelete }: ProductGridCardPr
           <SafeCategoryImage
             src={imageUrl}
             alt={product.name}
+            type="product"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             iconSize="w-8 h-8"
           />

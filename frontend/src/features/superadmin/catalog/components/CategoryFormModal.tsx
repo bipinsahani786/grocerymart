@@ -100,7 +100,7 @@ export function CategoryFormModal({
           <div className="flex items-center gap-3">
             {imageUrl ? (
               <div className="relative w-16 h-16 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 shadow-sm">
-                <SafeCategoryImage src={imageUrl} alt="Category preview" className="w-full h-full object-cover" iconSize="w-6 h-6" />
+                <SafeCategoryImage src={imageUrl} alt="Category preview" type="category" className="w-full h-full object-cover" iconSize="w-6 h-6" />
                 <button
                   type="button"
                   onClick={() => setImageUrl('')}

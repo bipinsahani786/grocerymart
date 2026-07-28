@@ -334,17 +334,17 @@ export function Sidebar({ className }: { className?: string }) {
         {/* ── Brand ── */}
         <div
           className={cn(
-            "h-14 flex items-center border-b border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden",
-            isSidebarCollapsed ? "justify-center px-0" : "px-4"
+            "h-16 flex items-center border-b border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden",
+            isSidebarCollapsed ? "justify-center px-0" : "px-3.5"
           )}
         >
-          <div className={cn("flex items-center gap-2 min-w-0", isSidebarCollapsed && "justify-center")}>
+          <div className={cn("flex items-center gap-2.5 min-w-0", isSidebarCollapsed && "justify-center")}>
             {appLogo ? (
-              <div className="w-7 h-7 rounded-md overflow-hidden shrink-0 flex items-center justify-center">
-                <img src={appLogo} alt={appName} className="w-full h-full object-contain" />
+              <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
+                <img src={appLogo} alt={appName} className="w-full h-full object-contain dark:invert" />
               </div>
             ) : (
-              <div className="bg-primary-600 rounded-md w-7 h-7 flex items-center justify-center text-white text-xs font-bold shrink-0">
+              <div className="bg-primary-600 rounded-lg w-9 h-9 flex items-center justify-center text-white text-sm font-extrabold shrink-0 shadow-xs">
                 {appName ? appName.charAt(0).toUpperCase() : "G"}
               </div>
             )}
@@ -397,40 +397,40 @@ export function Sidebar({ className }: { className?: string }) {
                     <PortalTooltip key={item.name} text={item.name} visible={isSidebarCollapsed}>
                       <Link
                         to={item.href}
-                        className={cn(
-                          "flex items-center text-[13px] font-medium transition-colors duration-150 relative rounded-md",
-                          isSidebarCollapsed
-                            ? "justify-center w-9 h-9 mx-auto"
-                            : "h-8 px-2.5 gap-2.5",
-                          isActive
-                            ? cn(isDark ? "bg-primary-500/15 text-primary-400" : "bg-primary-50 text-primary-700 font-semibold")
-                            : cn(isDark ? "text-slate-300 hover:text-white hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50")
-                        )}
+                      className={cn(
+                        "flex items-center text-[13px] font-medium transition-colors duration-150 relative rounded-md",
+                        isSidebarCollapsed
+                          ? "justify-center w-9 h-9 mx-auto"
+                          : "h-8 px-2.5 gap-2.5",
+                        isActive
+                          ? cn(isDark ? "bg-primary-500/15 text-primary-400" : "bg-primary-50 text-primary-700 font-semibold")
+                          : cn(isDark ? "text-slate-300 hover:text-white hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50")
+                      )}
                       >
-                        {isActive && !isSidebarCollapsed && (
-                          <div className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r", isDark ? "bg-primary-400" : "bg-primary-600")} />
+                      {isActive && !isSidebarCollapsed && (
+                        <div className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r", isDark ? "bg-primary-400" : "bg-primary-600")} />
+                      )}
+                      <item.icon
+                        strokeWidth={isActive ? 2 : 1.5}
+                        className={cn(
+                          "shrink-0 h-4 w-4",
+                          isActive
+                            ? cn(isDark ? "text-primary-400" : "text-primary-600")
+                            : cn(isDark ? "text-slate-400" : "text-slate-500")
                         )}
-                        <item.icon
-                          strokeWidth={isActive ? 2 : 1.5}
-                          className={cn(
-                            "shrink-0 h-4 w-4",
-                            isActive
-                              ? cn(isDark ? "text-primary-400" : "text-primary-600")
-                              : cn(isDark ? "text-slate-400" : "text-slate-500")
-                          )}
-                        />
-                        {!isSidebarCollapsed && (
-                          <span className="truncate">{item.name}</span>
-                        )}
-                      </Link>
+                      />
+                      {!isSidebarCollapsed && (
+                        <span className="truncate">{item.name}</span>
+                      )}
+                    </Link>
                     </PortalTooltip>
-                  );
+              );
                 })}
-              </div>
+            </div>
             </div>
           ))}
-        </nav>
-      </div>
+    </nav >
+      </div >
     </>
   );
 }
