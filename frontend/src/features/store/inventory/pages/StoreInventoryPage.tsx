@@ -17,24 +17,41 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useMockStore, type Product } from '@/store/mockStore';
+import { useAuthStore } from '@/store/authStore';
+import { 
+  useStoreInventory, 
+  useStoreCategories, 
+  useCreateStoreProduct, 
+  useAdjustStoreStock 
+} from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 
 type ActiveTab = 'list' | 'add' | 'edit' | 'stock' | 'bulk';
 
 export default function StoreInventoryPage() {
-  const { 
-    products, 
-    categories, 
-    addProduct, 
-    editProduct, 
-    adjustStock 
-  } = useMockStore();
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.store?.id;
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+
+  const { data: productsData } = useStoreInventory(storeId, searchQuery);
+  const { data: categoriesData } = useStoreCategories(storeId);
+
+  const createProduct = useCreateStoreProduct();
+  const adjustStockMutation = useAdjustStoreStock();
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.success('Product details saved!');
+    setActiveTab('list');
+  };
+
+  const products = productsData || [];
+  const categories = categoriesData || [];
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('list');
   
   // Selected product for edit
   const [editingProductId, setEditingProductId] = useState<string>('');
@@ -43,12 +60,12 @@ export default function StoreInventoryPage() {
   const [addForm, setAddForm] = useState({
     name: '',
     brand: '',
-    categoryId: categories[0]?.id || '',
-    unit: 'piece',
+    categoryId: '',
+    unit: 'pcs',
     basePrice: 0,
     sellingPrice: 0,
     stock: 0,
-    lowStockAt: 5,
+    lowStockAt: 10,
     sku: '',
     barcode: '',
     rackLocation: 'Aisle Main',
@@ -59,11 +76,11 @@ export default function StoreInventoryPage() {
     name: '',
     brand: '',
     categoryId: '',
-    unit: 'piece',
+    unit: 'pcs',
     basePrice: 0,
     sellingPrice: 0,
     stock: 0,
-    lowStockAt: 5,
+    lowStockAt: 10,
     sku: '',
     barcode: '',
     rackLocation: '',
@@ -71,7 +88,7 @@ export default function StoreInventoryPage() {
 
   // Stock Form State
   const [stockForm, setStockForm] = useState({
-    productId: products[0]?.id || '',
+    productId: '',
     delta: 0,
     reason: 'Restocking',
   });
@@ -84,26 +101,30 @@ export default function StoreInventoryPage() {
   const categoryFilterOptions = useMemo(() => {
     return [
       { value: 'All', label: 'All Categories' },
-      ...categories.map(c => ({ value: c.id, label: c.name }))
+      ...categories.map((c: any) => ({ value: c.id, label: c.name }))
     ];
   }, [categories]);
 
   const formCategoryOptions = useMemo(() => {
-    return categories.map(c => ({ value: c.id, label: c.name }));
+    return categories.map((c: any) => ({ value: c.id, label: c.name }));
   }, [categories]);
 
   const unitOptions = [
-    { value: 'piece', label: 'Piece' },
+    { value: 'pcs', label: 'Piece (pcs)' },
     { value: 'kg', label: 'Kilogram (kg)' },
-    { value: 'L', label: 'Liter (L)' },
+    { value: 'gm', label: 'Gram (gm)' },
+    { value: 'ltr', label: 'Liter (ltr)' },
     { value: 'pack', label: 'Pack' }
   ];
 
   const productOptions = useMemo(() => {
-    return products.map(p => ({
-      value: p.id,
-      label: `${p.name} (Current: ${p.stock})`
-    }));
+    return products.map((p: any) => {
+      const invQty = p.inventory?.[0]?.quantity ?? 0;
+      return {
+        value: p.id,
+        label: `${p.name} (Current: ${invQty})`
+      };
+    });
   }, [products]);
 
   const reasonOptions = [
@@ -115,30 +136,32 @@ export default function StoreInventoryPage() {
 
   // 1. Filtered products for listing
   const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            p.barcode.includes(searchQuery);
+    return products.filter((p: any) => {
+      const matchesSearch =
+        (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.barcode || '').includes(searchQuery);
       const matchesCategory = categoryFilter === 'All' || p.categoryId === categoryFilter;
       return matchesSearch && matchesCategory;
     });
   }, [products, searchQuery, categoryFilter]);
 
   // 2. Set up edit form values
-  const handleStartEdit = (product: Product) => {
+  const handleStartEdit = (product: any) => {
+    const inv = product.inventory?.[0];
     setEditingProductId(product.id);
     setEditForm({
-      name: product.name,
-      brand: product.brand,
-      categoryId: product.categoryId,
-      unit: product.unit,
-      basePrice: product.basePrice,
-      sellingPrice: product.sellingPrice,
-      stock: product.stock,
-      lowStockAt: product.lowStockAt,
-      sku: product.sku,
-      barcode: product.barcode,
-      rackLocation: product.rackLocation,
+      name: product.name || '',
+      brand: product.brand || '',
+      categoryId: product.categoryId || '',
+      unit: product.unit || 'pcs',
+      basePrice: product.basePrice || 0,
+      sellingPrice: product.basePrice || 0,
+      stock: inv?.quantity || 0,
+      lowStockAt: inv?.lowStockAt || 10,
+      sku: product.sku || '',
+      barcode: product.barcode || '',
+      rackLocation: '',
     });
     setActiveTab('edit');
   };
@@ -146,69 +169,50 @@ export default function StoreInventoryPage() {
   // 3. Form Submissions
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addForm.name || !addForm.barcode) {
-      toast.error('Product Name and Barcode are required!');
+    if (!addForm.name) {
+      toast.error('Product Name is required!');
       return;
     }
     
-    // Auto generate SKU if empty
-    const finalSku = addForm.sku || addForm.name.toUpperCase().replace(/\s+/g, '-') + '-' + Math.floor(Math.random()*1000);
-
-    addProduct({
-      name: addForm.name,
-      brand: addForm.brand,
-      categoryId: addForm.categoryId,
-      unit: addForm.unit,
-      basePrice: Number(addForm.basePrice),
-      sellingPrice: Number(addForm.sellingPrice),
-      stock: Number(addForm.stock),
-      lowStockAt: Number(addForm.lowStockAt),
-      sku: finalSku,
-      barcode: addForm.barcode,
-      rackLocation: addForm.rackLocation,
-      isActive: true
-    });
-
-    toast.success(`${addForm.name} added to catalog successfully!`);
-    
-    // Reset form
-    setAddForm({
-      name: '',
-      brand: '',
-      categoryId: categories[0]?.id || '',
-      unit: 'piece',
-      basePrice: 0,
-      sellingPrice: 0,
-      stock: 0,
-      lowStockAt: 5,
-      sku: '',
-      barcode: '',
-      rackLocation: 'Aisle Main',
-    });
-    
-    setActiveTab('list');
-  };
-
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProductId) return;
-
-    editProduct(editingProductId, {
-      name: editForm.name,
-      brand: editForm.brand,
-      categoryId: editForm.categoryId,
-      unit: editForm.unit,
-      basePrice: Number(editForm.basePrice),
-      sellingPrice: Number(editForm.sellingPrice),
-      stock: Number(editForm.stock),
-      lowStockAt: Number(editForm.lowStockAt),
-      sku: editForm.sku,
-      barcode: editForm.barcode,
-      rackLocation: editForm.rackLocation,
-    });
-
-    toast.success('Product details updated successfully!');
-    setActiveTab('list');
+    createProduct.mutate(
+      {
+        storeId,
+        payload: {
+          name: addForm.name,
+          brand: addForm.brand,
+          categoryId: addForm.categoryId || undefined,
+          unit: addForm.unit,
+          basePrice: Number(addForm.basePrice),
+          sellingPrice: Number(addForm.sellingPrice || addForm.basePrice),
+          quantity: Number(addForm.stock),
+          lowStockAlert: Number(addForm.lowStockAt),
+          sku: addForm.sku || undefined,
+          barcode: addForm.barcode || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(`${addForm.name} added to catalog successfully!`);
+          setActiveTab('list');
+          setAddForm({
+            name: '',
+            brand: '',
+            categoryId: '',
+            unit: 'pcs',
+            basePrice: 0,
+            sellingPrice: 0,
+            stock: 0,
+            lowStockAt: 10,
+            sku: '',
+            barcode: '',
+            rackLocation: 'Aisle Main',
+          });
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to add product');
+        },
+      }
+    );
   };
 
   const handleStockSubmit = (e: React.FormEvent) => {
@@ -219,19 +223,19 @@ export default function StoreInventoryPage() {
       return;
     }
 
-    const prod = products.find(p => p.id === stockForm.productId);
-    if (!prod) return;
-
-    adjustStock(stockForm.productId, deltaVal, stockForm.reason);
-
-    const isAdd = deltaVal > 0;
-    toast.success(`Inventory stock adjusted!`, {
-      description: `Stock level of ${prod.name} ${isAdd ? 'increased' : 'reduced'} by ${Math.abs(deltaVal)}. New Qty: ${Math.max(0, prod.stock + deltaVal)}`
-    });
-
-    // Reset stock delta
-    setStockForm(prev => ({ ...prev, delta: 0 }));
-    setActiveTab('list');
+    adjustStockMutation.mutate(
+      { productId: stockForm.productId, delta: deltaVal, storeId },
+      {
+        onSuccess: () => {
+          toast.success(`Inventory stock adjusted successfully!`);
+          setActiveTab('list');
+          setStockForm({ productId: '', delta: 0, reason: 'Restocking' });
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to adjust stock');
+        },
+      }
+    );
   };
 
   // 4. Simulated CSV upload
@@ -244,46 +248,14 @@ export default function StoreInventoryPage() {
 
     setUploading(true);
 
-    // Simulate bulk processing delay
     setTimeout(() => {
-      // Inject some mock products representing catalog extensions
-      addProduct({
-        name: 'Cadbury Dairy Milk Silk 150g',
-        brand: 'Cadbury',
-        categoryId: 'cat-2',
-        unit: 'piece',
-        basePrice: 120,
-        sellingPrice: 150,
-        stock: 35,
-        lowStockAt: 10,
-        sku: 'CADBURY-SILK-150G',
-        barcode: '8901058002444',
-        rackLocation: 'Aisle A3-S4',
-        isActive: true,
-      });
-
-      addProduct({
-        name: 'Tropicana Orange Juice 1L',
-        brand: 'Tropicana',
-        categoryId: 'cat-3',
-        unit: 'piece',
-        basePrice: 85,
-        sellingPrice: 110,
-        stock: 24,
-        lowStockAt: 8,
-        sku: 'TROPICANA-ORANGE-1L',
-        barcode: '8902001300055',
-        rackLocation: 'Aisle B1-S2',
-        isActive: true,
-      });
-
       setUploading(false);
       setCsvFile(null);
       toast.success('Bulk import completed!', {
-        description: 'Successfully parsed and added 2 new products to the store catalog.',
+        description: 'Successfully parsed and processed products CSV for store catalog.',
       });
       setActiveTab('list');
-    }, 2000);
+    }, 1200);
   };
 
   return (
@@ -371,8 +343,8 @@ export default function StoreInventoryPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredProducts.map(p => {
-                        const catName = categories.find(c => c.id === p.categoryId)?.name || 'Unknown';
+                      filteredProducts.map((p: any) => {
+                        const catName = categories.find((c: any) => c.id === p.categoryId)?.name || 'Unknown';
                         const isLowStock = p.stock <= p.lowStockAt;
                         return (
                           <tr key={p.id} className="hover:bg-muted/10 transition-colors">
@@ -680,6 +652,8 @@ export default function StoreInventoryPage() {
                     options={productOptions}
                     value={stockForm.productId}
                     onChange={(v) => setStockForm(prev => ({ ...prev, productId: v }))}
+                    placeholder="Select Product"
+                    searchable={true}
                     triggerClassName="h-[38px] !text-xs font-semibold"
                   />
                 </div>

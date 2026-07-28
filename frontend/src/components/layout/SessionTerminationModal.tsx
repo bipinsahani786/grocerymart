@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { AlertTriangle, LogOut, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';

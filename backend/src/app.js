@@ -9,6 +9,7 @@ import { swaggerSpec } from "../config/swagger.js";
 import authRoutes from "./common/auth/auth.routes.js";
 import uploadRoutes from "./common/upload/upload.routes.js";
 import adminRoutes from "./admin/index.js";
+import storePanelRoutes from "./store/panel/panel.routes.js";
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/store", storePanelRoutes);
 
 // Platform System Readiness Check Endpoint
 app.get("/", (req, res) => {

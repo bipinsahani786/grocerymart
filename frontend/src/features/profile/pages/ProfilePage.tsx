@@ -10,10 +10,8 @@ import {
 } from '../api/useProfile';
 import { profileSchema, passwordSchema } from '../schemas/profileSchema';
 import type { ProfileValues, PasswordValues } from '../schemas/profileSchema';
-import { AVATAR_UPLOAD_FOLDER } from '../constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ImageUpload } from '@/components/ui/image-upload';
 import { PageHeader } from '@/components/ui/page-header';
 import { SectionCard } from '@/components/ui/section-card';
 import { FormField } from '@/components/ui/form-field';

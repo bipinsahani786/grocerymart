@@ -358,17 +358,19 @@ export function Sidebar({ className }: { className?: string }) {
 
         {/* ── Search ── */}
         {!isSidebarCollapsed && (
-          <div className={cn("px-3 py-2 border-b shrink-0", isDark ? "border-slate-600" : "border-slate-200")}>
+          <div className={cn("px-3 py-2 border-b shrink-0", isDark ? "border-slate-700/80" : "border-slate-200")}>
             <div className="relative">
-              <Search className={cn("absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5", isDark ? "text-slate-300" : "text-slate-400")} />
+              <Search className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5", isDark ? "text-slate-300" : "text-slate-400")} />
               <input
                 type="text"
                 placeholder="Search..."
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 className={cn(
-                  "w-full h-7 pl-7 pr-2 text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500/30 transition-colors border",
-                  isDark ? "bg-slate-800/80 border-slate-600 text-white placeholder:text-slate-400" : "bg-slate-100 border-transparent text-slate-700 placeholder:text-slate-400"
+                  "w-full h-7 pl-8 pr-2 text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-colors border font-semibold",
+                  isDark
+                    ? "bg-slate-900/60 border-slate-600/80 text-white placeholder:text-slate-400"
+                    : "bg-slate-100 border-transparent text-slate-700 placeholder:text-slate-400"
                 )}
               />
             </div>
@@ -376,11 +378,11 @@ export function Sidebar({ className }: { className?: string }) {
         )}
 
         {/* ── Navigation ── */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none py-1">
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none pt-1 pb-8 space-y-1">
           {filteredMenuGroups.map((group, idx) => (
             <div key={idx}>
               {idx > 0 && !isSidebarCollapsed && (
-                <div className={cn("mx-3 my-1 border-t", isDark ? "border-slate-700/50" : "border-slate-100")} />
+                <div className={cn("mx-3 my-1 border-t", isDark ? "border-slate-700/60" : "border-slate-100")} />
               )}
               {!isSidebarCollapsed && (
                 <div className={cn(
@@ -397,39 +399,48 @@ export function Sidebar({ className }: { className?: string }) {
                     <PortalTooltip key={item.name} text={item.name} visible={isSidebarCollapsed}>
                       <Link
                         to={item.href}
-                      className={cn(
-                        "flex items-center text-[13px] font-medium transition-colors duration-150 relative rounded-md",
-                        isSidebarCollapsed
-                          ? "justify-center w-9 h-9 mx-auto"
-                          : "h-8 px-2.5 gap-2.5",
-                        isActive
-                          ? cn(isDark ? "bg-primary-500/15 text-primary-400" : "bg-primary-50 text-primary-700 font-semibold")
-                          : cn(isDark ? "text-slate-300 hover:text-white hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50")
-                      )}
-                      >
-                      {isActive && !isSidebarCollapsed && (
-                        <div className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r", isDark ? "bg-primary-400" : "bg-primary-600")} />
-                      )}
-                      <item.icon
-                        strokeWidth={isActive ? 2 : 1.5}
                         className={cn(
-                          "shrink-0 h-4 w-4",
+                          "flex items-center text-[13px] font-medium transition-colors duration-150 relative rounded-md",
+                          isSidebarCollapsed
+                            ? "justify-center w-9 h-9 mx-auto"
+                            : "h-8 px-2.5 gap-2.5",
                           isActive
-                            ? cn(isDark ? "text-primary-400" : "text-primary-600")
-                            : cn(isDark ? "text-slate-400" : "text-slate-500")
+                            ? cn(
+                                isDark
+                                  ? "bg-primary-500/20 text-white font-semibold"
+                                  : "bg-primary-50 text-primary-700 font-semibold"
+                              )
+                            : cn(
+                                isDark
+                                  ? "text-slate-200 hover:text-white hover:bg-slate-700/60"
+                                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                              )
                         )}
-                      />
-                      {!isSidebarCollapsed && (
-                        <span className="truncate">{item.name}</span>
-                      )}
-                    </Link>
+                      >
+                        {isActive && !isSidebarCollapsed && (
+                          <div className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r", isDark ? "bg-primary-400" : "bg-primary-600")} />
+                        )}
+                        <item.icon
+                          strokeWidth={isActive ? 2 : 1.5}
+                          className={cn(
+                            "shrink-0 h-4 w-4",
+                            isActive
+                              ? cn(isDark ? "text-primary-400" : "text-primary-600")
+                              : cn(isDark ? "text-slate-300" : "text-slate-500")
+                          )}
+                        />
+                        {!isSidebarCollapsed && (
+                          <span className="truncate">{item.name}</span>
+                        )}
+                      </Link>
                     </PortalTooltip>
-              );
+                  );
                 })}
-            </div>
+              </div>
             </div>
           ))}
-    </nav >
+          <div className="h-8 shrink-0" />
+        </nav>
       </div >
     </>
   );

@@ -13,26 +13,32 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useMockStore } from '@/store/mockStore';
+import { useAuthStore } from '@/store/authStore';
+import { useStorePickupQueue } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 
 export default function StorePickupPage() {
-  const { orders } = useMockStore();
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.store?.id;
+
+  const { data: pickupData } = useStorePickupQueue(storeId);
+  const orders = pickupData || [];
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // 1. Group Click & Collect orders
   const preparingOrders = useMemo(() => {
-    return orders.filter(o => 
-      o.type === 'Click & Collect' && 
-      ['ACCEPTED', 'PACKED'].includes(o.status)
+    return orders.filter((o: any) => 
+      o.type === 'CLICK_COLLECT' && 
+      ['PLACED', 'ACCEPTED', 'PACKING', 'PACKED'].includes(o.status)
     );
   }, [orders]);
 
   const readyOrders = useMemo(() => {
-    return orders.filter(o => 
-      o.type === 'Click & Collect' && 
-      o.status === 'READY'
+    return orders.filter((o: any) => 
+      o.type === 'CLICK_COLLECT' && 
+      o.status === 'READY_FOR_PICKUP'
     );
   }, [orders]);
 
@@ -113,14 +119,14 @@ export default function StorePickupPage() {
                 No orders preparing
               </div>
             ) : (
-              preparingOrders.map(order => (
+              preparingOrders.map((order: any) => (
                 <div key={order.id} className="p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center justify-between hover:bg-white/[0.04]">
                   <div>
                     <span className="text-xl font-extrabold text-white">#{order.id.replace('ORD-', '')}</span>
-                    <p className="text-xs text-slate-400 mt-1">{order.customerName}</p>
+                    <p className="text-xs text-slate-400 mt-1">{order.customerName || order.customer?.name}</p>
                   </div>
                   <Badge variant="outline" className="border-white/10 text-slate-300 font-bold text-[10px]">
-                    {order.items.reduce((sum, i) => sum + i.qty, 0)} items
+                    {(order.items || []).reduce((sum: number, i: any) => sum + (i.quantity || i.qty || 1), 0)} items
                   </Badge>
                 </div>
               ))
@@ -145,7 +151,7 @@ export default function StorePickupPage() {
                 No ready orders
               </div>
             ) : (
-              readyOrders.map(order => (
+              readyOrders.map((order: any) => (
                 <div 
                   key={order.id} 
                   className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl flex items-center justify-between hover:bg-emerald-500/10 cursor-pointer"

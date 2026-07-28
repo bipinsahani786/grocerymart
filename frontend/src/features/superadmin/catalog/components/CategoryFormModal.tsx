@@ -3,9 +3,10 @@ import { UploadCloud, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import type { MasterCategory } from '../schemas/catalogSchemas';
+import { CustomDropdown } from '@/components/ui/CustomDropdown';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -83,11 +84,12 @@ export function CategoryFormModal({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Parent Category <span className="text-rose-500">*</span>
             </label>
-            <SearchableSelect
+            <CustomDropdown
               options={parentOptions}
               value={parentId}
               onChange={(val) => setParentId(String(val))}
               placeholder="-- Select Parent Category --"
+              searchable={true}
             />
           </div>
         )}

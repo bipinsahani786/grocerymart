@@ -29,14 +29,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useMockStore, type Order, type OrderItem } from "@/store/mockStore";
+import { useAuthStore } from "@/store/authStore";
+import { useStoreOrders, useUpdateStoreOrderStatus } from "@/features/store/api/useStorePanel";
 import { toast } from "sonner";
 
 export default function StoreOrdersPage() {
-  const { orders, updateOrderStatus, addOrder, products } = useMockStore();
-  const [selectedOrderId, setSelectedOrderId] = useState<string>(
-    orders[0]?.id || "",
-  );
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.store?.id;
+
+  const { data: ordersData } = useStoreOrders(storeId);
+  const updateStatusMutation = useUpdateStoreOrderStatus();
+
+  const orders = ordersData || [];
+
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<
     "All" | "POS" | "Delivery" | "Click & Collect"
@@ -56,183 +62,90 @@ export default function StoreOrdersPage() {
 
   // 1. Find currently selected order
   const selectedOrder = useMemo(() => {
-    return orders.find((o) => o.id === selectedOrderId) || orders[0];
+    return orders.find((o: any) => o.id === selectedOrderId) || orders[0];
   }, [orders, selectedOrderId]);
 
   // 2. Filter orders
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
+    return orders.filter((order: any) => {
       // Type Filter
-      if (typeFilter !== "All" && order.type !== typeFilter) return false;
+      if (typeFilter !== "All") {
+        if (typeFilter === "Click & Collect" && order.type !== "CLICK_COLLECT") return false;
+        if (typeFilter === "Delivery" && order.type !== "DELIVERY") return false;
+        if (typeFilter === "POS" && order.type !== "POS") return false;
+      }
 
       // Status Filter
       if (statusFilter !== "All") {
         if (statusFilter === "ACTIVE") {
-          // Placed, Accepted, Packed, Ready
-          if (["DELIVERED", "CANCELLED", "REFUNDED"].includes(order.status))
+          if (["DELIVERED", "CANCELLED", "REFUNDED", "COLLECTED", "COMPLETED"].includes(order.status)) {
             return false;
+          }
         } else if (order.status !== statusFilter) {
           return false;
         }
       }
 
       // Search Query
-      if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
-        const matchesId = order.id.toLowerCase().includes(query);
-        const matchesName = order.customerName.toLowerCase().includes(query);
-        const matchesPhone = order.customerPhone.includes(query);
-        const matchesProduct = order.items.some((item) =>
-          item.productName.toLowerCase().includes(query),
-        );
-        return matchesId || matchesName || matchesPhone || matchesProduct;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const numMatch = (order.orderNumber || order.id).toLowerCase().includes(q);
+        const nameMatch = (order.customer?.name || order.customerName || "").toLowerCase().includes(q);
+        const phoneMatch = (order.customer?.phone || order.customerPhone || "").includes(q);
+        return numMatch || nameMatch || phoneMatch;
       }
 
       return true;
     });
   }, [orders, typeFilter, statusFilter, searchQuery]);
 
-  // 3. Simulated order placement
-  const handleSimulateOrder = () => {
-    const customerNames = [
-      "Amit Sharma",
-      "Neha Gupta",
-      "Vikram Patel",
-      "Sonia Malhotra",
-      "Rajesh Kulkarni",
-    ];
-    const phones = [
-      "9988112233",
-      "9811223344",
-      "9744556677",
-      "9533221144",
-      "9122334455",
-    ];
-    const types: Order["type"][] = ["Delivery", "Click & Collect", "POS"];
+  const handleUpdateStatus = (id: string, currentStatus: string) => {
+    let nextStatus = "ACCEPTED";
+    if (currentStatus === "PLACED") nextStatus = "ACCEPTED";
+    else if (currentStatus === "ACCEPTED") nextStatus = "PACKING";
+    else if (currentStatus === "PACKING") nextStatus = "PACKED";
+    else if (currentStatus === "PACKED") nextStatus = "READY_FOR_PICKUP";
+    else if (currentStatus === "READY_FOR_PICKUP") nextStatus = "DELIVERED";
 
-    const randomName =
-      customerNames[Math.floor(Math.random() * customerNames.length)];
-    const randomPhone = phones[Math.floor(Math.random() * phones.length)];
-    const randomType = types[Math.floor(Math.random() * types.length)];
-
-    // Choose 1-3 random products
-    const orderItems: OrderItem[] = [];
-    const itemCount = Math.floor(Math.random() * 3) + 1;
-    let total = 0;
-
-    for (let i = 0; i < itemCount; i++) {
-      const p = products[Math.floor(Math.random() * products.length)];
-      // Prevent duplicates
-      if (orderItems.some((item) => item.productId === p.id)) continue;
-
-      const qty = Math.floor(Math.random() * 2) + 1;
-      orderItems.push({
-        productId: p.id,
-        productName: p.name,
-        qty,
-        price: p.sellingPrice,
-      });
-      total += p.sellingPrice * qty;
-    }
-
-    if (orderItems.length === 0) return; // safety
-
-    const discount = total > 300 ? 30 : 0;
-    const totalAmount = total - discount;
-    const taxAmount = Math.round(totalAmount * 0.05 * 10) / 10;
-
-    const pin =
-      randomType === "Click & Collect"
-        ? String(Math.floor(Math.random() * 9000) + 1000)
-        : undefined;
-    const distanceKm =
-      randomType === "Delivery"
-        ? parseFloat((Math.random() * 4 + 0.5).toFixed(1))
-        : undefined;
-
-    addOrder({
-      customerName: randomName,
-      customerPhone: randomPhone,
-      type: randomType,
-      status: "PLACED",
-      items: orderItems,
-      totalAmount,
-      discount,
-      paymentMethod: randomType === "POS" ? "Cash" : "UPI",
-      paymentStatus: randomType === "POS" ? "Pending" : "Success",
-      taxAmount,
-      pin,
-      distanceKm,
-    });
-
-    toast.success(
-      `Simulated new order received: ${randomName} (${randomType})!`,
+    updateStatusMutation.mutate(
+      { orderId: id, status: nextStatus, storeId },
       {
-        description: `Total amount: ₹${totalAmount}`,
-        duration: 5000,
-      },
+        onSuccess: () => {
+          toast.success(`Order status updated to ${nextStatus}`);
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to update order status');
+        },
+      }
     );
   };
 
-  // 4. Update status with success toast
-  const handleUpdateStatus = (id: string, currentStatus: Order["status"]) => {
-    let nextStatus: Order["status"] = "PLACED";
-    let label = "";
-
-    if (currentStatus === "PLACED") {
-      nextStatus = "ACCEPTED";
-      label = "Order Accepted";
-    } else if (currentStatus === "ACCEPTED") {
-      nextStatus = "PACKED";
-      label = "Order Packed & Picked";
-    } else if (currentStatus === "PACKED") {
-      nextStatus = "READY";
-      label =
-        selectedOrder.type === "Delivery"
-          ? "Out for Delivery"
-          : "Ready for Counter Handover";
-    } else if (currentStatus === "READY") {
-      if (selectedOrder.type === "Click & Collect") {
-        // Validate PIN
-        if (enteredPin !== selectedOrder.pin) {
-          toast.error(
-            `Invalid Click & Collect PIN! Expected ${selectedOrder.pin}`,
-          );
-          return;
-        }
-        setEnteredPin("");
-      }
-      nextStatus = "DELIVERED";
-      label = "Order Completed & Handed Over";
-    }
-
-    updateOrderStatus(id, nextStatus);
-    toast.success(`${label}!`, {
-      description: `Order ${id} is now ${nextStatus}`,
-    });
-  };
-
   const handleCancelOrder = (id: string) => {
-    updateOrderStatus(id, "CANCELLED");
-    toast.warning(`Order ${id} Cancelled`, {
-      description: "Items returned to stock availability.",
-    });
+    updateStatusMutation.mutate(
+      { orderId: id, status: "CANCELLED", storeId },
+      {
+        onSuccess: () => {
+          toast.warning(`Order ${id} Cancelled`);
+        },
+      }
+    );
   };
 
-  const getStatusBadgeVariant = (status: Order["status"]) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "PLACED":
         return "warning";
       case "ACCEPTED":
+      case "PACKING":
         return "outline";
       case "PACKED":
         return "default";
-      case "READY":
-        return "info"; // will map to custom
+      case "READY_FOR_PICKUP":
+        return "info";
       case "DELIVERED":
+      case "COMPLETED":
         return "success";
       case "CANCELLED":
-        return "destructive";
       case "REFUNDED":
         return "destructive";
       default:
@@ -240,28 +153,31 @@ export default function StoreOrdersPage() {
     }
   };
 
-  const getTypeIcon = (type: Order["type"]) => {
+  const getTypeIcon = (type: string) => {
     switch (type) {
       case "POS":
         return <ShoppingCart className="h-4 w-4 text-emerald-500" />;
+      case "DELIVERY":
       case "Delivery":
         return <Truck className="h-4 w-4 text-blue-500" />;
+      case "CLICK_COLLECT":
       case "Click & Collect":
         return <ShoppingBag className="h-4 w-4 text-amber-500" />;
+      default:
+        return <ShoppingCart className="h-4 w-4 text-slate-500" />;
     }
   };
 
   // Find rack location of products in selected order
   const orderItemsWithRack = useMemo(() => {
     if (!selectedOrder) return [];
-    return selectedOrder.items.map((item) => {
-      const match = products.find((p) => p.id === item.productId);
+    return (selectedOrder.items || []).map((item: any) => {
       return {
         ...item,
-        rackLocation: match?.rackLocation || "Aisle Main",
+        rackLocation: item.rackLocation || item.product?.rackLocation || "Aisle Main",
       };
     });
-  }, [selectedOrder, products]);
+  }, [selectedOrder]);
 
   return (
     <div className="min-h-screen bg-transparent text-foreground pb-8">
@@ -286,7 +202,7 @@ export default function StoreOrdersPage() {
           <Button
             size="sm"
             variant="gradient"
-            onClick={handleSimulateOrder}
+            onClick={() => toast.info('New customer orders appear live in real-time as customers order.')}
             className="shrink-0 flex items-center gap-2"
           >
             <Plus className="h-3.5 w-3.5" /> Simulate Customer Order
@@ -369,7 +285,7 @@ export default function StoreOrdersPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
-                  {filteredOrders.map((order) => (
+                  {filteredOrders.map((order: any) => (
                     <div
                       key={order.id}
                       onClick={() => setSelectedOrderId(order.id)}
@@ -381,7 +297,7 @@ export default function StoreOrdersPage() {
                       <div className="space-y-1 min-w-0 pr-4">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-black text-sm text-slate-900 dark:text-white">
-                            {order.id}
+                            {order.orderNumber || order.id}
                           </span>
                           <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             {getTypeIcon(order.type)}
@@ -389,7 +305,7 @@ export default function StoreOrdersPage() {
                           </span>
                         </div>
                         <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
-                          {order.customerName}
+                          {order.customer?.name || order.customerName || 'Customer'}
                         </p>
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-semibold">
                           <Clock className="h-3 w-3" />
@@ -399,8 +315,8 @@ export default function StoreOrdersPage() {
                           })}
                           <span>
                             •{" "}
-                            {order.items.reduce(
-                              (sum, item) => sum + item.qty,
+                            {(order.items || []).reduce(
+                              (sum: number, item: any) => sum + (item.quantity || item.qty || 1),
                               0,
                             )}{" "}
                             items
@@ -435,7 +351,7 @@ export default function StoreOrdersPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-base font-black text-slate-900 dark:text-white">
-                          {selectedOrder.id}
+                          {selectedOrder.orderNumber || selectedOrder.id}
                         </CardTitle>
                         <Badge
                           variant={getStatusBadgeVariant(selectedOrder.status)}
@@ -460,11 +376,11 @@ export default function StoreOrdersPage() {
                     </h4>
                     <div className="text-xs space-y-1.5">
                       <p className="font-bold text-slate-800 dark:text-white">
-                        {selectedOrder.customerName}
+                        {selectedOrder.customer?.name || selectedOrder.customerName || 'Walk-in Customer'}
                       </p>
                       <p className="text-muted-foreground flex items-center gap-1">
                         <Smartphone className="h-3 w-3" />{" "}
-                        {selectedOrder.customerPhone}
+                        {selectedOrder.customer?.phone || selectedOrder.customerPhone || 'N/A'}
                       </p>
                       {selectedOrder.type === "Delivery" &&
                         selectedOrder.distanceKm && (
@@ -474,10 +390,10 @@ export default function StoreOrdersPage() {
                           </p>
                         )}
                       {selectedOrder.type === "Click & Collect" &&
-                        selectedOrder.pin && (
+                        selectedOrder.pickupPin && (
                           <p className="text-amber-700 dark:text-amber-400 font-extrabold flex items-center gap-1">
                             <Tag className="h-3.5 w-3.5" /> Collection Token
-                            PIN: {selectedOrder.pin}
+                            PIN: {selectedOrder.pickupPin}
                           </p>
                         )}
                     </div>
@@ -498,7 +414,7 @@ export default function StoreOrdersPage() {
                     </div>
 
                     <div className="divide-y divide-border max-h-[220px] overflow-y-auto pr-1">
-                      {orderItemsWithRack.map((item) => (
+                      {orderItemsWithRack.map((item: any) => (
                         <div
                           key={item.productId}
                           className="py-2.5 flex justify-between gap-3 text-xs"

@@ -6,9 +6,10 @@ const productInclude = {
 };
 
 const orderInclude = {
-  items: { include: { product: true } },
+  items: { include: { product: true, variant: true } },
   payment: true,
   bill: true,
+  customer: { select: { id: true, name: true, email: true, phone: true } },
   staff: { select: { id: true, name: true, email: true, phone: true } },
 };
 
@@ -25,16 +26,38 @@ export class StorePanelRepository {
     return user?.managedStore || user?.store || null;
   }
 
+  async getStoreSettings(storeId) {
+    return await prisma.store.findUnique({
+      where: { id: storeId },
+      include: { manager: true },
+    });
+  }
+
+  async updateStoreSettings(storeId, data) {
+    return await prisma.store.update({
+      where: { id: storeId },
+      data,
+      include: { manager: true },
+    });
+  }
+
   async dashboard(storeId) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [ordersToday, revenueToday, products, lowStock, pickupQueue, staff] = await Promise.all([
+    const [ordersToday, revenueTodayResult, products, lowStock, pickupQueue, staff] = await Promise.all([
       prisma.order.count({ where: { storeId, createdAt: { gte: today } } }),
-      prisma.order.aggregate({ where: { storeId, createdAt: { gte: today }, status: { not: "CANCELLED" } }, _sum: { totalAmount: true } }),
+      prisma.order.aggregate({
+        where: { storeId, createdAt: { gte: today }, status: { not: "CANCELLED" } },
+        _sum: { totalAmount: true },
+      }),
       prisma.product.count({ where: { storeId, isActive: true } }),
-      prisma.storeInventory.count({ where: { storeId, quantity: { lte: prisma.storeInventory.fields.lowStockAlert } } }),
-      prisma.order.count({ where: { storeId, type: "CLICK_COLLECT", status: { in: ["PLACED", "PACKING", "PACKED", "READY_FOR_PICKUP"] } } }),
+      prisma.storeInventory.count({
+        where: { storeId, quantity: { lte: 10 } },
+      }),
+      prisma.order.count({
+        where: { storeId, type: "CLICK_COLLECT", status: { in: ["PLACED", "PACKING", "PACKED", "READY_FOR_PICKUP"] } },
+      }),
       prisma.user.count({ where: { storeId, status: "active" } }),
     ]);
 
@@ -48,7 +71,7 @@ export class StorePanelRepository {
     return {
       summary: {
         ordersToday,
-        revenueToday: revenueToday._sum.totalAmount || 0,
+        revenueToday: revenueTodayResult._sum.totalAmount || 0,
         products,
         lowStock,
         pickupQueue,
@@ -58,18 +81,58 @@ export class StorePanelRepository {
     };
   }
 
+  // ── Categories ──
+  async getCategories(storeId) {
+    return await prisma.category.findMany({
+      where: { storeId },
+      include: { _count: { select: { products: true } } },
+      orderBy: { sortOrder: "asc" },
+    });
+  }
+
+  async createCategory(storeId, data) {
+    return await prisma.category.create({
+      data: {
+        storeId,
+        name: data.name,
+        imageUrl: data.imageUrl || null,
+        sortOrder: data.sortOrder ? parseInt(data.sortOrder) : 0,
+      },
+    });
+  }
+
+  async updateCategory(id, storeId, data) {
+    return await prisma.category.update({
+      where: { id },
+      data: {
+        ...(data.name ? { name: data.name } : {}),
+        ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
+        ...(data.sortOrder !== undefined ? { sortOrder: parseInt(data.sortOrder) } : {}),
+      },
+    });
+  }
+
+  async deleteCategory(id, storeId) {
+    return await prisma.category.delete({
+      where: { id },
+    });
+  }
+
+  // ── Products & Inventory ──
   async products(storeId, q = "") {
     return await prisma.product.findMany({
       where: {
         storeId,
-        ...(q ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { sku: { contains: q, mode: "insensitive" } },
-            { barcode: { contains: q, mode: "insensitive" } },
-            { brand: { contains: q, mode: "insensitive" } },
-          ],
-        } : {}),
+        ...(q
+          ? {
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { sku: { contains: q, mode: "insensitive" } },
+                { barcode: { contains: q, mode: "insensitive" } },
+                { brand: { contains: q, mode: "insensitive" } },
+              ],
+            }
+          : {}),
       },
       include: productInclude,
       orderBy: { createdAt: "desc" },
@@ -78,8 +141,9 @@ export class StorePanelRepository {
 
   async createProduct(storeId, payload) {
     return await prisma.$transaction(async (tx) => {
-      let categoryId = null;
-      if (payload.categoryName) {
+      let categoryId = payload.categoryId;
+
+      if (!categoryId && payload.categoryName) {
         const category = await tx.category.upsert({
           where: { storeId_name: { storeId, name: payload.categoryName } },
           update: {},
@@ -97,24 +161,22 @@ export class StorePanelRepository {
           barcode: payload.barcode || null,
           brand: payload.brand || null,
           description: payload.description || null,
-          type: payload.type,
-          mrp: payload.mrp,
-          sellingPrice: payload.sellingPrice,
-          costPrice: payload.costPrice,
-          taxRate: payload.taxRate,
+          productType: payload.productType || payload.type || "simple",
+          unit: payload.unit || "pcs",
+          basePrice: payload.basePrice !== undefined ? parseFloat(payload.basePrice) : parseFloat(payload.sellingPrice || 0),
+          mrp: payload.mrp ? parseFloat(payload.mrp) : null,
+          costPrice: payload.costPrice ? parseFloat(payload.costPrice) : null,
           hsnCode: payload.hsnCode || null,
-          unit: payload.unit,
-          rackLocation: payload.rackLocation || null,
-          expiryDate: payload.expiryDate ? new Date(payload.expiryDate) : null,
-          showOnline: payload.showOnline,
-          showPOS: payload.showPOS,
-          deliveryEnabled: payload.deliveryEnabled,
-          clickCollectEnabled: payload.clickCollectEnabled,
+          imageUrls: payload.imageUrls || [],
+          showOnApp: payload.showOnApp !== undefined ? payload.showOnApp : true,
+          showOnPOS: payload.showOnPOS !== undefined ? payload.showOnPOS : true,
+          availableForDelivery: payload.availableForDelivery !== undefined ? payload.availableForDelivery : true,
+          availableForClickCollect: payload.availableForClickCollect !== undefined ? payload.availableForClickCollect : true,
           inventory: {
             create: {
               storeId,
-              quantity: payload.quantity,
-              lowStockAlert: payload.lowStockAlert,
+              quantity: payload.quantity !== undefined ? parseInt(payload.quantity) : 0,
+              lowStockAt: payload.lowStockAlert !== undefined ? parseInt(payload.lowStockAlert) : 10,
             },
           },
         },
@@ -126,13 +188,29 @@ export class StorePanelRepository {
   }
 
   async adjustInventory(storeId, productId, delta) {
-    return await prisma.storeInventory.update({
-      where: { productId },
-      data: { quantity: { increment: delta } },
-      include: { product: true },
+    const inv = await prisma.storeInventory.findFirst({
+      where: { storeId, productId },
     });
+
+    if (inv) {
+      return await prisma.storeInventory.update({
+        where: { id: inv.id },
+        data: { quantity: { increment: parseInt(delta) } },
+        include: { product: true },
+      });
+    } else {
+      return await prisma.storeInventory.create({
+        data: {
+          storeId,
+          productId,
+          quantity: Math.max(parseInt(delta), 0),
+        },
+        include: { product: true },
+      });
+    }
   }
 
+  // ── Orders ──
   async orders(storeId, filters = {}) {
     return await prisma.order.findMany({
       where: {
@@ -146,125 +224,283 @@ export class StorePanelRepository {
     });
   }
 
-  async createPosOrder(storeId, staffId, payload) {
-    return await prisma.$transaction(async (tx) => {
-      const products = await tx.product.findMany({
-        where: { id: { in: payload.items.map((item) => item.productId) }, storeId },
-        include: { inventory: true },
-      });
-
-      const byId = new Map(products.map((product) => [product.id, product]));
-      const orderItems = [];
-      let subtotal = 0;
-      let taxAmount = 0;
-
-      for (const item of payload.items) {
-        const product = byId.get(item.productId);
-        if (!product) throw new Error("Product not found in this store");
-        if (product.type !== "service") {
-          const updated = await tx.storeInventory.updateMany({
-            where: { productId: product.id, storeId, quantity: { gte: item.quantity } },
-            data: { quantity: { decrement: item.quantity } },
-          });
-          if (updated.count === 0) throw new Error(`Out of stock: ${product.name}`);
-        }
-
-        const lineSubtotal = product.sellingPrice * item.quantity;
-        const lineTax = lineSubtotal * (product.taxRate / 100);
-        subtotal += lineSubtotal;
-        taxAmount += lineTax;
-        orderItems.push({
-          productId: product.id,
-          name: product.name,
-          sku: product.sku,
-          quantity: item.quantity,
-          unitPrice: product.sellingPrice,
-          taxRate: product.taxRate,
-          lineTotal: lineSubtotal + lineTax,
-          rackLocation: product.rackLocation,
-        });
-      }
-
-      const totalAmount = Math.max(subtotal + taxAmount - payload.discount, 0);
-      const orderNumber = `POS-${Date.now()}`;
-      const order = await tx.order.create({
-        data: {
-          orderNumber,
-          storeId,
-          staffId,
-          type: "POS",
-          status: "COMPLETED",
-          customerName: payload.customerName || null,
-          customerPhone: payload.customerPhone || null,
-          subtotal,
-          discount: payload.discount,
-          taxAmount,
-          totalAmount,
-          notes: payload.notes || null,
-          items: { create: orderItems },
-          payment: {
-            create: {
-              method: payload.paymentMethod,
-              status: "SUCCESS",
-              amount: totalAmount,
-            },
-          },
-          bill: {
-            create: {
-              storeId,
-              billNumber: `BILL-${Date.now()}`,
-              type: "RECEIPT",
-            },
-          },
-        },
-        include: orderInclude,
-      });
-
-      await tx.product.updateMany({
-        where: { id: { in: products.map((product) => product.id) } },
-        data: { salesCount: { increment: 1 } },
-      });
-
-      return order;
+  async getOrderById(storeId, id) {
+    return await prisma.order.findFirst({
+      where: { id, storeId },
+      include: orderInclude,
     });
   }
 
   async updateOrderStatus(storeId, id, status) {
     return await prisma.order.update({
-      where: { id, storeId },
+      where: { id },
       data: { status },
       include: orderInclude,
     });
   }
 
+  // ── Click & Collect Pickup ──
+  async getPickupQueue(storeId) {
+    return await prisma.order.findMany({
+      where: {
+        storeId,
+        type: "CLICK_COLLECT",
+        status: { in: ["PLACED", "PACKING", "PACKED", "READY_FOR_PICKUP"] },
+      },
+      include: orderInclude,
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async verifyPickupPin(storeId, orderId, pin) {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, storeId, type: "CLICK_COLLECT" },
+    });
+
+    if (!order) throw new Error("Pickup order not found");
+    if (order.pickupPin && order.pickupPin !== pin) {
+      throw new Error("Invalid pickup verification PIN");
+    }
+
+    return await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "COLLECTED" },
+      include: orderInclude,
+    });
+  }
+
+  // ── Bills & Receipts ──
   async bills(storeId) {
     return await prisma.bill.findMany({
       where: { storeId },
-      include: { order: { include: { payment: true } } },
+      include: {
+        order: {
+          include: {
+            payment: true,
+            items: { include: { product: true } },
+            customer: true,
+            staff: true,
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
       take: 100,
     });
   }
 
+  // ── Customers ──
+  async getCustomers(storeId) {
+    const customers = await prisma.user.findMany({
+      where: {
+        orders: {
+          some: { storeId },
+        },
+      },
+      include: {
+        orders: {
+          where: { storeId },
+          select: { totalAmount: true, createdAt: true, status: true },
+        },
+      },
+    });
+
+    return customers.map((c) => {
+      const validOrders = c.orders.filter((o) => o.status !== "CANCELLED");
+      const totalSpent = validOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+      return {
+        id: c.id,
+        name: c.name || "Customer",
+        email: c.email || "",
+        phone: c.phone || "",
+        loyaltyPoints: c.loyaltyPoints || 0,
+        totalOrders: validOrders.length,
+        totalSpent,
+        createdAt: c.createdAt,
+      };
+    });
+  }
+
+  // ── Staff ──
   async staff(storeId) {
-    return await prisma.user.findMany({
+    const staffMembers = await prisma.user.findMany({
       where: { storeId },
-      include: { role: true, shifts: { orderBy: { createdAt: "desc" }, take: 1 } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        pin: true,
+        avatar: true,
+        status: true,
+        role: true,
+        createdAt: true,
+        shifts: { orderBy: { createdAt: "desc" } },
+        staffOrders: {
+          select: {
+            id: true,
+            totalAmount: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
+    });
+
+    return staffMembers.map((member) => {
+      const totalOrders = member.staffOrders.length;
+      const totalShiftOrders = member.shifts.reduce((sum, s) => sum + (s.ordersHandled || 0), 0);
+      const processedOrders = Math.max(totalOrders, totalShiftOrders);
+
+      let avgHandlingMinutes = 0;
+      if (member.staffOrders.length > 0) {
+        const totalDurationMs = member.staffOrders.reduce((sum, order) => {
+          const diff = new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime();
+          return sum + (diff > 0 ? diff : 180000);
+        }, 0);
+        avgHandlingMinutes = Math.max(1, Math.round(totalDurationMs / (member.staffOrders.length * 60000)));
+      }
+
+      const completedOrders = member.staffOrders.filter(
+        (o) => o.status === "DELIVERED" || o.status === "COMPLETED" || o.status === "COLLECTED"
+      ).length;
+
+      let rating = null;
+      if (processedOrders > 0) {
+        const successRatio = completedOrders > 0 ? completedOrders / processedOrders : 0.8;
+        rating = (4.0 + successRatio * 1.0).toFixed(1);
+      }
+
+      return {
+        ...member,
+        performance: {
+          ordersProcessed: processedOrders,
+          avgPackTimeMinutes: avgHandlingMinutes,
+          rating: rating,
+        },
+      };
     });
   }
 
   async createStaff(storeId, userData, roleName) {
+    const roleToCreate = userData.role || roleName || "CASHIER";
+
+    const existingUser = await prisma.user.findFirst({
+      where: { phone: userData.phone },
+      include: { role: true },
+    });
+
+    if (existingUser) {
+      const updatedUser = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          name: userData.name,
+          email: userData.email || existingUser.email,
+          pin: userData.pin || existingUser.pin,
+          storeId,
+          status: "active",
+        },
+        include: { role: true, shifts: { orderBy: { createdAt: "desc" }, take: 1 } },
+      });
+
+      if (existingUser.role) {
+        await prisma.userRole.update({
+          where: { id: existingUser.role.id },
+          data: { roleName: roleToCreate },
+        });
+      } else {
+        await prisma.userRole.create({
+          data: {
+            userId: existingUser.id,
+            roleName: roleToCreate,
+          },
+        });
+      }
+
+      if (userData.shift) {
+        await prisma.staffShift.create({
+          data: {
+            storeId,
+            staffId: existingUser.id,
+            shiftName: userData.shift,
+          },
+        });
+      }
+
+      return updatedUser;
+    }
+
     return await prisma.user.create({
       data: {
-        ...userData,
+        name: userData.name,
+        email: userData.email || null,
+        phone: userData.phone,
+        pin: userData.pin || null,
         storeId,
-        role: { create: { roleName } },
+        status: "active",
+        role: {
+          create: {
+            roleName: roleToCreate,
+          },
+        },
+        shifts: userData.shift ? {
+          create: {
+            storeId,
+            shiftName: userData.shift,
+          }
+        } : undefined
       },
-      include: { role: true },
+      include: { role: true, shifts: { orderBy: { createdAt: "desc" }, take: 1 } },
     });
   }
 
+  async toggleStaffClock(storeId, staffId) {
+    const latestShift = await prisma.staffShift.findFirst({
+      where: { storeId, staffId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (latestShift && !latestShift.clockOut) {
+      return await prisma.staffShift.update({
+        where: { id: latestShift.id },
+        data: { clockOut: new Date() },
+      });
+    } else {
+      return await prisma.staffShift.create({
+        data: {
+          storeId,
+          staffId,
+          shiftName: latestShift?.shiftName || "Morning",
+          clockIn: new Date(),
+        },
+      });
+    }
+  }
+
+  async updateStaffShift(storeId, staffId, shiftName) {
+    const latestShift = await prisma.staffShift.findFirst({
+      where: { storeId, staffId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (latestShift) {
+      return await prisma.staffShift.update({
+        where: { id: latestShift.id },
+        data: { shiftName },
+      });
+    } else {
+      return await prisma.staffShift.create({
+        data: {
+          storeId,
+          staffId,
+          shiftName,
+        },
+      });
+    }
+  }
+
+  // ── Analytics ──
   async analytics(storeId) {
     const [paymentMethods, topProducts, hourly] = await Promise.all([
       prisma.payment.groupBy({
@@ -281,9 +517,9 @@ export class StorePanelRepository {
       }),
       prisma.order.findMany({
         where: { storeId },
-        select: { createdAt: true, totalAmount: true },
+        select: { createdAt: true, totalAmount: true, status: true },
         orderBy: { createdAt: "desc" },
-        take: 100,
+        take: 200,
       }),
     ]);
 

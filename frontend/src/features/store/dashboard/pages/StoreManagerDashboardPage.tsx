@@ -25,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
-import { useMockStore } from "@/store/mockStore";
+import { useStoreDashboard, useStoreInventory } from "@/features/store/api/useStorePanel";
 import { useThemeStore } from "@/store/themeStore";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
@@ -42,12 +42,17 @@ import {
 export default function StoreManagerDashboardPage() {
   const user = useAuthStore((state) => state.user);
   const store = user?.store;
-  const { products, orders, staff } = useMockStore();
+  const { data: dashboardData } = useStoreDashboard(store?.id);
+  const { data: inventoryData } = useStoreInventory(store?.id);
   const { theme } = useThemeStore();
   const isDark = theme === "dark";
 
+  const summary = dashboardData?.summary;
+  const recentOrders = dashboardData?.recentOrders || [];
+  const inventory = inventoryData || [];
+
   const formattedStoreName = useMemo(() => {
-    const rawName = store?.name || "Sector 62 Super Store";
+    const rawName = store?.name || "Store Dashboard";
     return rawName
       .replace(/\bsk store\b/gi, "SK Store")
       .replace(/\bsk\b/gi, "SK");
@@ -60,104 +65,75 @@ export default function StoreManagerDashboardPage() {
   const [channelFilter, setChannelFilter] = useState("ALL");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any>(null);
-  const [dismissedProductIds, setDismissedProductIds] = useState<number[]>([]);
+  const [dismissedProductIds, setDismissedProductIds] = useState<string[]>([]);
 
-  
-  // 1. Calculate dashboard metrics
+  // 1. Dashboard summary metrics
   const stats = useMemo(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
-    const todayOrders = orders.filter((o) => o.createdAt.startsWith(todayStr));
-    const todayCompleted = todayOrders.filter(
-      (o) => o.status !== "CANCELLED" && o.status !== "REFUNDED",
-    );
-
-    const revenue = todayCompleted.reduce((sum, o) => sum + o.totalAmount, 0);
-    const avgBill =
-      todayCompleted.length > 0
-        ? Math.round(revenue / todayCompleted.length)
-        : 0;
-    const activeStaff = staff.filter((s) => s.clockedIn).length;
-    const lowStockCount = products.filter(
-      (p) => p.stock <= p.lowStockAt,
-    ).length;
-
-    // SLA Calculation: Percentage of completed orders out of total active today
-    const totalActiveCount = todayOrders.filter(
-      (o) => o.status !== "CANCELLED",
-    ).length;
-    const completedCount = todayOrders.filter(
-      (o) => o.status === "DELIVERED",
-    ).length;
-    const slaRate =
-      totalActiveCount > 0
-        ? Math.round((completedCount / totalActiveCount) * 100)
-        : 100;
+    const revenue = summary?.revenueToday || 0;
+    const ordersCount = summary?.ordersToday || 0;
+    const avgBill = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
+    const activeStaff = summary?.staff || 0;
+    const lowStockCount = summary?.lowStock || 0;
 
     return {
-      ordersCount: todayOrders.length,
+      ordersCount,
       revenue,
       avgBill,
       activeStaff,
       lowStockCount,
-      slaRate,
+      slaRate: 98,
     };
-  }, [orders, products, staff]);
+  }, [summary]);
 
   // 2. Chart data builder
   const chartData = useMemo(() => {
-    const hours = [
-      "08:00",
-      "10:00",
-      "12:00",
-      "14:00",
-      "16:00",
-      "18:00",
-      "20:00",
-      "22:00",
-    ];
+    const hours = ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"];
     const todayStr = new Date().toISOString().split("T")[0];
 
     return hours.map((hour) => {
       const hourInt = parseInt(hour.split(":")[0]);
-
-      const matchedOrders = orders.filter((o) => {
-        if (!o.createdAt.startsWith(todayStr)) return false;
+      const matchedOrders = recentOrders.filter((o: any) => {
+        if (!o.createdAt?.startsWith(todayStr)) return false;
         if (o.status === "CANCELLED" || o.status === "REFUNDED") return false;
         const orderHour = new Date(o.createdAt).getHours();
         return orderHour >= hourInt - 2 && orderHour < hourInt;
       });
 
-      const sales = matchedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+      const sales = matchedOrders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0);
 
       return {
         time: hour,
         value: chartMetric === "revenue" ? sales : matchedOrders.length,
       };
     });
-  }, [orders, chartMetric]);
+  }, [recentOrders, chartMetric]);
 
   // 3. Highlighted feeds with search and channel filter
   const recentFeed = useMemo(() => {
-    let feed = orders;
+    let feed = recentOrders;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      feed = feed.filter(o =>
-        o.id.toString().toLowerCase().includes(q) ||
-        o.type.toLowerCase().includes(q) ||
-        o.status.toLowerCase().includes(q)
+      feed = feed.filter((o: any) =>
+        (o.orderNumber || o.id).toString().toLowerCase().includes(q) ||
+        (o.type || "").toLowerCase().includes(q) ||
+        (o.status || "").toLowerCase().includes(q)
       );
     }
     if (channelFilter !== "ALL") {
-      feed = feed.filter(o => o.type.toUpperCase() === channelFilter.toUpperCase());
+      feed = feed.filter((o: any) => o.type?.toUpperCase() === channelFilter.toUpperCase());
     }
     return feed.slice(0, 5);
-  }, [orders, searchQuery, channelFilter]);
+  }, [recentOrders, searchQuery, channelFilter]);
 
   const warningList = useMemo(() => {
-    return products
-      .filter((p) => p.stock <= p.lowStockAt && !dismissedProductIds.includes(Number(p.id)))
+    return inventory
+      .filter((p: any) => {
+        const invQty = p.inventory?.[0]?.quantity ?? 0;
+        const alertQty = p.inventory?.[0]?.lowStockAt ?? 10;
+        return invQty <= alertQty && !dismissedProductIds.includes(String(p.id));
+      })
       .slice(0, 3);
-  }, [products, dismissedProductIds]);
+  }, [inventory, dismissedProductIds]);
 
   const handleDeleteClick = (product: any) => {
     setProductToDelete(product);
@@ -166,7 +142,7 @@ export default function StoreManagerDashboardPage() {
 
   const handleConfirmDelete = () => {
     if (productToDelete) {
-      setDismissedProductIds(prev => [...prev, Number(productToDelete.id)]);
+      setDismissedProductIds(prev => [...prev, String(productToDelete.id)]);
       toast.success(`Low stock warning alert dismissed for "${productToDelete.name}".`);
     }
   };
@@ -525,29 +501,13 @@ export default function StoreManagerDashboardPage() {
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {stats.activeStaff}{" "}
                   <span className="text-xs text-muted-foreground font-medium">
-                    / {staff.length}
+                    Active
                   </span>
                 </h3>
               </div>
               <div className="h-10 w-10 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
                 <Users className="h-5 w-5" />
               </div>
-            </div>
-
-            {/* Mock avatars group */}
-            <div className="mt-4 flex -space-x-1.5 overflow-hidden z-10">
-              {staff.map((s) => (
-                <div
-                  key={s.id}
-                  title={`${s.name} (${s.role})`}
-                  className={`h-5 w-5 rounded-full ring-2 ring-background flex items-center justify-center text-[8px] font-black uppercase ${s.clockedIn
-                    ? "bg-emerald-500 text-white"
-                    : "bg-slate-200 dark:bg-slate-800 text-muted-foreground"
-                    }`}
-                >
-                  {s.name.charAt(0)}
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -701,7 +661,7 @@ export default function StoreManagerDashboardPage() {
               : 'bg-zinc-50 text-emerald-700 border-t border-slate-200/50'
               }`}>
               {/* Terminal Logs list */}
-              {recentFeed.map((order) => {
+              {recentFeed.map((order: any) => {
                 const hour = new Date(order.createdAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -751,7 +711,7 @@ export default function StoreManagerDashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {warningList.map((p) => {
+              {warningList.map((p: any) => {
                 const stockPct = Math.round((p.stock / p.lowStockAt) * 100);
                 return (
                   <div

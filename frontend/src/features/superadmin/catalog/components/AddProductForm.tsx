@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import {
   Trash2,
@@ -42,7 +42,7 @@ const parseImageUrls = (urls: any): string[] => {
 };
 
 export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductFormProps) {
-  const { flatCategories, createProduct, updateProduct, uploadImage } = useMasterCatalog();
+  const { flatCategories, createProduct, updateProduct } = useMasterCatalog();
   const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState<Partial<MasterProduct>>({
@@ -276,11 +276,12 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Master Category <span className="text-rose-500">*</span>
             </label>
-            <SearchableSelect
+            <CustomDropdown
               options={categoryOptions}
               value={formData.categoryId || ''}
               onChange={(val) => setFormData({ ...formData, categoryId: String(val) })}
               placeholder="Select Category (e.g. Dahi)"
+              searchable={true}
             />
           </div>
         </div>
@@ -438,16 +439,16 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 Measuring Unit <span className="text-rose-500">*</span>
               </label>
-              <select
-                required
-                value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-medium text-slate-900 dark:text-white"
-              >
-                <option value="kg">Kilogram (kg)</option>
-                <option value="gm">Gram (gm)</option>
-                <option value="ltr">Liter (ltr)</option>
-              </select>
+              <CustomDropdown
+                options={[
+                  { value: 'kg', label: 'Kilogram (kg)' },
+                  { value: 'gm', label: 'Gram (gm)' },
+                  { value: 'ltr', label: 'Liter (ltr)' },
+                ]}
+                value={formData.unit || 'kg'}
+                onChange={(val) => setFormData({ ...formData, unit: String(val) })}
+                placeholder="Select Unit"
+              />
             </div>
 
             <div className="space-y-1.5">

@@ -128,7 +128,7 @@ export default function StoreManagersPage() {
       header: 'Role',
       cell: (manager) => (
         <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
-          {manager.role?.roleName || 'store_manager'}
+          {typeof manager.role === 'string' ? manager.role : (manager.role?.roleName || 'store_manager')}
         </Badge>
       ),
     },
