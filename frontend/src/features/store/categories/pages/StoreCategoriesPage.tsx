@@ -7,7 +7,9 @@ import {
   FolderTree, 
   Tag, 
   FolderPlus,
-  AlertCircle
+  AlertCircle,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,7 +21,8 @@ import {
   useStoreCategories, 
   useCreateStoreCategory, 
   useUpdateStoreCategory, 
-  useDeleteStoreCategory 
+  useDeleteStoreCategory,
+  useImportMasterCategories 
 } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
@@ -33,15 +36,32 @@ export default function StoreCategoriesPage() {
   const createCategory = useCreateStoreCategory();
   const updateCategory = useUpdateStoreCategory();
   const deleteCategory = useDeleteStoreCategory();
+  const importMasterCategories = useImportMasterCategories();
 
   const categories = categoriesData || [];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [newCatName, setNewCatName] = useState('');
   const [parentId, setParentId] = useState<string>('');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const [editingId, setEditingId] = useState<string>('');
   const [editingName, setEditingName] = useState('');
+
+  const handleImportMaster = () => {
+    importMasterCategories.mutate(
+      { storeId },
+      {
+        onSuccess: (res: any) => {
+          toast.success(res.message || 'Master categories imported successfully!');
+          setIsImportModalOpen(false);
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Failed to import master categories');
+        },
+      }
+    );
+  };
 
   const parentCategoryOptions = useMemo(() => {
     return [
@@ -151,12 +171,23 @@ export default function StoreCategoriesPage() {
                 </CardTitle>
                 <CardDescription>Hierarchical list of catalog categories and current product counts</CardDescription>
               </div>
-              <div className="w-full sm:w-64">
-                <SearchBar
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  placeholder="Search categories..."
-                />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="text-xs font-bold gap-1.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                >
+                  <Download className="h-4 w-4 text-emerald-500" />
+                  Import Master Categories
+                </Button>
+                <div className="w-full sm:w-64">
+                  <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search categories..."
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -278,6 +309,43 @@ export default function StoreCategoriesPage() {
 
         </div>
       </div>
+
+      {/* IMPORT MASTER CATEGORIES CONFIRM MODAL */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-background border-border shadow-2xl animate-in fade-in-50 zoom-in-95">
+            <CardHeader className="pb-3 border-b border-border">
+              <CardTitle className="text-base font-black flex items-center gap-2">
+                <Download className="h-5 w-5 text-emerald-500" />
+                Import Master Categories
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Copy all master categories from the admin catalog into your store.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Are you sure you want to import all master categories into your store? Missing categories will be copied automatically without overwriting existing ones.
+              </p>
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="brand" 
+                  size="sm" 
+                  onClick={handleImportMaster}
+                  disabled={importMasterCategories.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  {importMasterCategories.isPending && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+                  Confirm & Import Categories
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

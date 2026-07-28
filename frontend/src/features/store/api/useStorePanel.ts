@@ -88,6 +88,20 @@ export const useDeleteStoreCategory = () => {
   });
 };
 
+export const useImportMasterCategories = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId }: { storeId?: string } = {}) => {
+      const { data } = await api.post('/store/categories/import-master', {}, { params: { storeId } });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+    },
+  });
+};
+
 // ── Store Inventory & Products ──
 export const useStoreInventory = (storeId?: string, query?: string) => {
   return useQuery({
@@ -105,6 +119,49 @@ export const useCreateStoreProduct = () => {
     mutationFn: async ({ storeId, payload }: { storeId?: string; payload: any }) => {
       const { data } = await api.post('/store/inventory', payload, { params: { storeId } });
       return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+    },
+  });
+};
+
+export const useImportMasterProducts = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId }: { storeId?: string } = {}) => {
+      const { data } = await api.post('/store/inventory/import-master', {}, { params: { storeId } });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['store-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+    },
+  });
+};
+
+export const useUpdateStoreProduct = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productId, storeId, payload }: { productId: string; storeId?: string; payload: any }) => {
+      const { data } = await api.patch(`/store/inventory/${productId}`, payload, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+    },
+  });
+};
+
+export const useDeleteStoreProduct = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productId, storeId }: { productId: string; storeId?: string }) => {
+      const { data } = await api.delete(`/store/inventory/${productId}`, { params: { storeId } });
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['store-inventory'] });

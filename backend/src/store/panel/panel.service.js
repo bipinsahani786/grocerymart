@@ -70,6 +70,38 @@ export class StorePanelService {
     return { success: true, data, message: "Product created in store successfully" };
   }
 
+  async updateProduct(user, storeIdParam, productId, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const data = await storePanelRepository.updateProduct(storeId, productId, payload);
+    return { success: true, data, message: "Product updated successfully" };
+  }
+
+  async deleteProduct(user, storeIdParam, productId) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    await storePanelRepository.deleteProduct(storeId, productId);
+    return { success: true, message: "Product deleted successfully" };
+  }
+
+  async importMasterCategories(user, storeIdParam) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const data = await storePanelRepository.importMasterCategories(storeId);
+    return {
+      success: true,
+      data,
+      message: `Successfully imported ${data.importedCount} master categories into your store!`,
+    };
+  }
+
+  async importMasterProducts(user, storeIdParam) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const data = await storePanelRepository.importMasterProducts(storeId);
+    return {
+      success: true,
+      data,
+      message: `Successfully imported ${data.importedCount} master products into your store catalog!`,
+    };
+  }
+
   async adjustInventory(user, storeIdParam, productId, delta) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
     const data = await storePanelRepository.adjustInventory(storeId, productId, delta);
