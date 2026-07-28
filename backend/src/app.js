@@ -24,8 +24,9 @@ app.use(cors({
   credentials: true
 }));
 
-// Parse structured incoming JSON payloads
-app.use(express.json());
+// Parse structured incoming JSON payloads with 50mb limit for Data URL image uploads
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Serve static files (avatars, images, etc.)
 app.use(express.static(path.join(process.cwd(), "public")));

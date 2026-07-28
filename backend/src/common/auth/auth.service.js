@@ -301,16 +301,22 @@ export class AuthService {
     };
   }
 
-  async changePassword(userId, { oldPassword, newPassword }) {
+  async changePassword(userId, payload) {
+    const oldPass = payload.current_password || payload.oldPassword;
+    const newPass = payload.new_password || payload.newPassword;
+
+    if (!oldPass) throw new AppError("Current password is required", 400);
+    if (!newPass || newPass.length < 6) throw new AppError("New password must be at least 6 characters", 400);
+
     const user = await authRepository.findUserById(userId);
     if (!user) throw new AppError("User not found", 404);
 
-    if (!user.passwordHash) throw new AppError("Password not set for this account.", 400);
+    if (!user.passwordHash) throw new AppError("Password is not set for this account.", 400);
 
-    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
-    if (!isMatch) throw new AppError("Incorrect old password", 400);
+    const isMatch = await bcrypt.compare(oldPass, user.passwordHash);
+    if (!isMatch) throw new AppError("Current password entered is incorrect.", 400);
 
-    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    const newPasswordHash = await bcrypt.hash(newPass, 10);
     await authRepository.updatePassword(userId, newPasswordHash);
 
     return {
