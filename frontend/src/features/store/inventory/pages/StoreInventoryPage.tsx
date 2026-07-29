@@ -1,31 +1,41 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Boxes, 
-  Search, 
-  Plus, 
-  Edit3, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Upload, 
-  FileSpreadsheet, 
-  
+import {
+  Boxes,
+  Search,
+  Plus,
+  Edit3,
+  ArrowUpRight,
+  ArrowDownRight,
+  Upload,
+  FileSpreadsheet,
+
   RefreshCw,
-  FolderOpen
+  FolderOpen,
+  AlertTriangle,
+  CheckCircle,
+  PackageSearch,
+  Layers,
+  Trash2
 } from 'lucide-react';
+import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/store/authStore';
-import { 
-  useStoreInventory, 
-  useStoreCategories, 
-  useCreateStoreProduct, 
-  useAdjustStoreStock 
+import {
+  useStoreInventory,
+  useAllStoreCategories,
+  useCreateStoreProduct,
+  useUpdateStoreProduct,
+  useAdjustStoreStock,
+  useDeleteStoreProduct
 } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { SearchBar } from '@/components/ui/SearchBar';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 
 type ActiveTab = 'list' | 'add' | 'edit' | 'stock' | 'bulk';
 
@@ -35,27 +45,43 @@ export default function StoreInventoryPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [stockFilter, setStockFilter] = useState('All');
 
   const { data: productsData } = useStoreInventory(storeId, searchQuery);
-  const { data: categoriesData } = useStoreCategories(storeId);
+  const { data: categoriesData } = useAllStoreCategories(storeId);
 
   const createProduct = useCreateStoreProduct();
+  const updateProductMutation = useUpdateStoreProduct();
   const adjustStockMutation = useAdjustStoreStock();
+  const deleteProductMutation = useDeleteStoreProduct();
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Product details saved!');
-    setActiveTab('list');
+    updateProductMutation.mutate(
+      { productId: editingProductId, storeId, payload: editForm },
+      {
+        onSuccess: () => {
+          toast.success('Product details updated successfully!');
+          setActiveTab('list');
+        },
+        onError: (error: any) => {
+          toast.error(error?.response?.data?.message || 'Failed to update product');
+        }
+      }
+    );
   };
 
   const products = productsData || [];
   const categories = categoriesData || [];
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('list');
-  
+
   // Selected product for edit
   const [editingProductId, setEditingProductId] = useState<string>('');
   
+  // Product being deleted
+  const [deletingProduct, setDeletingProduct] = useState<any>(null);
+
   // Add Form State
   const [addForm, setAddForm] = useState({
     name: '',
@@ -134,6 +160,13 @@ export default function StoreInventoryPage() {
     { value: 'Customer Return', label: 'Customer Return' }
   ];
 
+  const stockFilterOptions = [
+    { value: 'All', label: 'All Stock Status' },
+    { value: 'InStock', label: 'In Stock' },
+    { value: 'LowStock', label: 'Low Stock' },
+    { value: 'OutOfStock', label: 'Out of Stock' }
+  ];
+
   // 1. Filtered products for listing
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
@@ -142,9 +175,17 @@ export default function StoreInventoryPage() {
         (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.barcode || '').includes(searchQuery);
       const matchesCategory = categoryFilter === 'All' || p.categoryId === categoryFilter;
-      return matchesSearch && matchesCategory;
+      
+      const q = p.inventory?.[0]?.quantity || 0;
+      const lowStockAt = p.lowStockAt || 10;
+      let matchesStock = true;
+      if (stockFilter === 'InStock') matchesStock = q > 0;
+      if (stockFilter === 'LowStock') matchesStock = q > 0 && q <= lowStockAt;
+      if (stockFilter === 'OutOfStock') matchesStock = q <= 0;
+
+      return matchesSearch && matchesCategory && matchesStock;
     });
-  }, [products, searchQuery, categoryFilter]);
+  }, [products, searchQuery, categoryFilter, stockFilter]);
 
   // 2. Set up edit form values
   const handleStartEdit = (product: any) => {
@@ -173,7 +214,7 @@ export default function StoreInventoryPage() {
       toast.error('Product Name is required!');
       return;
     }
-    
+
     createProduct.mutate(
       {
         storeId,
@@ -258,6 +299,14 @@ export default function StoreInventoryPage() {
     }, 1200);
   };
 
+  const totalProducts = products.length;
+  const totalCategories = categories.length;
+  const outOfStock = products.filter((p: any) => (p.inventory?.[0]?.quantity || 0) <= 0).length;
+  const lowStock = products.filter((p: any) => {
+    const q = p.inventory?.[0]?.quantity || 0;
+    return q > 0 && q <= (p.lowStockAt || 10);
+  }).length;
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-8">
       <PageHeader
@@ -267,7 +316,43 @@ export default function StoreInventoryPage() {
       />
 
       <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-        
+
+        {/* ── KPI Summary Cards ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-page-enter">
+          <CustomKpiCard
+            title="Total Catalog Items"
+            value={totalProducts}
+            subtitle="Products configured for this store"
+            icon={<PackageSearch />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+          <CustomKpiCard
+            title="Active Categories"
+            value={totalCategories}
+            subtitle="Taxonomy groups in use"
+            icon={<Layers />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+          <CustomKpiCard
+            title="Low Stock Alerts"
+            value={lowStock}
+            subtitle="Items needing replenishment"
+            icon={<AlertTriangle />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+          <CustomKpiCard
+            title="Out of Stock"
+            value={outOfStock}
+            subtitle="Currently unavailable items"
+            icon={<CheckCircle />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+        </div>
+
         {/* Navigation Tabs */}
         <div className="flex border-b border-border gap-1 overflow-x-auto pb-px">
           {[
@@ -281,11 +366,10 @@ export default function StoreInventoryPage() {
               key={tab.id}
               disabled={tab.disabled}
               onClick={() => setActiveTab(tab.id as ActiveTab)}
-              className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${activeTab === tab.id
                   ? 'border-primary-500 text-primary-600 dark:text-primary-500 font-extrabold'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              } ${tab.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+                } ${tab.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
               <tab.icon className="h-4 w-4" />
               {tab.name}
@@ -296,25 +380,36 @@ export default function StoreInventoryPage() {
         {/* Tab Content Rendering */}
         {activeTab === 'list' && (
           <div className="space-y-4 animate-page-enter">
-            {/* Search and Category Filter */}
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch justify-between">
-              <div className="relative flex-1 max-w-md">
-                <Input 
-                  icon={<Search className="h-4 w-4" />} 
-                  placeholder="Search catalog by name, barcode or SKU..." 
+            {/* Search and Filters */}
+            <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm">
+              <div className="w-full xl:max-w-md shrink-0">
+                <SearchBar
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={setSearchQuery}
+                  placeholder="Search catalog by name, barcode or SKU..."
                 />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Filter Category:</span>
-                <div className="w-[170px] z-20">
-                  <CustomDropdown
-                    options={categoryFilterOptions}
-                    value={categoryFilter}
-                    onChange={setCategoryFilter}
-                    triggerClassName="h-[38px] !text-xs font-semibold"
-                  />
+              <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                  <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap hidden sm:inline-block">Category:</span>
+                  <div className="w-full sm:w-[180px] z-20">
+                    <CustomDropdown
+                      options={categoryFilterOptions}
+                      value={categoryFilter}
+                      onChange={setCategoryFilter}
+                      searchable
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                  <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap hidden sm:inline-block">Stock:</span>
+                  <div className="w-full sm:w-[160px] z-10">
+                    <CustomDropdown
+                      options={stockFilterOptions}
+                      value={stockFilter}
+                      onChange={setStockFilter}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -352,9 +447,26 @@ export default function StoreInventoryPage() {
                               <p className="font-bold text-slate-800 dark:text-white">{p.barcode}</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">{p.sku}</p>
                             </td>
-                            <td className="p-4 font-bold text-slate-900 dark:text-white">
-                              {p.name}
-                              <span className="text-[10px] font-semibold text-muted-foreground ml-1.5">({p.unit})</span>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                {p.imageUrls?.[0] ? (
+                                  <img 
+                                    src={p.imageUrls[0]} 
+                                    alt={p.name} 
+                                    className="w-10 h-10 rounded-md object-cover border border-border shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center border border-border shrink-0">
+                                    <Boxes className="w-5 h-5 text-muted-foreground opacity-50" />
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="font-bold text-slate-900 dark:text-white">
+                                    {p.name}
+                                  </div>
+                                  <div className="text-[10px] font-semibold text-muted-foreground">Unit: {p.unit}</div>
+                                </div>
+                              </div>
                             </td>
                             <td className="p-4">
                               <Badge variant="outline" className="font-bold text-[10px]">
@@ -376,14 +488,24 @@ export default function StoreInventoryPage() {
                             </td>
                             <td className="p-4 font-medium text-slate-600 dark:text-slate-400">{p.rackLocation}</td>
                             <td className="p-4 text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0"
-                                onClick={() => handleStartEdit(p)}
-                              >
-                                <Edit3 className="h-4 w-4 text-primary-500" />
-                              </Button>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleStartEdit(p)}
+                                >
+                                  <Edit3 className="h-4 w-4 text-primary-500" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                  onClick={() => setDeletingProduct(p)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -407,7 +529,7 @@ export default function StoreInventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Product Name *</label>
-                    <Input 
+                    <Input
                       placeholder="e.g. Kurkure Green Chutney 26g"
                       value={addForm.name}
                       onChange={(e) => setAddForm(prev => ({ ...prev, name: e.target.value }))}
@@ -416,7 +538,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Brand Name</label>
-                    <Input 
+                    <Input
                       placeholder="e.g. Pepsico"
                       value={addForm.brand}
                       onChange={(e) => setAddForm(prev => ({ ...prev, brand: e.target.value }))}
@@ -445,7 +567,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Barcode (EAN/UPC) *</label>
-                    <Input 
+                    <Input
                       placeholder="e.g. 8901058002315"
                       value={addForm.barcode}
                       onChange={(e) => setAddForm(prev => ({ ...prev, barcode: e.target.value }))}
@@ -457,7 +579,7 @@ export default function StoreInventoryPage() {
                 <div className="grid grid-cols-4 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Cost Price (Base)</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={addForm.basePrice}
                       onChange={(e) => setAddForm(prev => ({ ...prev, basePrice: Number(e.target.value) }))}
@@ -465,7 +587,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Selling Price *</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={addForm.sellingPrice}
                       onChange={(e) => setAddForm(prev => ({ ...prev, sellingPrice: Number(e.target.value) }))}
@@ -474,7 +596,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Initial Qty</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={addForm.stock}
                       onChange={(e) => setAddForm(prev => ({ ...prev, stock: Number(e.target.value) }))}
@@ -482,7 +604,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Low Threshold</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={addForm.lowStockAt}
                       onChange={(e) => setAddForm(prev => ({ ...prev, lowStockAt: Number(e.target.value) }))}
@@ -493,7 +615,7 @@ export default function StoreInventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">SKU (Auto-gen if empty)</label>
-                    <Input 
+                    <Input
                       placeholder="e.g. LAYS-CLASSIC-GREEN"
                       value={addForm.sku}
                       onChange={(e) => setAddForm(prev => ({ ...prev, sku: e.target.value }))}
@@ -501,7 +623,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Physical Rack Location</label>
-                    <Input 
+                    <Input
                       placeholder="e.g. Aisle B2-S1"
                       value={addForm.rackLocation}
                       onChange={(e) => setAddForm(prev => ({ ...prev, rackLocation: e.target.value }))}
@@ -529,7 +651,7 @@ export default function StoreInventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Product Name</label>
-                    <Input 
+                    <Input
                       value={editForm.name}
                       onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                       required
@@ -537,7 +659,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Brand Name</label>
-                    <Input 
+                    <Input
                       value={editForm.brand}
                       onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
                     />
@@ -565,7 +687,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Barcode (EAN/UPC)</label>
-                    <Input 
+                    <Input
                       value={editForm.barcode}
                       onChange={(e) => setEditForm(prev => ({ ...prev, barcode: e.target.value }))}
                       required
@@ -576,7 +698,7 @@ export default function StoreInventoryPage() {
                 <div className="grid grid-cols-4 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Cost Price (Base)</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={editForm.basePrice}
                       onChange={(e) => setEditForm(prev => ({ ...prev, basePrice: Number(e.target.value) }))}
@@ -584,7 +706,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Selling Price</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={editForm.sellingPrice}
                       onChange={(e) => setEditForm(prev => ({ ...prev, sellingPrice: Number(e.target.value) }))}
@@ -593,7 +715,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Current Stock Qty</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={editForm.stock}
                       onChange={(e) => setEditForm(prev => ({ ...prev, stock: Number(e.target.value) }))}
@@ -601,7 +723,7 @@ export default function StoreInventoryPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Low Threshold</label>
-                    <Input 
+                    <Input
                       type="number"
                       value={editForm.lowStockAt}
                       onChange={(e) => setEditForm(prev => ({ ...prev, lowStockAt: Number(e.target.value) }))}
@@ -612,14 +734,14 @@ export default function StoreInventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">SKU</label>
-                    <Input 
+                    <Input
                       value={editForm.sku}
                       onChange={(e) => setEditForm(prev => ({ ...prev, sku: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Physical Rack Location</label>
-                    <Input 
+                    <Input
                       value={editForm.rackLocation}
                       onChange={(e) => setEditForm(prev => ({ ...prev, rackLocation: e.target.value }))}
                     />
@@ -661,7 +783,7 @@ export default function StoreInventoryPage() {
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-muted-foreground uppercase">Adjustment Quantity</label>
                   <div className="flex gap-2">
-                    <Input 
+                    <Input
                       type="number"
                       placeholder="e.g. 15 for Restock, -5 for damage"
                       value={stockForm.delta === 0 ? '' : stockForm.delta}
@@ -708,13 +830,13 @@ export default function StoreInventoryPage() {
               <CardDescription>Simulate loading multi-sku updates into active store catalog databases.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              
+
               <div className="border-2 border-dashed border-border rounded-xl p-8 text-center bg-muted/20">
                 <Upload className="h-10 w-10 text-slate-400 mx-auto mb-3" />
                 <h4 className="font-bold text-sm text-slate-800 dark:text-white">Upload Catalog CSV file</h4>
                 <p className="text-xs text-muted-foreground mt-1 mb-4">Drag and drop file here, or click to browse</p>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept=".csv"
                   onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
                   className="mx-auto block text-xs text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-black file:uppercase file:bg-primary-500 file:text-white file:cursor-pointer"
@@ -745,6 +867,27 @@ export default function StoreInventoryPage() {
         )}
 
       </div>
+      
+      <DeleteConfirmModal
+        isOpen={!!deletingProduct}
+        onClose={() => setDeletingProduct(null)}
+        onConfirm={() => {
+          if (deletingProduct) {
+            deleteProductMutation.mutate({ productId: deletingProduct.id, storeId }, {
+              onSuccess: () => {
+                toast.success(`${deletingProduct.name} deleted successfully.`);
+                setDeletingProduct(null);
+              },
+              onError: (error: any) => {
+                toast.error(error?.response?.data?.message || 'Failed to delete product');
+              }
+            });
+          }
+        }}
+        title="Delete Product"
+        description={`Are you sure you want to delete '${deletingProduct?.name}'? This will permanently remove the product from this store.`}
+        requireTyping={false}
+      />
     </div>
   );
 }

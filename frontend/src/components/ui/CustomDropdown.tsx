@@ -16,6 +16,7 @@ export interface CustomDropdownProps {
   searchable?: boolean;
   className?: string;
   triggerClassName?: string;
+  menuClassName?: string;
   disabled?: boolean;
   creatable?: boolean;
   onCreate?: (inputValue: string) => void | Promise<void>;
@@ -29,6 +30,7 @@ export function CustomDropdown({
   searchable = false,
   className,
   triggerClassName,
+  menuClassName,
   disabled = false,
   creatable = false,
   onCreate,
@@ -105,7 +107,10 @@ export function CustomDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 z-[100] mt-1 max-h-60 overflow-hidden rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl flex flex-col animate-in fade-in-50 slide-in-from-top-1 duration-100 min-w-[150px]">
+        <div className={cn(
+          "absolute left-0 right-auto z-[100] mt-1 max-h-60 min-w-full overflow-hidden rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl flex flex-col animate-in fade-in-50 slide-in-from-top-1 duration-100",
+          menuClassName || "min-w-[150px]"
+        )}>
           {(searchable || creatable) && (
             <div className="flex items-center border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-2.5 py-1.5 shrink-0">
               <Search className="mr-2 h-3.5 w-3.5 text-slate-400 shrink-0" />

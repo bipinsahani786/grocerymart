@@ -30,9 +30,9 @@ export class StorePanelService {
     return { success: true, data, message: "Store settings updated successfully" };
   }
 
-  async getCategories(user, storeIdParam) {
+  async getCategories(user, storeIdParam, filters) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
-    const data = await storePanelRepository.getCategories(storeId);
+    const data = await storePanelRepository.getCategories(storeId, filters);
     return { success: true, data };
   }
 

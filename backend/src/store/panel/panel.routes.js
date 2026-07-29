@@ -1,6 +1,7 @@
 import express from "express";
 import { storePanelController } from "./panel.controller.js";
 import { verifyToken } from "../../middleware/auth.middleware.js";
+import { uploadMemoryMiddleware } from "../../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -8,6 +9,8 @@ const router = express.Router();
 router.use(verifyToken);
 
 router.get("/dashboard", storePanelController.getDashboard);
+
+router.post("/upload", uploadMemoryMiddleware.single('file'), storePanelController.uploadImage);
 
 router.get("/settings", storePanelController.getSettings);
 router.patch("/settings", storePanelController.updateSettings);
