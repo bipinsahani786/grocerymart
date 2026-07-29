@@ -379,7 +379,7 @@ export class StorePanelRepository {
 
   async importMasterProducts(storeId) {
     const masterProducts = await prisma.masterProduct.findMany({
-      include: { category: true },
+      include: { category: true, variants: true },
       orderBy: { createdAt: "asc" },
     });
 
@@ -428,6 +428,19 @@ export class StorePanelRepository {
             imageUrls: mp.imageUrls || [],
             showOnApp: true,
             showOnPOS: true,
+            isActive: mp.isActive ?? true,
+            taxClassId: mp.taxClassId || null,
+            hsnCode: mp.hsnCode || null,
+            masterProductId: mp.id,
+            variants: mp.variants?.length ? {
+              create: mp.variants.map((v) => ({
+                name: v.name,
+                barcode: v.barcode,
+                price: v.price,
+                mrp: v.mrp,
+                imageUrl: v.imageUrl,
+              }))
+            } : undefined,
             inventory: {
               create: {
                 storeId,

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import type { MasterCategory } from '../schemas/catalogSchemas';
-import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -51,12 +51,7 @@ export function CategoryFormModal({
     return 'Create Root Category';
   };
 
-  const parentOptions = flatCategories
-    .filter((c) => c.id !== editingCategory?.id)
-    .map((c) => ({
-      value: c.id!,
-      label: c.name,
-    }));
+  const filteredFlatCategories = flatCategories.filter(c => c.id !== editingCategory?.id);
 
   return (
     <Modal
@@ -64,6 +59,7 @@ export function CategoryFormModal({
       onClose={onClose}
       title={getModalTitle()}
       maxWidth="sm"
+      overflowVisible={true}
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-1">
         <div className="space-y-1.5">
@@ -84,12 +80,11 @@ export function CategoryFormModal({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Parent Category <span className="text-rose-500">*</span>
             </label>
-            <CustomDropdown
-              options={parentOptions}
+            <CascadingCategoryDropdown
+              categories={filteredFlatCategories}
               value={parentId}
-              onChange={(val) => setParentId(String(val))}
+              onChange={(val) => setParentId(val)}
               placeholder="-- Select Parent Category --"
-              searchable={true}
             />
           </div>
         )}

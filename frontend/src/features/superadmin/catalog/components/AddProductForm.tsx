@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import {
   Trash2,
@@ -58,13 +58,7 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
     variants: initialData?.variants || [],
   });
 
-  const categoryOptions = [
-    { value: '', label: 'Select Master Category' },
-    ...flatCategories.map((c) => ({
-      value: c.id!,
-      label: c.name,
-    })),
-  ];
+
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,6 +168,10 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
       toast.error('Please select a Master Category.');
       return;
     }
+    if (!formData.barcode || !formData.barcode.trim()) {
+      toast.error('Barcode is required.');
+      return;
+    }
 
     if (formData.productType === 'simple' || formData.productType === 'loose') {
       if (!formData.unit || !formData.unit.trim()) {
@@ -276,12 +274,24 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Master Category <span className="text-rose-500">*</span>
             </label>
-            <CustomDropdown
-              options={categoryOptions}
+            <CascadingCategoryDropdown
+              categories={flatCategories}
               value={formData.categoryId || ''}
-              onChange={(val) => setFormData({ ...formData, categoryId: String(val) })}
+              onChange={(val) => setFormData({ ...formData, categoryId: val })}
               placeholder="Select Category (e.g. Dahi)"
-              searchable={true}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Barcode / EAN <span className="text-rose-500">*</span>
+            </label>
+            <Input
+              required
+              value={formData.barcode || ''}
+              onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+              placeholder="8901234567890"
+              icon={<Barcode className="w-4 h-4 text-slate-400" />}
             />
           </div>
         </div>
@@ -419,17 +429,6 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
                 icon={<DollarSign className="w-4 h-4 text-slate-400" />}
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Barcode / EAN
-              </label>
-              <Input
-                value={formData.barcode || ''}
-                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                placeholder="8901234567890"
-                icon={<Barcode className="w-4 h-4 text-slate-400" />}
-              />
-            </div>
           </div>
         )}
 
@@ -517,7 +516,8 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
                   />
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="Barcode"
+                      required
+                      placeholder="Barcode *"
                       value={v.barcode || ''}
                       onChange={(e) => updateVariant(idx, 'barcode', e.target.value)}
                     />

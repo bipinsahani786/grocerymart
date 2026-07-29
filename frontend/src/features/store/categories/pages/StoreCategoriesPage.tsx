@@ -267,7 +267,7 @@ export default function StoreCategoriesPage() {
         subtitle="Manage product category trees, groups, and catalog tax defaults"
       />
 
-      <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 py-6">
+      <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 pt-4 pb-6">
 
         {/* ── KPI Summary Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">

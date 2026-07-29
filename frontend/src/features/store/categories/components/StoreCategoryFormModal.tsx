@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
-import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 
 interface StoreCategoryFormModalProps {
   isOpen: boolean;
@@ -50,12 +50,8 @@ export function StoreCategoryFormModal({
     return 'Create Root Category';
   };
 
-  const parentOptions = flatCategories
-    .filter((c) => c.id !== editingCategory?.id)
-    .map((c) => ({
-      value: c.id!,
-      label: c.name,
-    }));
+  // We filter out the editing category itself so it cannot be its own parent
+  const filteredFlatCategories = flatCategories.filter(c => c.id !== editingCategory?.id);
 
   return (
     <Modal
@@ -63,6 +59,7 @@ export function StoreCategoryFormModal({
       onClose={onClose}
       title={getModalTitle()}
       maxWidth="sm"
+      overflowVisible={true}
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-1">
         <div className="space-y-1.5">
@@ -83,12 +80,11 @@ export function StoreCategoryFormModal({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Parent Category <span className="text-rose-500">*</span>
             </label>
-            <CustomDropdown
-              options={parentOptions}
+            <CascadingCategoryDropdown
+              categories={filteredFlatCategories}
               value={parentId}
-              onChange={(val) => setParentId(String(val))}
+              onChange={(val) => setParentId(val)}
               placeholder="-- Select Parent Category --"
-              searchable={true}
             />
           </div>
         )}

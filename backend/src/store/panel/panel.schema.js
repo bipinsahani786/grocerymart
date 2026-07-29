@@ -4,15 +4,16 @@ const optionalText = z.string().trim().optional().nullable();
 
 export const createProductSchema = z.object({
   body: z.object({
+    categoryId: z.string().uuid("Invalid Category ID").optional().nullable(),
     name: z.string().min(2, "Product name is required"),
     categoryName: optionalText,
     sku: optionalText,
-    barcode: optionalText,
+    barcode: z.string().min(1, "Barcode is required"),
     brand: optionalText,
     description: optionalText,
     type: z.enum(["simple", "weighted", "variable", "bundle", "service", "perishable"]).default("simple"),
-    mrp: z.coerce.number().min(0).default(0),
-    sellingPrice: z.coerce.number().min(0),
+    mrp: z.coerce.number().min(0).default(0).optional().nullable(),
+    sellingPrice: z.coerce.number().min(0, "Selling price cannot be negative"),
     costPrice: z.coerce.number().min(0).default(0),
     taxRate: z.coerce.number().min(0).default(0),
     hsnCode: optionalText,
@@ -25,6 +26,19 @@ export const createProductSchema = z.object({
     showPOS: z.boolean().default(true),
     deliveryEnabled: z.boolean().default(true),
     clickCollectEnabled: z.boolean().default(true),
+  }).refine((data) => {
+    if (data.mrp && data.mrp > 0) {
+      return data.sellingPrice <= data.mrp;
+    }
+    return true;
+  }, {
+    message: "Selling price cannot exceed MRP",
+    path: ["sellingPrice"],
+  }).refine((data) => {
+    return data.categoryId || data.categoryName;
+  }, {
+    message: "Either category ID or Category Name is required",
+    path: ["categoryId"],
   }),
   query: z.object({}).optional(),
   params: z.object({}).optional(),
