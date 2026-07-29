@@ -39,12 +39,22 @@ export const useUpdateStoreSettings = () => {
 };
 
 // ── Store Categories ──
-export const useStoreCategories = (storeId?: string) => {
+export const useStoreCategories = (storeId?: string, params?: { page?: number; limit?: number; search?: string; parentId?: string | null }) => {
   return useQuery({
-    queryKey: ['store-categories', storeId],
+    queryKey: ['store-categories', storeId, params],
     queryFn: async () => {
-      const { data } = await api.get('/store/categories', { params: { storeId } });
-      return data.data;
+      const { data } = await api.get('/store/categories', { params: { storeId, ...params } });
+      return data.data; // returning { data, meta }
+    },
+  });
+};
+
+export const useAllStoreCategories = (storeId?: string) => {
+  return useQuery({
+    queryKey: ['store-categories-all', storeId],
+    queryFn: async () => {
+      const { data } = await api.get('/store/categories', { params: { storeId, all: 'true' } });
+      return data.data.data; // returning just the array
     },
   });
 };
@@ -58,6 +68,7 @@ export const useCreateStoreCategory = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['store-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['store-categories-all'] });
     },
   });
 };
@@ -71,6 +82,7 @@ export const useUpdateStoreCategory = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['store-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['store-categories-all'] });
     },
   });
 };
@@ -84,6 +96,7 @@ export const useDeleteStoreCategory = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['store-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['store-categories-all'] });
     },
   });
 };
@@ -97,6 +110,7 @@ export const useImportMasterCategories = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['store-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['store-categories-all'] });
       queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
     },
   });
@@ -138,6 +152,19 @@ export const useImportMasterProducts = () => {
       queryClient.invalidateQueries({ queryKey: ['store-inventory'] });
       queryClient.invalidateQueries({ queryKey: ['store-categories'] });
       queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+    },
+  });
+};
+
+export const useUploadStoreImage = () => {
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const { data } = await api.post('/store/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return data.data; // expects { url: string }
     },
   });
 };

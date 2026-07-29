@@ -25,7 +25,7 @@ export const masterProductSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, 'Name is required'),
   sku: z.string().optional().nullable(),
-  barcode: z.string().optional().nullable(),
+  barcode: z.string().min(1, 'Barcode is required'),
   brand: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   categoryId: z.string().min(1, 'Category is required'),

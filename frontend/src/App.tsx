@@ -21,7 +21,7 @@ const StoreManagerDashboard = lazy(() => import('@/features/store/dashboard/page
 const StorePosPage = lazy(() => import('@/features/store/pos/pages/StorePosPage'));
 const StoreOrdersPage = lazy(() => import('@/features/store/orders/pages/StoreOrdersPage'));
 const StorePickupPage = lazy(() => import('@/features/store/pickup/pages/StorePickupPage'));
-const StoreProductsPage = lazy(() => import('@/features/store/products/pages/StoreProductsPage'));
+
 const StoreInventoryPage = lazy(() => import('@/features/store/inventory/pages/StoreInventoryPage'));
 const StoreBillingPage = lazy(() => import('@/features/store/billing/pages/StoreBillingPage'));
 const StoreStaffPage = lazy(() => import('@/features/store/staff/pages/StoreStaffPage'));
@@ -148,7 +148,7 @@ function App() {
             <Route path="/store/pos" element={<StoreManagerRoute><StorePosPage /></StoreManagerRoute>} />
             <Route path="/store/orders" element={<StoreManagerRoute><StoreOrdersPage /></StoreManagerRoute>} />
             <Route path="/store/pickup" element={<StoreManagerRoute><StorePickupPage /></StoreManagerRoute>} />
-            <Route path="/store/products" element={<StoreManagerRoute><StoreProductsPage /></StoreManagerRoute>} />
+
             <Route path="/store/inventory" element={<StoreManagerRoute><StoreInventoryPage /></StoreManagerRoute>} />
             <Route path="/store/categories" element={<StoreManagerRoute><StoreCategoriesPage /></StoreManagerRoute>} />
             <Route path="/store/customers" element={<StoreManagerRoute><StoreCustomersPage /></StoreManagerRoute>} />

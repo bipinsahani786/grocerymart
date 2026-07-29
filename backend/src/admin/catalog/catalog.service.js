@@ -69,6 +69,11 @@ export class CatalogService {
         throw new AppError('Product Title is required.', 400);
       }
     }
+    if (!isUpdate || data.barcode !== undefined) {
+      if (!data.barcode || !String(data.barcode).trim()) {
+        throw new AppError('Barcode is required.', 400);
+      }
+    }
     if (!isUpdate || data.brand !== undefined) {
       if (!data.brand || !String(data.brand).trim()) {
         throw new AppError('Brand Name is required.', 400);

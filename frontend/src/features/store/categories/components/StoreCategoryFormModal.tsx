@@ -5,13 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
-import type { MasterCategory } from '../schemas/catalogSchemas';
 import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 
-interface CategoryFormModalProps {
+interface StoreCategoryFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  editingCategory: MasterCategory | null;
+  editingCategory: any | null;
   isSubcategoryMode: boolean;
   name: string;
   setName: (val: string) => void;
@@ -22,11 +21,11 @@ interface CategoryFormModalProps {
   isUploading: boolean;
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: FormEvent) => void;
-  flatCategories: MasterCategory[];
+  flatCategories: any[];
   isPending: boolean;
 }
 
-export function CategoryFormModal({
+export function StoreCategoryFormModal({
   isOpen,
   onClose,
   editingCategory,
@@ -42,7 +41,7 @@ export function CategoryFormModal({
   handleSubmit,
   flatCategories,
   isPending,
-}: CategoryFormModalProps) {
+}: StoreCategoryFormModalProps) {
   const isEditing = Boolean(editingCategory);
 
   const getModalTitle = () => {
@@ -51,6 +50,7 @@ export function CategoryFormModal({
     return 'Create Root Category';
   };
 
+  // We filter out the editing category itself so it cannot be its own parent
   const filteredFlatCategories = flatCategories.filter(c => c.id !== editingCategory?.id);
 
   return (
@@ -148,4 +148,4 @@ export function CategoryFormModal({
   );
 }
 
-export default CategoryFormModal;
+export default StoreCategoryFormModal;

@@ -1,31 +1,54 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Boxes, 
-  Search, 
-  Plus, 
-  Edit3, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Upload, 
-  FileSpreadsheet, 
-  
+import {
+  Boxes,
+  Search,
+  Plus,
+  Edit3,
+  ArrowUpRight,
+  ArrowDownRight,
+  Upload,
+  FileSpreadsheet,
   RefreshCw,
-  FolderOpen
+  FolderOpen,
+  AlertTriangle,
+  CheckCircle,
+  PackageSearch,
+  Layers,
+  Trash2,
+  Download,
+  Package,
+  Building,
+  Barcode,
+  DollarSign,
+  Archive,
+  Tags,
+  Activity,
+  Tag,
+  ArrowLeft
 } from 'lucide-react';
+import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/store/authStore';
-import { 
-  useStoreInventory, 
-  useStoreCategories, 
-  useCreateStoreProduct, 
-  useAdjustStoreStock 
+import {
+  useStoreInventory,
+  useAllStoreCategories,
+  useCreateStoreProduct,
+  useUpdateStoreProduct,
+  useAdjustStoreStock,
+  useDeleteStoreProduct,
+  useImportMasterProducts
 } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
+import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { SearchBar } from '@/components/ui/SearchBar';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
+import { Modal } from '@/components/ui/modal';
+import { StoreAddProductForm } from '../components/StoreAddProductForm';
 
 type ActiveTab = 'list' | 'add' | 'edit' | 'stock' | 'bulk';
 
@@ -35,41 +58,61 @@ export default function StoreInventoryPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [stockFilter, setStockFilter] = useState('All');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const { data: productsData } = useStoreInventory(storeId, searchQuery);
-  const { data: categoriesData } = useStoreCategories(storeId);
+  const { data: categoriesData } = useAllStoreCategories(storeId);
 
   const createProduct = useCreateStoreProduct();
+  const updateProductMutation = useUpdateStoreProduct();
   const adjustStockMutation = useAdjustStoreStock();
+  const deleteProductMutation = useDeleteStoreProduct();
+  const importMasterProducts = useImportMasterProducts();
+
+  const handleImportMaster = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const confirmImportMaster = () => {
+    importMasterProducts.mutate({ storeId }, {
+      onSuccess: (res) => {
+        toast.success(res.message || `Successfully imported ${res.data?.importedCount || 0} new products!`);
+        setIsImportModalOpen(false);
+      },
+      onError: (err: any) => {
+        toast.error(err.response?.data?.message || 'Failed to import master products');
+        setIsImportModalOpen(false);
+      }
+    });
+  };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Product details saved!');
-    setActiveTab('list');
+    updateProductMutation.mutate(
+      { productId: editingProductId, storeId, payload: editForm },
+      {
+        onSuccess: () => {
+          toast.success('Product details updated successfully!');
+          setActiveTab('list');
+        },
+        onError: (error: any) => {
+          toast.error(error?.response?.data?.message || 'Failed to update product');
+        }
+      }
+    );
   };
 
   const products = productsData || [];
   const categories = categoriesData || [];
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('list');
-  
+
   // Selected product for edit
   const [editingProductId, setEditingProductId] = useState<string>('');
   
-  // Add Form State
-  const [addForm, setAddForm] = useState({
-    name: '',
-    brand: '',
-    categoryId: '',
-    unit: 'pcs',
-    basePrice: 0,
-    sellingPrice: 0,
-    stock: 0,
-    lowStockAt: 10,
-    sku: '',
-    barcode: '',
-    rackLocation: 'Aisle Main',
-  });
+  // Product being deleted
+  const [deletingProduct, setDeletingProduct] = useState<any>(null);
 
   // Edit Form State
   const [editForm, setEditForm] = useState({
@@ -98,10 +141,10 @@ export default function StoreInventoryPage() {
   const [uploading, setUploading] = useState(false);
 
   // Dropdown Option Mappings for CustomDropdown
-  const categoryFilterOptions = useMemo(() => {
+  const filterCategories = useMemo(() => {
     return [
-      { value: 'All', label: 'All Categories' },
-      ...categories.map((c: any) => ({ value: c.id, label: c.name }))
+      { id: 'All', name: 'All Categories', parentId: null },
+      ...categories
     ];
   }, [categories]);
 
@@ -134,6 +177,13 @@ export default function StoreInventoryPage() {
     { value: 'Customer Return', label: 'Customer Return' }
   ];
 
+  const stockFilterOptions = [
+    { value: 'All', label: 'All Stock Status' },
+    { value: 'InStock', label: 'In Stock' },
+    { value: 'LowStock', label: 'Low Stock' },
+    { value: 'OutOfStock', label: 'Out of Stock' }
+  ];
+
   // 1. Filtered products for listing
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
@@ -142,9 +192,17 @@ export default function StoreInventoryPage() {
         (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.barcode || '').includes(searchQuery);
       const matchesCategory = categoryFilter === 'All' || p.categoryId === categoryFilter;
-      return matchesSearch && matchesCategory;
+      
+      const q = p.inventory?.[0]?.quantity || 0;
+      const lowStockAt = p.lowStockAt || 10;
+      let matchesStock = true;
+      if (stockFilter === 'InStock') matchesStock = q > 0;
+      if (stockFilter === 'LowStock') matchesStock = q > 0 && q <= lowStockAt;
+      if (stockFilter === 'OutOfStock') matchesStock = q <= 0;
+
+      return matchesSearch && matchesCategory && matchesStock;
     });
-  }, [products, searchQuery, categoryFilter]);
+  }, [products, searchQuery, categoryFilter, stockFilter]);
 
   // 2. Set up edit form values
   const handleStartEdit = (product: any) => {
@@ -166,54 +224,6 @@ export default function StoreInventoryPage() {
     setActiveTab('edit');
   };
 
-  // 3. Form Submissions
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!addForm.name) {
-      toast.error('Product Name is required!');
-      return;
-    }
-    
-    createProduct.mutate(
-      {
-        storeId,
-        payload: {
-          name: addForm.name,
-          brand: addForm.brand,
-          categoryId: addForm.categoryId || undefined,
-          unit: addForm.unit,
-          basePrice: Number(addForm.basePrice),
-          sellingPrice: Number(addForm.sellingPrice || addForm.basePrice),
-          quantity: Number(addForm.stock),
-          lowStockAlert: Number(addForm.lowStockAt),
-          sku: addForm.sku || undefined,
-          barcode: addForm.barcode || undefined,
-        },
-      },
-      {
-        onSuccess: () => {
-          toast.success(`${addForm.name} added to catalog successfully!`);
-          setActiveTab('list');
-          setAddForm({
-            name: '',
-            brand: '',
-            categoryId: '',
-            unit: 'pcs',
-            basePrice: 0,
-            sellingPrice: 0,
-            stock: 0,
-            lowStockAt: 10,
-            sku: '',
-            barcode: '',
-            rackLocation: 'Aisle Main',
-          });
-        },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || 'Failed to add product');
-        },
-      }
-    );
-  };
 
   const handleStockSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,6 +268,14 @@ export default function StoreInventoryPage() {
     }, 1200);
   };
 
+  const totalProducts = products.length;
+  const totalCategories = categories.length;
+  const outOfStock = products.filter((p: any) => (p.inventory?.[0]?.quantity || 0) <= 0).length;
+  const lowStock = products.filter((p: any) => {
+    const q = p.inventory?.[0]?.quantity || 0;
+    return q > 0 && q <= (p.lowStockAt || 10);
+  }).length;
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-8">
       <PageHeader
@@ -266,55 +284,114 @@ export default function StoreInventoryPage() {
         subtitle="Manage product listings, SKU catalog parameters, stock updates, and bulk CSV uploads"
       />
 
-      <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-        
+      <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 pt-4 pb-6 space-y-6">
+
+        {/* ── KPI Summary Cards ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-page-enter">
+          <CustomKpiCard
+            title="Total Catalog Items"
+            value={totalProducts}
+            subtitle="Products configured for this store"
+            icon={<PackageSearch />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+          <CustomKpiCard
+            title="Active Categories"
+            value={totalCategories}
+            subtitle="Taxonomy groups in use"
+            icon={<Layers />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+          <CustomKpiCard
+            title="Low Stock Alerts"
+            value={lowStock}
+            subtitle="Items needing replenishment"
+            icon={<AlertTriangle />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+          <CustomKpiCard
+            title="Out of Stock"
+            value={outOfStock}
+            subtitle="Currently unavailable items"
+            icon={<CheckCircle />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
+        </div>
+
         {/* Navigation Tabs */}
-        <div className="flex border-b border-border gap-1 overflow-x-auto pb-px">
-          {[
-            { id: 'list', name: 'Product List', icon: Boxes },
-            { id: 'add', name: 'Add Product', icon: Plus },
-            { id: 'edit', name: 'Edit Product', icon: Edit3, disabled: !editingProductId },
-            { id: 'stock', name: 'Stock Update', icon: RefreshCw },
-            { id: 'bulk', name: 'Bulk Upload', icon: Upload }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              disabled={tab.disabled}
-              onClick={() => setActiveTab(tab.id as ActiveTab)}
-              className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
-                activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-500 font-extrabold'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              } ${tab.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.name}
-            </button>
-          ))}
+        <div className="flex items-center justify-between border-b border-border">
+          <div className="flex gap-1 overflow-x-auto">
+            {[
+              { id: 'list', name: 'Product List', icon: Boxes },
+              { id: 'add', name: 'Add Product', icon: Plus },
+              { id: 'edit', name: 'Edit Product', icon: Edit3, disabled: !editingProductId },
+              { id: 'stock', name: 'Stock Update', icon: RefreshCw },
+              { id: 'bulk', name: 'Bulk Upload', icon: Upload }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                disabled={tab.disabled}
+                onClick={() => setActiveTab(tab.id as ActiveTab)}
+                className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 -mb-[1px] transition-all relative ${activeTab === tab.id
+                    ? 'border-primary-600 text-white bg-primary-600 dark:border-primary-500 dark:bg-primary-500 dark:text-white rounded-t-lg shadow-sm'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-lg'
+                  } ${tab.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.name}
+              </button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleImportMaster}
+            disabled={importMasterProducts.isPending}
+            className="text-xs font-bold gap-1.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hidden sm:flex shrink-0 mb-1"
+          >
+            <Download className="h-4 w-4 text-emerald-500" />
+            Import Master Products
+          </Button>
         </div>
 
         {/* Tab Content Rendering */}
         {activeTab === 'list' && (
           <div className="space-y-4 animate-page-enter">
-            {/* Search and Category Filter */}
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch justify-between">
-              <div className="relative flex-1 max-w-md">
-                <Input 
-                  icon={<Search className="h-4 w-4" />} 
-                  placeholder="Search catalog by name, barcode or SKU..." 
+            {/* Search and Filters */}
+            <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm">
+              <div className="w-full xl:max-w-md shrink-0">
+                <SearchBar
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={setSearchQuery}
+                  placeholder="Search catalog by name, barcode or SKU..."
                 />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Filter Category:</span>
-                <div className="w-[170px] z-20">
-                  <CustomDropdown
-                    options={categoryFilterOptions}
-                    value={categoryFilter}
-                    onChange={setCategoryFilter}
-                    triggerClassName="h-[38px] !text-xs font-semibold"
-                  />
+              <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                  <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap hidden sm:inline-block">Category:</span>
+                  <div className="w-full sm:w-[200px] z-20">
+                    <CascadingCategoryDropdown
+                      categories={filterCategories}
+                      value={categoryFilter}
+                      onChange={setCategoryFilter}
+                      triggerClassName="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                  <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap hidden sm:inline-block">Stock:</span>
+                  <div className="w-full sm:w-[200px] z-10">
+                    <CustomDropdown
+                      options={stockFilterOptions}
+                      value={stockFilter}
+                      onChange={setStockFilter}
+                      triggerClassName="h-8 text-xs"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -352,9 +429,26 @@ export default function StoreInventoryPage() {
                               <p className="font-bold text-slate-800 dark:text-white">{p.barcode}</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">{p.sku}</p>
                             </td>
-                            <td className="p-4 font-bold text-slate-900 dark:text-white">
-                              {p.name}
-                              <span className="text-[10px] font-semibold text-muted-foreground ml-1.5">({p.unit})</span>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                {p.imageUrls?.[0] ? (
+                                  <img 
+                                    src={p.imageUrls[0]} 
+                                    alt={p.name} 
+                                    className="w-10 h-10 rounded-md object-cover border border-border shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center border border-border shrink-0">
+                                    <Boxes className="w-5 h-5 text-muted-foreground opacity-50" />
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="font-bold text-slate-900 dark:text-white">
+                                    {p.name}
+                                  </div>
+                                  <div className="text-[10px] font-semibold text-muted-foreground">Unit: {p.unit}</div>
+                                </div>
+                              </div>
                             </td>
                             <td className="p-4">
                               <Badge variant="outline" className="font-bold text-[10px]">
@@ -376,14 +470,24 @@ export default function StoreInventoryPage() {
                             </td>
                             <td className="p-4 font-medium text-slate-600 dark:text-slate-400">{p.rackLocation}</td>
                             <td className="p-4 text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0"
-                                onClick={() => handleStartEdit(p)}
-                              >
-                                <Edit3 className="h-4 w-4 text-primary-500" />
-                              </Button>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleStartEdit(p)}
+                                >
+                                  <Edit3 className="h-4 w-4 text-primary-500" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                  onClick={() => setDeletingProduct(p)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -397,242 +501,240 @@ export default function StoreInventoryPage() {
         )}
 
         {activeTab === 'add' && (
-          <Card className="max-w-2xl mx-auto animate-page-enter">
-            <CardHeader>
-              <CardTitle className="text-base font-black">Add New Product to Store</CardTitle>
-              <CardDescription>Specify catalog parameters to instantly propagate to POS and online apps.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAddSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Product Name *</label>
-                    <Input 
-                      placeholder="e.g. Kurkure Green Chutney 26g"
-                      value={addForm.name}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Brand Name</label>
-                    <Input 
-                      placeholder="e.g. Pepsico"
-                      value={addForm.brand}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, brand: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1 z-20">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Category *</label>
-                    <CustomDropdown
-                      options={formCategoryOptions}
-                      value={addForm.categoryId}
-                      onChange={(v) => setAddForm(prev => ({ ...prev, categoryId: v }))}
-                      triggerClassName="h-[38px] !text-xs font-semibold"
-                    />
-                  </div>
-                  <div className="space-y-1 z-20">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Selling Unit</label>
-                    <CustomDropdown
-                      options={unitOptions}
-                      value={addForm.unit}
-                      onChange={(v) => setAddForm(prev => ({ ...prev, unit: v }))}
-                      triggerClassName="h-[38px] !text-xs font-semibold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Barcode (EAN/UPC) *</label>
-                    <Input 
-                      placeholder="e.g. 8901058002315"
-                      value={addForm.barcode}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, barcode: e.target.value }))}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Cost Price (Base)</label>
-                    <Input 
-                      type="number"
-                      value={addForm.basePrice}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, basePrice: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Selling Price *</label>
-                    <Input 
-                      type="number"
-                      value={addForm.sellingPrice}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, sellingPrice: Number(e.target.value) }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Initial Qty</label>
-                    <Input 
-                      type="number"
-                      value={addForm.stock}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, stock: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Low Threshold</label>
-                    <Input 
-                      type="number"
-                      value={addForm.lowStockAt}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, lowStockAt: Number(e.target.value) }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">SKU (Auto-gen if empty)</label>
-                    <Input 
-                      placeholder="e.g. LAYS-CLASSIC-GREEN"
-                      value={addForm.sku}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, sku: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Physical Rack Location</label>
-                    <Input 
-                      placeholder="e.g. Aisle B2-S1"
-                      value={addForm.rackLocation}
-                      onChange={(e) => setAddForm(prev => ({ ...prev, rackLocation: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab('list')}>Cancel</Button>
-                  <Button type="submit" variant="brand" size="sm">Save Product</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <StoreAddProductForm
+            storeId={storeId}
+            categories={categories}
+            onCancel={() => setActiveTab('list')}
+            onSuccess={() => setActiveTab('list')}
+          />
         )}
 
         {activeTab === 'edit' && (
-          <Card className="max-w-2xl mx-auto animate-page-enter">
-            <CardHeader>
-              <CardTitle className="text-base font-black">Edit Product: {editForm.name}</CardTitle>
-              <CardDescription>Adjust properties of an existing catalog product record.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Product Name</label>
-                    <Input 
-                      value={editForm.name}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Brand Name</label>
-                    <Input 
-                      value={editForm.brand}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
-                    />
-                  </div>
+          <div className="space-y-6 animate-page-enter max-w-[1200px] mx-auto py-4">
+            <div className="flex items-center gap-4 border-b border-border pb-4">
+              <Button variant="ghost" size="icon" onClick={() => setActiveTab('list')} className="hover:bg-muted/50 rounded-full">
+                <ArrowLeft className="w-5 h-5 text-slate-500 hover:text-slate-900 dark:hover:text-white" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Edit3 className="w-6 h-6 text-primary-500" />
+                  Edit Store Product
+                </h2>
+                <p className="text-xs font-semibold text-muted-foreground mt-1">
+                  Adjust properties of {editForm.name}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Column */}
+                <div className="lg:col-span-2 space-y-6">
+                  <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
+                    <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
+                      <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                        <Package className="w-4 h-4 text-primary-500" />
+                        Basic Information
+                      </h3>
+                    </div>
+                    <CardContent className="p-6 space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-1.5 md:col-span-2">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Product Title <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            required
+                            placeholder="e.g. Misti Dahi 500g"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                            icon={<Package className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 z-30">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Store Category <span className="text-rose-500">*</span>
+                          </label>
+                          <CascadingCategoryDropdown
+                            categories={categories}
+                            value={editForm.categoryId}
+                            onChange={(val) => setEditForm(prev => ({ ...prev, categoryId: val }))}
+                            placeholder="Select Category"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Brand Name
+                          </label>
+                          <Input
+                            placeholder="e.g. ITC / Fortune"
+                            value={editForm.brand}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
+                            icon={<Building className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Barcode (EAN/UPC) <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            required
+                            placeholder="8901234567890"
+                            value={editForm.barcode}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, barcode: e.target.value }))}
+                            icon={<Barcode className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            SKU (Stock Keeping Unit)
+                          </label>
+                          <Input
+                            placeholder="Auto-generated if empty"
+                            value={editForm.sku}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, sku: e.target.value }))}
+                            icon={<Tags className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
+                    <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
+                      <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                        <DollarSign className="w-4 h-4 text-emerald-500" />
+                        Pricing Details
+                      </h3>
+                    </div>
+                    <CardContent className="p-6 space-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Selling Price <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="number"
+                            required
+                            min="0"
+                            step="0.01"
+                            value={editForm.sellingPrice === 0 ? '' : editForm.sellingPrice}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))}
+                            placeholder="0.00"
+                            icon={<DollarSign className="w-4 h-4 text-emerald-500" />}
+                            className="border-emerald-500/50 focus:border-emerald-500 ring-emerald-500/20 focus-visible:ring-emerald-500/20"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Cost Price (Base)
+                          </label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={editForm.basePrice === 0 ? '' : editForm.basePrice}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, basePrice: parseFloat(e.target.value) || 0 }))}
+                            placeholder="0.00"
+                            icon={<Activity className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1 z-20">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Category</label>
-                    <CustomDropdown
-                      options={formCategoryOptions}
-                      value={editForm.categoryId}
-                      onChange={(v) => setEditForm(prev => ({ ...prev, categoryId: v }))}
-                      triggerClassName="h-[38px] !text-xs font-semibold"
-                    />
-                  </div>
-                  <div className="space-y-1 z-20">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Selling Unit</label>
-                    <CustomDropdown
-                      options={unitOptions}
-                      value={editForm.unit}
-                      onChange={(v) => setEditForm(prev => ({ ...prev, unit: v }))}
-                      triggerClassName="h-[38px] !text-xs font-semibold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Barcode (EAN/UPC)</label>
-                    <Input 
-                      value={editForm.barcode}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, barcode: e.target.value }))}
-                      required
-                    />
-                  </div>
-                </div>
+                {/* Sidebar Column */}
+                <div className="space-y-6">
+                  <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
+                    <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
+                      <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                        <Archive className="w-4 h-4 text-blue-500" />
+                        Inventory Settings
+                      </h3>
+                    </div>
+                    <CardContent className="p-6 space-y-5">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          Current Stock Qty
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editForm.stock === 0 ? '' : editForm.stock}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                          placeholder="0"
+                          icon={<Layers className="w-4 h-4 text-slate-400" />}
+                        />
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          Low Stock Threshold
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editForm.lowStockAt === 0 ? '' : editForm.lowStockAt}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, lowStockAt: parseInt(e.target.value) || 0 }))}
+                          placeholder="5"
+                          icon={<Activity className="w-4 h-4 text-slate-400" />}
+                        />
+                      </div>
 
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Cost Price (Base)</label>
-                    <Input 
-                      type="number"
-                      value={editForm.basePrice}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, basePrice: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Selling Price</label>
-                    <Input 
-                      type="number"
-                      value={editForm.sellingPrice}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, sellingPrice: Number(e.target.value) }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Current Stock Qty</label>
-                    <Input 
-                      type="number"
-                      value={editForm.stock}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, stock: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Low Threshold</label>
-                    <Input 
-                      type="number"
-                      value={editForm.lowStockAt}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, lowStockAt: Number(e.target.value) }))}
-                    />
-                  </div>
-                </div>
+                      <div className="space-y-1.5 z-20">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          Selling Unit
+                        </label>
+                        <CustomDropdown
+                          options={unitOptions}
+                          value={editForm.unit}
+                          onChange={(val) => setEditForm(prev => ({ ...prev, unit: String(val) }))}
+                        />
+                      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">SKU</label>
-                    <Input 
-                      value={editForm.sku}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, sku: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase">Physical Rack Location</label>
-                    <Input 
-                      value={editForm.rackLocation}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, rackLocation: e.target.value }))}
-                    />
-                  </div>
-                </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          Rack Location
+                        </label>
+                        <Input
+                          placeholder="e.g. Aisle B2-S1"
+                          value={editForm.rackLocation}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, rackLocation: e.target.value }))}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <div className="pt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab('list')}>Cancel</Button>
-                  <Button type="submit" variant="brand" size="sm">Update Product</Button>
+                  <div className="pt-2 flex flex-col gap-3">
+                    <Button 
+                      type="submit" 
+                      variant="brand" 
+                      size="lg" 
+                      className="w-full font-bold shadow-md h-12 text-sm uppercase tracking-wider"
+                      disabled={updateProductMutation.isPending}
+                    >
+                      {updateProductMutation.isPending ? 'Updating...' : 'Update Product'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="lg" 
+                      className="w-full font-bold h-12 text-sm uppercase tracking-wider text-slate-600 dark:text-slate-400"
+                      onClick={() => setActiveTab('list')}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+              </div>
+            </form>
+          </div>
         )}
 
         {activeTab === 'stock' && (
@@ -661,7 +763,7 @@ export default function StoreInventoryPage() {
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-muted-foreground uppercase">Adjustment Quantity</label>
                   <div className="flex gap-2">
-                    <Input 
+                    <Input
                       type="number"
                       placeholder="e.g. 15 for Restock, -5 for damage"
                       value={stockForm.delta === 0 ? '' : stockForm.delta}
@@ -708,13 +810,13 @@ export default function StoreInventoryPage() {
               <CardDescription>Simulate loading multi-sku updates into active store catalog databases.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              
+
               <div className="border-2 border-dashed border-border rounded-xl p-8 text-center bg-muted/20">
                 <Upload className="h-10 w-10 text-slate-400 mx-auto mb-3" />
                 <h4 className="font-bold text-sm text-slate-800 dark:text-white">Upload Catalog CSV file</h4>
                 <p className="text-xs text-muted-foreground mt-1 mb-4">Drag and drop file here, or click to browse</p>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept=".csv"
                   onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
                   className="mx-auto block text-xs text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-black file:uppercase file:bg-primary-500 file:text-white file:cursor-pointer"
@@ -745,6 +847,57 @@ export default function StoreInventoryPage() {
         )}
 
       </div>
+      
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Confirm Import"
+        footer={
+          <div className="flex justify-end gap-3 w-full">
+            <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(false)}>Cancel</Button>
+            <Button variant="brand" size="sm" onClick={confirmImportMaster} isLoading={importMasterProducts.isPending}>Import Now</Button>
+          </div>
+        }
+        maxWidth="md"
+      >
+        <div className="space-y-4 text-left">
+          <div className="flex gap-4 items-start p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+            <div className="w-10 h-10 shrink-0 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <Download className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                Import Master Catalog
+              </h4>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1 leading-relaxed">
+                This will automatically add all new master products into your store catalog. Products that already exist (matched by name, SKU, or barcode) will be skipped safely.
+              </p>
+            </div>
+          </div>
+          <p className="text-xs font-medium text-slate-700 dark:text-slate-300">Are you sure you want to proceed with the import?</p>
+        </div>
+      </Modal>
+
+      <DeleteConfirmModal
+        isOpen={!!deletingProduct}
+        onClose={() => setDeletingProduct(null)}
+        onConfirm={() => {
+          if (deletingProduct) {
+            deleteProductMutation.mutate({ productId: deletingProduct.id, storeId }, {
+              onSuccess: () => {
+                toast.success(`${deletingProduct.name} deleted successfully.`);
+                setDeletingProduct(null);
+              },
+              onError: (error: any) => {
+                toast.error(error?.response?.data?.message || 'Failed to delete product');
+              }
+            });
+          }
+        }}
+        title="Delete Product"
+        description={`Are you sure you want to delete '${deletingProduct?.name}'? This will permanently remove the product from this store.`}
+        requireTyping={false}
+      />
     </div>
   );
 }

@@ -1,10 +1,33 @@
 import { storePanelService } from "./panel.service.js";
+import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 import { catchAsync } from "../../utils/catchAsync.js";
 
 export class StorePanelController {
   getDashboard = catchAsync(async (req, res) => {
     const result = await storePanelService.getDashboard(req.user, req.query.storeId);
     res.json(result);
+  });
+
+  uploadImage = catchAsync(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image provided' });
+    }
+
+    const uploadDir = path.join(process.cwd(), 'public/uploads/categories');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const ext = req.file.originalname.split('.').pop() || 'png';
+    const filename = `store-cat-${crypto.randomUUID()}-${Date.now()}.${ext}`;
+    const filePath = path.join(uploadDir, filename);
+
+    fs.writeFileSync(filePath, req.file.buffer);
+    const url = `/uploads/categories/${filename}`;
+
+    res.status(200).json({ success: true, data: { url } });
   });
 
   getSettings = catchAsync(async (req, res) => {
@@ -18,7 +41,14 @@ export class StorePanelController {
   });
 
   getCategories = catchAsync(async (req, res) => {
-    const result = await storePanelService.getCategories(req.user, req.query.storeId);
+    const filters = {
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search || req.query.q,
+      parentId: req.query.parentId,
+      all: req.query.all
+    };
+    const result = await storePanelService.getCategories(req.user, req.query.storeId, filters);
     res.json(result);
   });
 

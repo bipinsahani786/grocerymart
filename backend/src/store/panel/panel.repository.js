@@ -82,12 +82,60 @@ export class StorePanelRepository {
   }
 
   // ── Categories ──
-  async getCategories(storeId) {
-    return await prisma.category.findMany({
-      where: { storeId },
-      include: { _count: { select: { products: true } } },
-      orderBy: { sortOrder: "asc" },
-    });
+  async getCategories(storeId, filters = {}) {
+    const { page, limit, search, parentId, all } = filters;
+
+    // If 'all' flag is provided, return all categories (used for dropdowns)
+    if (all === 'true') {
+      const data = await prisma.category.findMany({
+        where: { storeId },
+        include: { _count: { select: { products: true } }, children: true },
+        orderBy: { sortOrder: "asc" },
+      });
+      return { data, meta: { total: data.length, page: 1, limit: data.length, totalPages: 1 } };
+    }
+
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    const where = {
+      storeId,
+    };
+
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    if (parentId !== undefined) {
+      if (parentId === 'not_null') {
+        where.parentId = { not: null };
+        where.parent = { parentId: null };
+      } else {
+        where.parentId = parentId === 'null' || !parentId ? null : parentId;
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.category.findMany({
+        where,
+        include: { _count: { select: { products: true } }, children: true, parent: true },
+        orderBy: { sortOrder: "asc" },
+        skip,
+        take: limitNum,
+      }),
+      prisma.category.count({ where })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      }
+    };
   }
 
   async createCategory(storeId, data) {
@@ -95,6 +143,7 @@ export class StorePanelRepository {
       data: {
         storeId,
         name: data.name,
+        parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
         sortOrder: data.sortOrder ? parseInt(data.sortOrder) : 0,
       },
@@ -106,6 +155,7 @@ export class StorePanelRepository {
       where: { id },
       data: {
         ...(data.name ? { name: data.name } : {}),
+        ...(data.parentId !== undefined ? { parentId: data.parentId } : {}),
         ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
         ...(data.sortOrder !== undefined ? { sortOrder: parseInt(data.sortOrder) } : {}),
       },
@@ -125,13 +175,13 @@ export class StorePanelRepository {
         storeId,
         ...(q
           ? {
-              OR: [
-                { name: { contains: q, mode: "insensitive" } },
-                { sku: { contains: q, mode: "insensitive" } },
-                { barcode: { contains: q, mode: "insensitive" } },
-                { brand: { contains: q, mode: "insensitive" } },
-              ],
-            }
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { sku: { contains: q, mode: "insensitive" } },
+              { barcode: { contains: q, mode: "insensitive" } },
+              { brand: { contains: q, mode: "insensitive" } },
+            ],
+          }
           : {}),
       },
       include: productInclude,
@@ -284,9 +334,12 @@ export class StorePanelRepository {
   async importMasterCategories(storeId) {
     const masterCategories = await prisma.masterCategory.findMany({
       orderBy: { sortOrder: "asc" },
+      include: { parent: true }
     });
 
     let importedCount = 0;
+    
+    // First pass: create all categories (without parentId initially)
     for (const mc of masterCategories) {
       const existing = await prisma.category.findUnique({
         where: { storeId_name: { storeId, name: mc.name } },
@@ -305,12 +358,28 @@ export class StorePanelRepository {
       }
     }
 
+    // Second pass: link parent categories
+    for (const mc of masterCategories) {
+      if (mc.parentId && mc.parent) {
+        const localParent = await prisma.category.findUnique({
+          where: { storeId_name: { storeId, name: mc.parent.name } }
+        });
+        
+        if (localParent) {
+          await prisma.category.update({
+            where: { storeId_name: { storeId, name: mc.name } },
+            data: { parentId: localParent.id }
+          });
+        }
+      }
+    }
+
     return { importedCount, totalMaster: masterCategories.length };
   }
 
   async importMasterProducts(storeId) {
     const masterProducts = await prisma.masterProduct.findMany({
-      include: { category: true },
+      include: { category: true, variants: true },
       orderBy: { createdAt: "asc" },
     });
 
@@ -359,6 +428,19 @@ export class StorePanelRepository {
             imageUrls: mp.imageUrls || [],
             showOnApp: true,
             showOnPOS: true,
+            isActive: mp.isActive ?? true,
+            taxClassId: mp.taxClassId || null,
+            hsnCode: mp.hsnCode || null,
+            masterProductId: mp.id,
+            variants: mp.variants?.length ? {
+              create: mp.variants.map((v) => ({
+                name: v.name,
+                barcode: v.barcode,
+                price: v.price,
+                mrp: v.mrp,
+                imageUrl: v.imageUrl,
+              }))
+            } : undefined,
             inventory: {
               create: {
                 storeId,

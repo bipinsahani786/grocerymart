@@ -76,12 +76,7 @@ export const businessMenuGroups = [
   {
     title: "CATALOG",
     items: [
-      {
-        name: "Products",
-        href: "/store/products",
-        icon: Package,
-        subtitle: "Add, manage and organize your store product catalog",
-      },
+
       {
         name: "Categories",
         href: "/store/categories",

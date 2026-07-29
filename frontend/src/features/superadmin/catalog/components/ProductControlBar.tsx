@@ -2,7 +2,9 @@ import { LayoutGrid, Table, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 import type { MasterCategory } from '../schemas/catalogSchemas';
+import React from 'react';
 
 interface ProductControlBarProps {
   search: string;
@@ -29,13 +31,12 @@ export function ProductControlBar({
   onAddProduct,
   flatCategories,
 }: ProductControlBarProps) {
-  const categoryOptions = [
-    { value: '', label: 'ALL CATEGORIES' },
-    ...flatCategories.map((c) => ({
-      value: c.id!,
-      label: c.name.toUpperCase(),
-    })),
-  ];
+  const cascadingCategories = React.useMemo(() => {
+    return [
+      { id: '', name: 'ALL CATEGORIES', parentId: null },
+      ...flatCategories
+    ];
+  }, [flatCategories]);
 
   const typeOptions = [
     { value: 'all', label: 'ALL TYPES' },
@@ -56,13 +57,13 @@ export function ProductControlBar({
           />
         </div>
 
-        <div className="w-full sm:w-52">
-          <CustomDropdown
-            options={categoryOptions}
+        <div className="w-full sm:w-52 z-20">
+          <CascadingCategoryDropdown
+            categories={cascadingCategories as any}
             value={selectedCategory}
             onChange={setSelectedCategory}
             placeholder="ALL CATEGORIES"
-            searchable={true}
+            triggerClassName="h-8 text-xs"
           />
         </div>
 
@@ -72,6 +73,7 @@ export function ProductControlBar({
             value={selectedType}
             onChange={setSelectedType}
             placeholder="ALL TYPES"
+            triggerClassName="h-8 text-xs"
           />
         </div>
       </div>
@@ -82,11 +84,10 @@ export function ProductControlBar({
           <button
             type="button"
             onClick={() => setViewMode('table')}
-            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              viewMode === 'table'
+            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'table'
                 ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs font-bold'
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+              }`}
             title="Table View"
           >
             <Table className="w-4 h-4" />
@@ -95,11 +96,10 @@ export function ProductControlBar({
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              viewMode === 'grid'
+            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'grid'
                 ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs font-bold'
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+              }`}
             title="Grid View"
           >
             <LayoutGrid className="w-4 h-4" />

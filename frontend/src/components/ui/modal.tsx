@@ -22,7 +22,7 @@ const maxWidthClasses = {
   '5xl': 'max-w-5xl',
 };
 
-export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '2xl' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '2xl', overflowVisible = false }: ModalProps & { overflowVisible?: boolean }) {
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -37,10 +37,10 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '2x
       onClick={handleOverlayClick}
     >
       <div 
-        className={`bg-card w-full ${maxWidthClasses[maxWidth]} rounded-xl shadow-2xl border border-border max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
+        className={`bg-card w-full ${maxWidthClasses[maxWidth]} rounded-xl shadow-2xl border border-border max-h-[90vh] flex flex-col ${overflowVisible ? 'overflow-visible' : 'overflow-hidden'} animate-in fade-in zoom-in-95 duration-200`}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center shrink-0 bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className={`px-5 py-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center shrink-0 bg-slate-50/50 dark:bg-white/[0.02] ${overflowVisible ? 'rounded-t-xl' : ''}`}>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
             {title}
           </h2>
@@ -53,7 +53,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '2x
         </div>
 
         {/* Body */}
-        <div className="p-5 overflow-y-auto min-h-0 custom-scrollbar">
+        <div className={`p-5 min-h-0 custom-scrollbar ${overflowVisible ? 'overflow-visible' : 'overflow-y-auto'}`}>
           {children}
         </div>
 
