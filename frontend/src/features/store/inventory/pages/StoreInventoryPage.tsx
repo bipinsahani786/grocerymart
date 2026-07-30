@@ -24,7 +24,16 @@ import {
   Tags,
   Activity,
   Tag,
-  ArrowLeft
+  ArrowLeft,
+  Image as ImageIcon,
+  FileText,
+  Eye,
+  Smartphone,
+  Store,
+  Truck,
+  ShoppingBag,
+  X,
+  Loader2
 } from 'lucide-react';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -40,7 +49,8 @@ import {
   useUpdateStoreProduct,
   useAdjustStoreStock,
   useDeleteStoreProduct,
-  useImportMasterProducts
+  useImportMasterProducts,
+  useUploadStoreImage
 } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
@@ -48,6 +58,7 @@ import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { Modal } from '@/components/ui/modal';
+import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import { StoreAddProductForm } from '../components/StoreAddProductForm';
 
 type ActiveTab = 'list' | 'add' | 'edit' | 'stock' | 'bulk';
@@ -69,6 +80,7 @@ export default function StoreInventoryPage() {
   const adjustStockMutation = useAdjustStoreStock();
   const deleteProductMutation = useDeleteStoreProduct();
   const importMasterProducts = useImportMasterProducts();
+  const uploadImageMutation = useUploadStoreImage();
 
   const handleImportMaster = () => {
     setIsImportModalOpen(true);
@@ -87,22 +99,6 @@ export default function StoreInventoryPage() {
     });
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateProductMutation.mutate(
-      { productId: editingProductId, storeId, payload: editForm },
-      {
-        onSuccess: () => {
-          toast.success('Product details updated successfully!');
-          setActiveTab('list');
-        },
-        onError: (error: any) => {
-          toast.error(error?.response?.data?.message || 'Failed to update product');
-        }
-      }
-    );
-  };
-
   const products = productsData || [];
   const categories = categoriesData || [];
 
@@ -114,25 +110,157 @@ export default function StoreInventoryPage() {
   // Product being deleted
   const [deletingProduct, setDeletingProduct] = useState<any>(null);
 
-  // Edit Form State
+  // Edit Form State - All Backend Data Fields
   const [editForm, setEditForm] = useState({
     name: '',
     brand: '',
     categoryId: '',
     unit: 'pcs',
-    basePrice: 0,
     sellingPrice: 0,
+    mrp: 0,
+    costPrice: 0,
     stock: 0,
     lowStockAt: 10,
     sku: '',
     barcode: '',
     rackLocation: '',
+    description: '',
+    hsnCode: '',
+    productType: 'simple',
+    imageUrls: [] as string[],
+    showOnApp: true,
+    showOnPOS: true,
+    availableForDelivery: true,
+    availableForClickCollect: true,
   });
+
+  const resetEditForm = () => {
+    setEditingProductId('');
+    setEditForm({
+      name: '',
+      brand: '',
+      categoryId: '',
+      unit: 'pcs',
+      sellingPrice: 0,
+      mrp: 0,
+      costPrice: 0,
+      stock: 0,
+      lowStockAt: 10,
+      sku: '',
+      barcode: '',
+      rackLocation: '',
+      description: '',
+      hsnCode: '',
+      productType: 'simple',
+      imageUrls: [] as string[],
+      showOnApp: true,
+      showOnPOS: true,
+      availableForDelivery: true,
+      availableForClickCollect: true,
+    });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const currentCount = editForm.imageUrls?.length || 0;
+    if (currentCount >= 5) {
+      toast.error('Maximum 5 images allowed per product');
+      e.target.value = '';
+      return;
+    }
+
+    const localPreviewUrl = URL.createObjectURL(file);
+
+    setEditForm(prev => ({
+      ...prev,
+      imageUrls: [localPreviewUrl, ...(prev.imageUrls || [])]
+    }));
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    uploadImageMutation.mutate(formData, {
+      onSuccess: (data) => {
+        if (data?.url) {
+          setEditForm(prev => ({
+            ...prev,
+            imageUrls: (prev.imageUrls || []).map(u => u === localPreviewUrl ? data.url : u)
+          }));
+          toast.success('Product image uploaded successfully');
+        }
+      },
+      onError: (err: any) => {
+        setEditForm(prev => ({
+          ...prev,
+          imageUrls: (prev.imageUrls || []).filter(u => u !== localPreviewUrl)
+        }));
+        toast.error(err.response?.data?.message || 'Failed to upload image');
+      }
+    });
+  };
+
+  const handleRemoveImage = (urlToRemove: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter(url => url !== urlToRemove)
+    }));
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.name.trim()) {
+      toast.error('Product title is required.');
+      return;
+    }
+    if (!editForm.barcode.trim()) {
+      toast.error('Barcode is required.');
+      return;
+    }
+    if (editForm.sellingPrice <= 0) {
+      toast.error('Selling price must be greater than zero.');
+      return;
+    }
+    if (editForm.mrp > 0 && editForm.sellingPrice > editForm.mrp) {
+      toast.error('Selling price cannot exceed MRP.');
+      return;
+    }
+
+    const cleanImageUrls = (editForm.imageUrls || []).filter(url => !url.startsWith('blob:'));
+
+    const payload = {
+      ...editForm,
+      imageUrls: cleanImageUrls,
+      basePrice: editForm.sellingPrice,
+      lowStockAlert: editForm.lowStockAt,
+      quantity: editForm.stock,
+      type: editForm.productType,
+      showOnline: editForm.showOnApp,
+      showPOS: editForm.showOnPOS,
+      deliveryEnabled: editForm.availableForDelivery,
+      clickCollectEnabled: editForm.availableForClickCollect,
+    };
+
+    updateProductMutation.mutate(
+      { productId: editingProductId, storeId, payload },
+      {
+        onSuccess: () => {
+          toast.success('Product details updated successfully!');
+          resetEditForm();
+          setActiveTab('list');
+        },
+        onError: (error: any) => {
+          toast.error(error?.response?.data?.message || 'Failed to update product');
+        }
+      }
+    );
+  };
 
   // Stock Form State
   const [stockForm, setStockForm] = useState({
     productId: '',
-    delta: 0,
+    delta: '',
     reason: 'Restocking',
   });
 
@@ -158,6 +286,15 @@ export default function StoreInventoryPage() {
     { value: 'gm', label: 'Gram (gm)' },
     { value: 'ltr', label: 'Liter (ltr)' },
     { value: 'pack', label: 'Pack' }
+  ];
+
+  const productTypeOptions = [
+    { value: 'simple', label: 'Simple Product' },
+    { value: 'weighted', label: 'Weighted / Loose Item' },
+    { value: 'variable', label: 'Variant Product' },
+    { value: 'bundle', label: 'Combo / Bundle' },
+    { value: 'perishable', label: 'Perishable Grocery' },
+    { value: 'service', label: 'Service / Non-inventory' },
   ];
 
   const productOptions = useMemo(() => {
@@ -194,7 +331,7 @@ export default function StoreInventoryPage() {
       const matchesCategory = categoryFilter === 'All' || p.categoryId === categoryFilter;
       
       const q = p.inventory?.[0]?.quantity || 0;
-      const lowStockAt = p.lowStockAt || 10;
+      const lowStockAt = p.inventory?.[0]?.lowStockAt || p.lowStockAt || 10;
       let matchesStock = true;
       if (stockFilter === 'InStock') matchesStock = q > 0;
       if (stockFilter === 'LowStock') matchesStock = q > 0 && q <= lowStockAt;
@@ -204,7 +341,7 @@ export default function StoreInventoryPage() {
     });
   }, [products, searchQuery, categoryFilter, stockFilter]);
 
-  // 2. Set up edit form values
+  // 2. Set up edit form values - Prepopulate ALL backend fields
   const handleStartEdit = (product: any) => {
     const inv = product.inventory?.[0];
     setEditingProductId(product.id);
@@ -213,13 +350,22 @@ export default function StoreInventoryPage() {
       brand: product.brand || '',
       categoryId: product.categoryId || '',
       unit: product.unit || 'pcs',
-      basePrice: product.basePrice || 0,
-      sellingPrice: product.basePrice || 0,
-      stock: inv?.quantity || 0,
-      lowStockAt: inv?.lowStockAt || 10,
+      sellingPrice: product.basePrice ?? product.sellingPrice ?? 0,
+      mrp: product.mrp ?? 0,
+      costPrice: product.costPrice ?? 0,
+      stock: inv?.quantity ?? product.stock ?? 0,
+      lowStockAt: inv?.lowStockAt ?? product.lowStockAt ?? 10,
       sku: product.sku || '',
       barcode: product.barcode || '',
-      rackLocation: '',
+      rackLocation: inv?.rack?.name || product.rackLocation || '',
+      description: product.description || '',
+      hsnCode: product.hsnCode || '',
+      productType: product.productType || product.type || 'simple',
+      imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []),
+      showOnApp: product.showOnApp ?? product.showOnline ?? true,
+      showOnPOS: product.showOnPOS ?? product.showPOS ?? true,
+      availableForDelivery: product.availableForDelivery ?? product.deliveryEnabled ?? true,
+      availableForClickCollect: product.availableForClickCollect ?? product.clickCollectEnabled ?? true,
     });
     setActiveTab('edit');
   };
@@ -228,8 +374,16 @@ export default function StoreInventoryPage() {
   const handleStockSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const deltaVal = Number(stockForm.delta);
-    if (!stockForm.productId || deltaVal === 0) {
+    if (!stockForm.productId || isNaN(deltaVal) || deltaVal === 0) {
       toast.error('Please select a product and provide non-zero adjustment quantity!');
+      return;
+    }
+
+    const selectedProduct = products.find((p: any) => p.id === stockForm.productId);
+    const currentQty = selectedProduct?.inventory?.[0]?.quantity ?? 0;
+
+    if (deltaVal < 0 && (currentQty + deltaVal) < 0) {
+      toast.error(`Cannot deduct ${Math.abs(deltaVal)} items. Current stock is ${currentQty}. Stock quantity cannot drop below 0.`);
       return;
     }
 
@@ -239,7 +393,7 @@ export default function StoreInventoryPage() {
         onSuccess: () => {
           toast.success(`Inventory stock adjusted successfully!`);
           setActiveTab('list');
-          setStockForm({ productId: '', delta: 0, reason: 'Restocking' });
+          setStockForm({ productId: '', delta: '', reason: 'Restocking' });
         },
         onError: (err: any) => {
           toast.error(err.response?.data?.message || 'Failed to adjust stock');
@@ -422,7 +576,14 @@ export default function StoreInventoryPage() {
                     ) : (
                       filteredProducts.map((p: any) => {
                         const catName = categories.find((c: any) => c.id === p.categoryId)?.name || 'Unknown';
-                        const isLowStock = p.stock <= p.lowStockAt;
+                        const inv = p.inventory?.[0];
+                        const stockQty = inv?.quantity ?? p.stock ?? 0;
+                        const lowStockAt = inv?.lowStockAt ?? p.lowStockAt ?? 10;
+                        const isLowStock = stockQty <= lowStockAt;
+                        const rackLocation = inv?.rack?.name || p.rackLocation || '-';
+                        const costPriceDisplay = p.costPrice !== null && p.costPrice !== undefined ? p.costPrice : (p.basePrice || 0);
+                        const sellingPriceDisplay = p.basePrice || p.sellingPrice || 0;
+
                         return (
                           <tr key={p.id} className="hover:bg-muted/10 transition-colors">
                             <td className="p-4">
@@ -431,17 +592,11 @@ export default function StoreInventoryPage() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center gap-3">
-                                {p.imageUrls?.[0] ? (
-                                  <img 
-                                    src={p.imageUrls[0]} 
-                                    alt={p.name} 
-                                    className="w-10 h-10 rounded-md object-cover border border-border shrink-0"
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center border border-border shrink-0">
-                                    <Boxes className="w-5 h-5 text-muted-foreground opacity-50" />
-                                  </div>
-                                )}
+                                <SafeCategoryImage
+                                  src={p.imageUrls || p.imageUrl}
+                                  alt={p.name}
+                                  className="w-10 h-10 rounded-md object-cover border border-border shrink-0"
+                                />
                                 <div>
                                   <div className="font-bold text-slate-900 dark:text-white">
                                     {p.name}
@@ -455,20 +610,20 @@ export default function StoreInventoryPage() {
                                 {catName}
                               </Badge>
                             </td>
-                            <td className="p-4 font-semibold text-muted-foreground">₹{p.basePrice}</td>
-                            <td className="p-4 font-black">₹{p.sellingPrice}</td>
+                            <td className="p-4 font-semibold text-muted-foreground">₹{costPriceDisplay}</td>
+                            <td className="p-4 font-black text-emerald-600 dark:text-emerald-400">₹{sellingPriceDisplay}</td>
                             <td className="p-4 text-center">
                               {isLowStock ? (
                                 <Badge variant="destructive" className="font-extrabold text-[10px] animate-pulse">
-                                  {p.stock} Qty (Low)
+                                  {stockQty} Qty (Low)
                                 </Badge>
                               ) : (
                                 <Badge variant="success" className="font-extrabold text-[10px]">
-                                  {p.stock} Qty
+                                  {stockQty} Qty
                                 </Badge>
                               )}
                             </td>
-                            <td className="p-4 font-medium text-slate-600 dark:text-slate-400">{p.rackLocation}</td>
+                            <td className="p-4 font-medium text-slate-600 dark:text-slate-400">{rackLocation}</td>
                             <td className="p-4 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <Button
@@ -502,7 +657,7 @@ export default function StoreInventoryPage() {
 
         {activeTab === 'add' && (
           <StoreAddProductForm
-            storeId={storeId}
+            storeId={storeId || ''}
             categories={categories}
             onCancel={() => setActiveTab('list')}
             onSuccess={() => setActiveTab('list')}
@@ -521,7 +676,7 @@ export default function StoreInventoryPage() {
                   Edit Store Product
                 </h2>
                 <p className="text-xs font-semibold text-muted-foreground mt-1">
-                  Adjust properties of {editForm.name}
+                  Viewing & updating all backend parameters for <span className="font-bold text-primary-600 dark:text-primary-400">{editForm.name}</span>
                 </p>
               </div>
             </div>
@@ -530,6 +685,7 @@ export default function StoreInventoryPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Column */}
                 <div className="lg:col-span-2 space-y-6">
+                  {/* Basic Information */}
                   <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
                     <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
                       <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
@@ -600,19 +756,56 @@ export default function StoreInventoryPage() {
                             icon={<Tags className="w-4 h-4 text-slate-400" />}
                           />
                         </div>
+
+                        <div className="space-y-1.5 z-20">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Product Type
+                          </label>
+                          <CustomDropdown
+                            options={productTypeOptions}
+                            value={editForm.productType}
+                            onChange={(val) => setEditForm(prev => ({ ...prev, productType: String(val) }))}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            HSN Code
+                          </label>
+                          <Input
+                            placeholder="e.g. 1905"
+                            value={editForm.hsnCode}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, hsnCode: e.target.value }))}
+                            icon={<FileText className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 md:col-span-2">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Product Description
+                          </label>
+                          <textarea
+                            rows={3}
+                            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            placeholder="Detailed specification or product notes..."
+                            value={editForm.description}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                          />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
 
+                  {/* Pricing Details */}
                   <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
                     <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
                       <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
                         <DollarSign className="w-4 h-4 text-emerald-500" />
-                        Pricing Details
+                        Pricing & Profit Margin
                       </h3>
                     </div>
                     <CardContent className="p-6 space-y-5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                             Selling Price <span className="text-rose-500">*</span>
@@ -626,22 +819,114 @@ export default function StoreInventoryPage() {
                             onChange={(e) => setEditForm(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))}
                             placeholder="0.00"
                             icon={<DollarSign className="w-4 h-4 text-emerald-500" />}
-                            className="border-emerald-500/50 focus:border-emerald-500 ring-emerald-500/20 focus-visible:ring-emerald-500/20"
+                            className="border-emerald-500/50 focus:border-emerald-500 ring-emerald-500/20 focus-visible:ring-emerald-500/20 font-bold text-emerald-600 dark:text-emerald-400"
                           />
                         </div>
 
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                            Cost Price (Base)
+                            MRP (Retail Price)
                           </label>
                           <Input
                             type="number"
                             min="0"
                             step="0.01"
-                            value={editForm.basePrice === 0 ? '' : editForm.basePrice}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, basePrice: parseFloat(e.target.value) || 0 }))}
+                            value={editForm.mrp === 0 ? '' : editForm.mrp}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, mrp: parseFloat(e.target.value) || 0 }))}
+                            placeholder="0.00"
+                            icon={<Tag className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Cost Price (Purchase)
+                          </label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={editForm.costPrice === 0 ? '' : editForm.costPrice}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, costPrice: parseFloat(e.target.value) || 0 }))}
                             placeholder="0.00"
                             icon={<Activity className="w-4 h-4 text-slate-400" />}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Channel & Feature Toggles */}
+                  <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
+                    <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
+                      <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                        <Eye className="w-4 h-4 text-purple-500" />
+                        Sales Channels & Visibility
+                      </h3>
+                    </div>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex items-center justify-between p-3.5 rounded-lg border border-border bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <Smartphone className="w-5 h-5 text-indigo-500" />
+                            <div>
+                              <p className="text-xs font-bold text-slate-900 dark:text-white">Mobile App / Online</p>
+                              <p className="text-[10px] text-muted-foreground">Visible on consumer ordering app</p>
+                            </div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={editForm.showOnApp}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, showOnApp: e.target.checked }))}
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3.5 rounded-lg border border-border bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <Store className="w-5 h-5 text-emerald-500" />
+                            <div>
+                              <p className="text-xs font-bold text-slate-900 dark:text-white">POS Counter System</p>
+                              <p className="text-[10px] text-muted-foreground">Searchable at checkout counter</p>
+                            </div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={editForm.showOnPOS}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, showOnPOS: e.target.checked }))}
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3.5 rounded-lg border border-border bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <Truck className="w-5 h-5 text-blue-500" />
+                            <div>
+                              <p className="text-xs font-bold text-slate-900 dark:text-white">Express Home Delivery</p>
+                              <p className="text-[10px] text-muted-foreground">Available for door delivery orders</p>
+                            </div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={editForm.availableForDelivery}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, availableForDelivery: e.target.checked }))}
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3.5 rounded-lg border border-border bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <ShoppingBag className="w-5 h-5 text-amber-500" />
+                            <div>
+                              <p className="text-xs font-bold text-slate-900 dark:text-white">Click & Collect (Pickup)</p>
+                              <p className="text-[10px] text-muted-foreground">Eligible for store counter pickup</p>
+                            </div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={editForm.availableForClickCollect}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, availableForClickCollect: e.target.checked }))}
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                           />
                         </div>
                       </div>
@@ -651,6 +936,70 @@ export default function StoreInventoryPage() {
 
                 {/* Sidebar Column */}
                 <div className="space-y-6">
+                  {/* Image Gallery & Upload */}
+                  <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
+                    <div className="bg-muted/30 px-6 py-4 border-b border-border/50 flex items-center justify-between">
+                      <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                        <ImageIcon className="w-4 h-4 text-sky-500" />
+                        Product Media
+                      </h3>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
+                        (editForm.imageUrls?.length || 0) >= 5
+                          ? 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400'
+                          : 'bg-muted text-slate-600 dark:text-slate-400 border-border'
+                      }`}>
+                        {editForm.imageUrls?.length || 0} / 5 Max
+                      </span>
+                    </div>
+                    <CardContent className="p-6 space-y-4">
+                      {editForm.imageUrls && editForm.imageUrls.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {editForm.imageUrls.map((url, idx) => (
+                            <div key={idx} className="relative group rounded-lg overflow-hidden border border-border aspect-square bg-muted">
+                              <SafeCategoryImage src={url} alt={`Product ${idx}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(url)}
+                                className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-6 border-2 border-dashed border-border rounded-xl text-center flex flex-col items-center justify-center gap-2 bg-muted/10">
+                          <ImageIcon className="w-8 h-8 text-muted-foreground opacity-40" />
+                          <p className="text-xs text-muted-foreground font-medium">No product images uploaded</p>
+                        </div>
+                      )}
+
+                      <div className="pt-2">
+                        <label className="block">
+                          <span className="sr-only">Choose image</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={uploadImageMutation.isPending || (editForm.imageUrls?.length || 0) >= 5}
+                            className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-950 dark:file:text-primary-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </label>
+                        {(editForm.imageUrls?.length || 0) >= 5 && (
+                          <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-1">
+                            Maximum 5 images limit reached.
+                          </p>
+                        )}
+                        {uploadImageMutation.isPending && (
+                          <p className="text-[10px] text-primary-500 font-medium mt-1 animate-pulse flex items-center gap-1">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Uploading image...
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Inventory Settings */}
                   <Card className="border border-border/50 shadow-sm bg-card overflow-visible">
                     <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
                       <h3 className="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
@@ -719,14 +1068,17 @@ export default function StoreInventoryPage() {
                       className="w-full font-bold shadow-md h-12 text-sm uppercase tracking-wider"
                       disabled={updateProductMutation.isPending}
                     >
-                      {updateProductMutation.isPending ? 'Updating...' : 'Update Product'}
+                      {updateProductMutation.isPending ? 'Updating Product...' : 'Update Product'}
                     </Button>
                     <Button 
                       type="button" 
                       variant="outline" 
                       size="lg" 
                       className="w-full font-bold h-12 text-sm uppercase tracking-wider text-slate-600 dark:text-slate-400"
-                      onClick={() => setActiveTab('list')}
+                      onClick={() => {
+                        resetEditForm();
+                        setActiveTab('list');
+                      }}
                     >
                       Cancel
                     </Button>
@@ -765,9 +1117,10 @@ export default function StoreInventoryPage() {
                   <div className="flex gap-2">
                     <Input
                       type="number"
+                      allowNegative={true}
                       placeholder="e.g. 15 for Restock, -5 for damage"
-                      value={stockForm.delta === 0 ? '' : stockForm.delta}
-                      onChange={(e) => setStockForm(prev => ({ ...prev, delta: Number(e.target.value) }))}
+                      value={stockForm.delta}
+                      onChange={(e) => setStockForm(prev => ({ ...prev, delta: e.target.value }))}
                       required
                     />
                     <div className="flex flex-col gap-1 text-[10px] font-bold text-slate-500 uppercase">

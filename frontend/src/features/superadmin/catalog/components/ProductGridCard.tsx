@@ -22,7 +22,7 @@ export function ProductGridCard({ product, onEdit, onDelete }: ProductGridCardPr
         {/* Top Header Image & Badges */}
         <div className="relative w-full h-36 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200/60 dark:border-zinc-700/60 overflow-hidden flex items-center justify-center">
           <SafeCategoryImage
-            src={imageUrl}
+            src={product.imageUrls}
             alt={product.name}
             type="product"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

@@ -1,8 +1,6 @@
 import { storePanelService } from "./panel.service.js";
-import path from 'path';
-import fs from 'fs';
-import crypto from 'crypto';
 import { catchAsync } from "../../utils/catchAsync.js";
+import { uploadToCloudflare } from "../../utils/cloudflare.js";
 
 export class StorePanelController {
   getDashboard = catchAsync(async (req, res) => {
@@ -15,18 +13,7 @@ export class StorePanelController {
       return res.status(400).json({ success: false, message: 'No image provided' });
     }
 
-    const uploadDir = path.join(process.cwd(), 'public/uploads/categories');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const ext = req.file.originalname.split('.').pop() || 'png';
-    const filename = `store-cat-${crypto.randomUUID()}-${Date.now()}.${ext}`;
-    const filePath = path.join(uploadDir, filename);
-
-    fs.writeFileSync(filePath, req.file.buffer);
-    const url = `/uploads/categories/${filename}`;
-
+    const url = await uploadToCloudflare(req.file.buffer, req.file.mimetype, req.file.originalname);
     res.status(200).json({ success: true, data: { url } });
   });
 
