@@ -41,6 +41,8 @@ router.get("/customers", storePanelController.getCustomers);
 
 router.get("/staff", storePanelController.getStaff);
 router.post("/staff", storePanelController.createStaff);
+router.patch("/staff/:id", storePanelController.updateStaff);
+router.delete("/staff/:id", storePanelController.deleteStaff);
 router.patch("/staff/:id/clock", storePanelController.toggleStaffClock);
 router.patch("/staff/:id/shift", storePanelController.updateStaffShift);
 

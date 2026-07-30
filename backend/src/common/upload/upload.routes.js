@@ -1,17 +1,14 @@
 import express from "express";
 import { verifyToken } from "../../middleware/auth.middleware.js";
-import { getPresignedUrl } from "./upload.controller.js";
+import { uploadMemoryMiddleware } from "../../middleware/upload.middleware.js";
+import { getPresignedUrl, directUpload, getFileFromR2 } from "./upload.controller.js";
 
 const router = express.Router();
 
-/**
- * @swagger
- * /api/upload/presigned-url:
- *   post:
- *     tags:
- *       - Upload
- *     summary: Generate a presigned URL for Cloudflare R2
- */
+// Stream images directly from Cloudflare R2 bucket
+router.get("/file/*key", getFileFromR2);
+
 router.post("/presigned-url", verifyToken, getPresignedUrl);
+router.post("/", verifyToken, uploadMemoryMiddleware.single("file"), directUpload);
 
 export default router;

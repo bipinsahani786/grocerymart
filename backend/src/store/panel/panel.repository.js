@@ -2,7 +2,11 @@ import { prisma } from "../../../config/prisma.js";
 
 const productInclude = {
   category: true,
-  inventory: true,
+  inventory: {
+    include: {
+      rack: true,
+    },
+  },
 };
 
 const orderInclude = {
@@ -202,10 +206,23 @@ export class StorePanelRepository {
         categoryId = category.id;
       }
 
+      let rackId = null;
+      if (payload.rackLocation && payload.rackLocation.trim()) {
+        let rack = await tx.rack.findFirst({
+          where: { storeId, name: payload.rackLocation.trim() }
+        });
+        if (!rack) {
+          rack = await tx.rack.create({
+            data: { storeId, name: payload.rackLocation.trim() }
+          });
+        }
+        rackId = rack.id;
+      }
+
       const product = await tx.product.create({
         data: {
-          storeId,
-          categoryId,
+          store: { connect: { id: storeId } },
+          category: { connect: { id: categoryId } },
           name: payload.name,
           sku: payload.sku || null,
           barcode: payload.barcode || null,
@@ -218,15 +235,16 @@ export class StorePanelRepository {
           costPrice: payload.costPrice ? parseFloat(payload.costPrice) : null,
           hsnCode: payload.hsnCode || null,
           imageUrls: payload.imageUrls || [],
-          showOnApp: payload.showOnApp !== undefined ? payload.showOnApp : true,
-          showOnPOS: payload.showOnPOS !== undefined ? payload.showOnPOS : true,
-          availableForDelivery: payload.availableForDelivery !== undefined ? payload.availableForDelivery : true,
-          availableForClickCollect: payload.availableForClickCollect !== undefined ? payload.availableForClickCollect : true,
+          showOnApp: payload.showOnApp !== undefined ? payload.showOnApp : (payload.showOnline !== undefined ? payload.showOnline : true),
+          showOnPOS: payload.showOnPOS !== undefined ? payload.showOnPOS : (payload.showPOS !== undefined ? payload.showPOS : true),
+          availableForDelivery: payload.availableForDelivery !== undefined ? payload.availableForDelivery : (payload.deliveryEnabled !== undefined ? payload.deliveryEnabled : true),
+          availableForClickCollect: payload.availableForClickCollect !== undefined ? payload.availableForClickCollect : (payload.clickCollectEnabled !== undefined ? payload.clickCollectEnabled : true),
           inventory: {
             create: {
-              storeId,
-              quantity: payload.quantity !== undefined ? parseInt(payload.quantity) : 0,
-              lowStockAt: payload.lowStockAlert !== undefined ? parseInt(payload.lowStockAlert) : 10,
+              store: { connect: { id: storeId } },
+              quantity: payload.quantity !== undefined ? parseInt(payload.quantity) : (payload.stock !== undefined ? parseInt(payload.stock) : 0),
+              lowStockAt: payload.lowStockAlert !== undefined ? parseInt(payload.lowStockAlert) : (payload.lowStockAt !== undefined ? parseInt(payload.lowStockAt) : 10),
+              ...(rackId ? { rack: { connect: { id: rackId } } } : {}),
             },
           },
         },
@@ -242,18 +260,28 @@ export class StorePanelRepository {
       where: { storeId, productId },
     });
 
+    const deltaInt = parseInt(delta);
+    const currentQty = inv?.quantity || 0;
+
+    if (deltaInt < 0 && (currentQty + deltaInt) < 0) {
+      throw new Error(`Insufficient stock. Current stock is ${currentQty}, cannot deduct ${Math.abs(deltaInt)} items.`);
+    }
+
     if (inv) {
       return await prisma.storeInventory.update({
         where: { id: inv.id },
-        data: { quantity: { increment: parseInt(delta) } },
+        data: { quantity: currentQty + deltaInt },
         include: { product: true },
       });
     } else {
+      if (deltaInt < 0) {
+        throw new Error(`Product has no inventory record. Cannot perform negative stock adjustment.`);
+      }
       return await prisma.storeInventory.create({
         data: {
           storeId,
           productId,
-          quantity: Math.max(parseInt(delta), 0),
+          quantity: deltaInt,
         },
         include: { product: true },
       });
@@ -280,13 +308,17 @@ export class StorePanelRepository {
         ...(payload.barcode !== undefined ? { barcode: payload.barcode } : {}),
         ...(payload.brand !== undefined ? { brand: payload.brand } : {}),
         ...(payload.description !== undefined ? { description: payload.description } : {}),
-        ...(payload.productType !== undefined ? { productType: payload.productType } : {}),
+        ...(payload.productType !== undefined || payload.type !== undefined ? { productType: payload.productType || payload.type } : {}),
         ...(payload.unit !== undefined ? { unit: payload.unit } : {}),
-        ...(payload.basePrice !== undefined ? { basePrice: parseFloat(payload.basePrice) } : {}),
-        ...(payload.mrp !== undefined ? { mrp: payload.mrp ? parseFloat(payload.mrp) : null } : {}),
+        ...(payload.basePrice !== undefined || payload.sellingPrice !== undefined ? { basePrice: parseFloat(payload.sellingPrice ?? payload.basePrice) } : {}),
+        ...(payload.mrp !== undefined ? { mrp: payload.mrp !== null && payload.mrp !== '' ? parseFloat(payload.mrp) : null } : {}),
+        ...(payload.costPrice !== undefined ? { costPrice: payload.costPrice !== null && payload.costPrice !== '' ? parseFloat(payload.costPrice) : null } : {}),
+        ...(payload.hsnCode !== undefined ? { hsnCode: payload.hsnCode } : {}),
         ...(payload.imageUrls !== undefined ? { imageUrls: payload.imageUrls } : {}),
-        ...(payload.showOnApp !== undefined ? { showOnApp: payload.showOnApp } : {}),
-        ...(payload.showOnPOS !== undefined ? { showOnPOS: payload.showOnPOS } : {}),
+        ...(payload.showOnApp !== undefined || payload.showOnline !== undefined ? { showOnApp: payload.showOnApp ?? payload.showOnline } : {}),
+        ...(payload.showOnPOS !== undefined || payload.showPOS !== undefined ? { showOnPOS: payload.showOnPOS ?? payload.showPOS } : {}),
+        ...(payload.availableForDelivery !== undefined || payload.deliveryEnabled !== undefined ? { availableForDelivery: payload.availableForDelivery ?? payload.deliveryEnabled } : {}),
+        ...(payload.availableForClickCollect !== undefined || payload.clickCollectEnabled !== undefined ? { availableForClickCollect: payload.availableForClickCollect ?? payload.clickCollectEnabled } : {}),
       };
 
       const product = await tx.product.update({
@@ -295,17 +327,38 @@ export class StorePanelRepository {
         include: productInclude,
       });
 
-      if (payload.quantity !== undefined || payload.lowStockAlert !== undefined) {
+      let rackId = undefined;
+      if (payload.rackLocation !== undefined) {
+        if (payload.rackLocation && payload.rackLocation.trim()) {
+          let rack = await tx.rack.findFirst({
+            where: { storeId, name: payload.rackLocation.trim() }
+          });
+          if (!rack) {
+            rack = await tx.rack.create({
+              data: { storeId, name: payload.rackLocation.trim() }
+            });
+          }
+          rackId = rack.id;
+        } else {
+          rackId = null;
+        }
+      }
+
+      if (payload.quantity !== undefined || payload.stock !== undefined || payload.lowStockAlert !== undefined || payload.lowStockAt !== undefined || rackId !== undefined) {
         const inv = await tx.storeInventory.findFirst({
           where: { storeId, productId },
         });
+
+        const qtyVal = payload.quantity !== undefined ? parseInt(payload.quantity) : (payload.stock !== undefined ? parseInt(payload.stock) : undefined);
+        const lowStockVal = payload.lowStockAlert !== undefined ? parseInt(payload.lowStockAlert) : (payload.lowStockAt !== undefined ? parseInt(payload.lowStockAt) : undefined);
 
         if (inv) {
           await tx.storeInventory.update({
             where: { id: inv.id },
             data: {
-              ...(payload.quantity !== undefined ? { quantity: parseInt(payload.quantity) } : {}),
-              ...(payload.lowStockAlert !== undefined ? { lowStockAt: parseInt(payload.lowStockAlert) } : {}),
+              ...(qtyVal !== undefined ? { quantity: qtyVal } : {}),
+              ...(lowStockVal !== undefined ? { lowStockAt: lowStockVal } : {}),
+              ...(rackId !== undefined ? { rackId } : {}),
             },
           });
         } else {
@@ -313,8 +366,9 @@ export class StorePanelRepository {
             data: {
               storeId,
               productId,
-              quantity: payload.quantity !== undefined ? parseInt(payload.quantity) : 0,
-              lowStockAt: payload.lowStockAlert !== undefined ? parseInt(payload.lowStockAlert) : 10,
+              quantity: qtyVal ?? 0,
+              lowStockAt: lowStockVal ?? 10,
+              ...(rackId ? { rackId } : {}),
             },
           });
         }
@@ -569,136 +623,73 @@ export class StorePanelRepository {
 
   // ── Staff ──
   async staff(storeId) {
-    const staffMembers = await prisma.user.findMany({
+    const storeStaffList = await prisma.storeStaff.findMany({
       where: { storeId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        pin: true,
-        avatar: true,
-        status: true,
-        role: true,
-        createdAt: true,
-        shifts: { orderBy: { createdAt: "desc" } },
-        staffOrders: {
-          select: {
-            id: true,
-            totalAmount: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
+      include: {
+        user: true,
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return staffMembers.map((member) => {
-      const totalOrders = member.staffOrders.length;
-      const totalShiftOrders = member.shifts.reduce((sum, s) => sum + (s.ordersHandled || 0), 0);
-      const processedOrders = Math.max(totalOrders, totalShiftOrders);
-
-      let avgHandlingMinutes = 0;
-      if (member.staffOrders.length > 0) {
-        const totalDurationMs = member.staffOrders.reduce((sum, order) => {
-          const diff = new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime();
-          return sum + (diff > 0 ? diff : 180000);
-        }, 0);
-        avgHandlingMinutes = Math.max(1, Math.round(totalDurationMs / (member.staffOrders.length * 60000)));
-      }
-
-      const completedOrders = member.staffOrders.filter(
-        (o) => o.status === "DELIVERED" || o.status === "COMPLETED" || o.status === "COLLECTED"
-      ).length;
-
-      let rating = null;
-      if (processedOrders > 0) {
-        const successRatio = completedOrders > 0 ? completedOrders / processedOrders : 0.8;
-        rating = (4.0 + successRatio * 1.0).toFixed(1);
-      }
-
-      return {
-        ...member,
-        performance: {
-          ordersProcessed: processedOrders,
-          avgPackTimeMinutes: avgHandlingMinutes,
-          rating: rating,
-        },
-      };
-    });
+    return storeStaffList.map((member) => ({
+      id: member.id,
+      name: member.name || member.user?.name || "Staff Member",
+      email: member.email || member.user?.email || "",
+      phone: member.phone || member.user?.phone || "",
+      role: member.role || "CASHIER",
+      shift: member.shift || "General",
+      status: member.isActive ? "active" : "inactive",
+      createdAt: member.createdAt,
+      performance: {
+        ordersProcessed: 0,
+        avgPackTimeMinutes: 0,
+        rating: "5.0",
+      },
+    }));
   }
 
-  async createStaff(storeId, userData, roleName) {
-    const roleToCreate = userData.role || roleName || "CASHIER";
-
-    const existingUser = await prisma.user.findFirst({
-      where: { phone: userData.phone },
-      include: { role: true },
-    });
-
-    if (existingUser) {
-      const updatedUser = await prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
-          name: userData.name,
-          email: userData.email || existingUser.email,
-          pin: userData.pin || existingUser.pin,
-          storeId,
-          status: "active",
-        },
-        include: { role: true, shifts: { orderBy: { createdAt: "desc" }, take: 1 } },
+  async createStaff(storeId, userData) {
+    let userId = null;
+    if (userData.phone) {
+      const existingUser = await prisma.user.findFirst({
+        where: { phone: userData.phone },
       });
-
-      if (existingUser.role) {
-        await prisma.userRole.update({
-          where: { id: existingUser.role.id },
-          data: { roleName: roleToCreate },
-        });
-      } else {
-        await prisma.userRole.create({
-          data: {
-            userId: existingUser.id,
-            roleName: roleToCreate,
-          },
-        });
+      if (existingUser) {
+        userId = existingUser.id;
       }
-
-      if (userData.shift) {
-        await prisma.staffShift.create({
-          data: {
-            storeId,
-            staffId: existingUser.id,
-            shiftName: userData.shift,
-          },
-        });
-      }
-
-      return updatedUser;
     }
 
-    return await prisma.user.create({
+    return await prisma.storeStaff.create({
       data: {
+        storeId,
+        userId,
         name: userData.name,
         email: userData.email || null,
         phone: userData.phone,
-        pin: userData.pin || null,
-        storeId,
-        status: "active",
-        role: {
-          create: {
-            roleName: roleToCreate,
-          },
-        },
-        shifts: userData.shift ? {
-          create: {
-            storeId,
-            shiftName: userData.shift,
-          }
-        } : undefined
+        role: userData.role || "CASHIER",
+        shift: userData.shift || "General",
+        isActive: true,
       },
-      include: { role: true, shifts: { orderBy: { createdAt: "desc" }, take: 1 } },
+    });
+  }
+
+  async updateStaff(storeId, staffId, userData) {
+    return await prisma.storeStaff.update({
+      where: { id: staffId },
+      data: {
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        role: userData.role,
+        shift: userData.shift,
+        isActive: userData.isActive !== undefined ? userData.isActive : (userData.status === "active"),
+      },
+    });
+  }
+
+  async deleteStaff(storeId, staffId) {
+    return await prisma.storeStaff.delete({
+      where: { id: staffId },
     });
   }
 

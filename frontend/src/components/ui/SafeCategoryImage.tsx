@@ -3,7 +3,7 @@ import { FolderTree, Package } from 'lucide-react';
 import { getFileUrl } from '@/lib/utils';
 
 export interface SafeCategoryImageProps {
-  src?: string | null;
+  src?: any;
   alt: string;
   className?: string;
   iconSize?: string;
@@ -19,11 +19,11 @@ export function SafeCategoryImage({
 }: SafeCategoryImageProps) {
   const [hasError, setHasError] = useState(false);
 
+  const finalSrc = getFileUrl(src);
+
   useEffect(() => {
     setHasError(false);
-  }, [src]);
-
-  const finalSrc = getFileUrl(src);
+  }, [finalSrc]);
 
   if (!finalSrc || hasError) {
     return (

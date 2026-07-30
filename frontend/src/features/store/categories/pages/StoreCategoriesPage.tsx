@@ -108,66 +108,31 @@ export default function StoreCategoriesPage() {
     );
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size should be less than 2MB');
-      return;
-    }
+    const localPreviewUrl = URL.createObjectURL(file);
+    setFormImageUrl(localPreviewUrl);
 
-    const reader = new FileReader();
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
 
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 300;
-        const MAX_HEIGHT = 300;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = Math.round(width);
-        canvas.height = Math.round(height);
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
-          setFormImageUrl(compressedDataUrl);
-          toast.success('Category image processed successfully');
-        } else {
-          setFormImageUrl(event.target?.result as string);
+    uploadImage.mutate(formData, {
+      onSuccess: (data: any) => {
+        if (data?.url) {
+          setFormImageUrl(data.url);
+          toast.success('Category image uploaded successfully!');
         }
         setIsUploading(false);
-      };
-
-      img.onerror = () => {
-        setFormImageUrl(event.target?.result as string);
+      },
+      onError: (err: any) => {
+        setFormImageUrl('');
+        toast.error(err.response?.data?.message || 'Failed to upload image');
         setIsUploading(false);
-      };
-
-      img.src = event.target?.result as string;
-    };
-
-    reader.onerror = () => {
-      setIsUploading(false);
-      toast.error('Failed to read image file');
-    };
-
-    reader.readAsDataURL(file);
+      }
+    });
   };
 
   const handleOpenCreateModal = () => {

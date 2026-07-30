@@ -1,6 +1,7 @@
 import React, { useState, useMemo, type FormEvent } from 'react';
 import { Loader2, FolderTree } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 import { useMasterCatalog } from '../api/useMasterCatalog';
 import type { MasterCategory } from '../schemas/catalogSchemas';
@@ -83,63 +84,35 @@ export function CategoryManagementPage() {
     setImageUrl('');
   };
 
-  // Image Upload Handler (Failsafe Canvas Compression & Data URL Generation)
+  // Image Upload Handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const localPreviewUrl = URL.createObjectURL(file);
+    setImageUrl(localPreviewUrl);
+
     setIsUploading(true);
-    const reader = new FileReader();
+    const body = new FormData();
+    body.append('file', file);
 
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 300;
-        const MAX_HEIGHT = 300;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = Math.round(width);
-        canvas.height = Math.round(height);
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
-          setImageUrl(compressedDataUrl);
+    api.post('/admin/catalog/upload', body, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+      .then((res) => {
+        const url = res.data?.data?.url;
+        if (url) {
+          setImageUrl(url);
           toast.success('Category image uploaded successfully');
-        } else {
-          setImageUrl(event.target?.result as string);
         }
+      })
+      .catch((err) => {
+        setImageUrl('');
+        toast.error(err.response?.data?.message || 'Failed to upload image');
+      })
+      .finally(() => {
         setIsUploading(false);
-      };
-
-      img.onerror = () => {
-        setImageUrl(event.target?.result as string);
-        setIsUploading(false);
-      };
-
-      img.src = event.target?.result as string;
-    };
-
-    reader.onerror = () => {
-      setIsUploading(false);
-      toast.error('Failed to read image file');
-    };
-
-    reader.readAsDataURL(file);
+      });
   };
 
   // Form Submit Handler (Create & Update)

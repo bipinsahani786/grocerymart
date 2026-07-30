@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import {
@@ -58,75 +60,51 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
     variants: initialData?.variants || [],
   });
 
-
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const currentCount = parseImageUrls(formData.imageUrls).length;
+    if (currentCount >= 5) {
+      toast.error('Maximum 5 images allowed per product');
+      e.target.value = '';
+      return;
+    }
+
+    const localPreviewUrl = URL.createObjectURL(file);
+
+    setFormData((prev) => ({
+      ...prev,
+      imageUrls: [...parseImageUrls(prev.imageUrls), localPreviewUrl],
+    }));
+
     setIsUploading(true);
-    const reader = new FileReader();
+    const body = new FormData();
+    body.append('file', file);
 
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 400;
-        const MAX_HEIGHT = 400;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = Math.round(width);
-        canvas.height = Math.round(height);
-        const ctx = canvas.getContext('2d');
-        let compressedDataUrl = '';
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
-        } else {
-          compressedDataUrl = event.target?.result as string;
-        }
-
-        setFormData((prev) => ({
-          ...prev,
-          imageUrls: [...parseImageUrls(prev.imageUrls), compressedDataUrl],
-        }));
-        toast.success('Product image added successfully');
-        setIsUploading(false);
-      };
-
-      img.onerror = () => {
-        const fallbackUrl = event.target?.result as string;
-        if (fallbackUrl) {
+    api.post('/admin/catalog/upload', body, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+      .then((res) => {
+        const url = res.data?.data?.url;
+        if (url) {
           setFormData((prev) => ({
             ...prev,
-            imageUrls: [...parseImageUrls(prev.imageUrls), fallbackUrl],
+            imageUrls: parseImageUrls(prev.imageUrls).map(u => u === localPreviewUrl ? url : u),
           }));
+          toast.success('Product image uploaded successfully');
         }
+      })
+      .catch((err) => {
+        setFormData((prev) => ({
+          ...prev,
+          imageUrls: parseImageUrls(prev.imageUrls).filter(u => u !== localPreviewUrl),
+        }));
+        toast.error(err.response?.data?.message || 'Failed to upload image');
+      })
+      .finally(() => {
         setIsUploading(false);
-      };
-
-      img.src = event.target?.result as string;
-    };
-
-    reader.onerror = () => {
-      setIsUploading(false);
-      toast.error('Failed to read image file');
-    };
-
-    reader.readAsDataURL(file);
+      });
   };
 
   const addVariantRow = () => {
@@ -139,23 +117,29 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
     }));
   };
 
-  const updateVariant = (index: number, field: string, value: any) => {
-    setFormData((prev) => {
-      const updated = [...(prev.variants || [])];
-      updated[index] = { ...updated[index], [field]: value };
-      return { ...prev, variants: updated };
-    });
-  };
-
   const removeVariant = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      variants: prev.variants?.filter((_, i) => i !== index),
+      variants: (prev.variants || []).filter((_, i) => i !== index),
     }));
+  };
+
+  const updateVariant = (index: number, field: string, value: any) => {
+    setFormData((prev) => {
+      const nextVariants = [...(prev.variants || [])];
+      nextVariants[index] = { ...nextVariants[index], [field]: value };
+      return { ...prev, variants: nextVariants };
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isUploading) {
+      toast.info('Please wait for image upload to finish...');
+      return;
+    }
+
     if (!formData.name || !formData.name.trim()) {
       toast.error('Product Title is required.');
       return;
@@ -196,9 +180,15 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
       return;
     }
 
+    const cleanImageUrls = parseImageUrls(formData.imageUrls).filter(url => !url.startsWith('blob:'));
+    const payload = {
+      ...formData,
+      imageUrls: cleanImageUrls
+    };
+
     if (initialData?.id) {
       updateProduct.mutate(
-        { id: initialData.id, payload: formData as MasterProduct },
+        { id: initialData.id, payload: payload as MasterProduct },
         {
           onSuccess: () => {
             toast.success('Master product updated successfully!');
@@ -210,7 +200,7 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
         }
       );
     } else {
-      createProduct.mutate(formData as MasterProduct, {
+      createProduct.mutate(payload as MasterProduct, {
         onSuccess: () => {
           toast.success('Master product created successfully!');
           onSuccess();
@@ -347,19 +337,17 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
                     variants: [],
                   })
                 }
-                className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
-                  isSelected
+                className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${isSelected
                     ? 'border-primary-500 bg-primary-50/40 dark:bg-primary-500/10 ring-2 ring-primary-500/20 shadow-xs'
                     : 'border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 hover:border-slate-300 dark:hover:border-zinc-700'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      isSelected
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected
                         ? 'bg-primary-500 text-white'
                         : 'bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-slate-300'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                   </div>
@@ -367,7 +355,7 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
                     type="radio"
                     name="productType"
                     checked={isSelected}
-                    onChange={() => {}}
+                    onChange={() => { }}
                     className="text-primary-600 focus:ring-primary-500"
                   />
                 </div>
@@ -540,18 +528,26 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
 
       {/* ── Section 3: Product Image Media Upload ── */}
       <div className="space-y-4">
-        <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
-          <div className="w-8 h-8 rounded-xl bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center font-bold text-sm shadow-xs">
-            3
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center font-bold text-sm shadow-xs">
+              3
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Product Image Gallery
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Upload product photos displayed across stores and customer catalog (Max 5 images).
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Product Image Gallery
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Upload product photos displayed across stores and customer catalog.
-            </p>
-          </div>
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${parseImageUrls(formData.imageUrls).length >= 5
+              ? 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400'
+              : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-zinc-700'
+            }`}>
+            {parseImageUrls(formData.imageUrls).length} / 5 Max
+          </span>
         </div>
 
         <div className="p-4 bg-slate-50/50 dark:bg-zinc-900/40 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-4">
@@ -583,23 +579,29 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
               </div>
             ))}
 
-            <label className="w-28 h-28 flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-primary-500 dark:hover:border-primary-500 rounded-xl cursor-pointer bg-white dark:bg-zinc-900 hover:bg-primary-50/30 dark:hover:bg-primary-950/20 transition-all shadow-2xs group">
-              {isUploading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-              ) : (
-                <UploadCloud className="w-6 h-6 text-slate-400 group-hover:text-primary-500 transition-colors" />
-              )}
-              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 group-hover:text-primary-600 transition-colors">
-                {isUploading ? 'Uploading...' : 'Upload Image'}
-              </span>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={isUploading}
-              />
-            </label>
+            {parseImageUrls(formData.imageUrls).length < 5 ? (
+              <label className="w-28 h-28 flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-primary-500 dark:hover:border-primary-500 rounded-xl cursor-pointer bg-white dark:bg-zinc-900 hover:bg-primary-50/30 dark:hover:bg-primary-950/20 transition-all shadow-2xs group">
+                {isUploading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+                ) : (
+                  <UploadCloud className="w-6 h-6 text-slate-400 group-hover:text-primary-500 transition-colors" />
+                )}
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 group-hover:text-primary-600 transition-colors">
+                  {isUploading ? 'Uploading...' : 'Upload Image'}
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={isUploading || parseImageUrls(formData.imageUrls).length >= 5}
+                />
+              </label>
+            ) : (
+              <div className="w-full text-xs font-semibold text-amber-600 dark:text-amber-400 pt-1">
+                Maximum 5 images limit reached for this product.
+              </div>
+            )}
           </div>
         </div>
       </div>

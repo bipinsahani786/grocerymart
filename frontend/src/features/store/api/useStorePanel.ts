@@ -312,6 +312,34 @@ export const useCreateStoreStaff = () => {
   });
 };
 
+export const useUpdateStoreStaff = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, staffId, payload }: { storeId?: string; staffId: string; payload: any }) => {
+      const { data } = await api.patch(`/store/staff/${staffId}`, payload, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-staff'] });
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+    },
+  });
+};
+
+export const useDeleteStoreStaff = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, staffId }: { storeId?: string; staffId: string }) => {
+      const { data } = await api.delete(`/store/staff/${staffId}`, { params: { storeId } });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-staff'] });
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+    },
+  });
+};
+
 export const useToggleStoreStaffClock = () => {
   const queryClient = useQueryClient();
   return useMutation({

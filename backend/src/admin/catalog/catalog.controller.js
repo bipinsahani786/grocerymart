@@ -1,8 +1,6 @@
 import { catalogService } from './catalog.service.js';
 import { catchAsync } from '../../utils/catchAsync.js';
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
+import { uploadToCloudflare } from '../../utils/cloudflare.js';
 
 export class CatalogController {
   // --- Master Categories ---
@@ -48,25 +46,13 @@ export class CatalogController {
     res.status(200).json(result);
   });
 
-  // --- Upload (100% Reliable Local Serving) ---
+  // --- Upload (Cloudflare R2 Storage with Local Fallback) ---
   uploadImage = catchAsync(async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image provided' });
     }
 
-    // Save directly to public/uploads/categories for reliable Express static file serving
-    const uploadDir = path.join(process.cwd(), 'public/uploads/categories');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const ext = req.file.originalname.split('.').pop() || 'png';
-    const filename = `cat-${crypto.randomUUID()}-${Date.now()}.${ext}`;
-    const filePath = path.join(uploadDir, filename);
-
-    fs.writeFileSync(filePath, req.file.buffer);
-    const url = `/uploads/categories/${filename}`;
-
+    const url = await uploadToCloudflare(req.file.buffer, req.file.mimetype, req.file.originalname);
     res.status(200).json({ success: true, data: { url } });
   });
 }

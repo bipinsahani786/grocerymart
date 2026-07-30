@@ -351,17 +351,22 @@ model Rack {
 // ─── STAFF ──────────────────────────────────────────────────────────────────
 model StoreStaff {
   id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id])
   storeId     String   @map("store_id")
   store       Store    @relation(fields: [storeId], references: [id])
-  role        Role
-  maxDiscount Float    @default(0.1) @map("max_discount") // max 10% by default
+  name        String?
+  email       String?
+  phone       String?
+  role        Role     @default(CASHIER)
+  shift       String?  @default("General")
+  maxDiscount Float    @default(0.1) @map("max_discount")
   isActive    Boolean  @default(true) @map("is_active")
   joinedAt    DateTime @default(now()) @map("joined_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @default(now()) @map("updated_at")
   shifts      Shift[]
 
-  @@unique([userId, storeId])
   @@map("store_staff")
 }
 

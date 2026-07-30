@@ -194,6 +194,18 @@ export class StorePanelService {
     return { success: true, data, message: "Staff member created successfully" };
   }
 
+  async updateStaff(user, storeIdParam, staffId, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const data = await storePanelRepository.updateStaff(storeId, staffId, payload);
+    return { success: true, data, message: "Staff member updated successfully" };
+  }
+
+  async deleteStaff(user, storeIdParam, staffId) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    await storePanelRepository.deleteStaff(storeId, staffId);
+    return { success: true, message: "Staff member deleted successfully" };
+  }
+
   async toggleStaffClock(user, storeIdParam, staffId) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
     const data = await storePanelRepository.toggleStaffClock(storeId, staffId);
