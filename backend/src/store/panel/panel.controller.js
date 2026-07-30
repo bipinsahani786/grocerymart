@@ -134,6 +134,16 @@ export class StorePanelController {
     res.status(201).json(result);
   });
 
+  updateStaff = catchAsync(async (req, res) => {
+    const result = await storePanelService.updateStaff(req.user, req.query.storeId, req.params.id, req.body);
+    res.json(result);
+  });
+
+  deleteStaff = catchAsync(async (req, res) => {
+    const result = await storePanelService.deleteStaff(req.user, req.query.storeId, req.params.id);
+    res.json(result);
+  });
+
   toggleStaffClock = catchAsync(async (req, res) => {
     const result = await storePanelService.toggleStaffClock(req.user, req.query.storeId, req.params.id);
     res.json(result);

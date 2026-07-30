@@ -11,7 +11,8 @@ import {
   ToggleLeft,
   ToggleRight,
   Mail,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +23,8 @@ import { useAuthStore } from '@/store/authStore';
 import { 
   useStoreStaff, 
   useCreateStoreStaff,
+  useUpdateStoreStaff,
+  useDeleteStoreStaff,
   useToggleStoreStaffClock,
   useUpdateStoreStaffShift
 } from '@/features/store/api/useStorePanel';
@@ -36,6 +39,7 @@ export default function StoreStaffPage() {
 
   const { data: staffData, isLoading } = useStoreStaff(storeId);
   const createStaff = useCreateStoreStaff();
+  const deleteStaff = useDeleteStoreStaff();
   const toggleClock = useToggleStoreStaffClock();
   const updateShift = useUpdateStoreStaffShift();
 
@@ -282,18 +286,37 @@ export default function StoreStaffPage() {
                         </div>
 
                         <div className="border-t border-border pt-3.5 flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase">Toggle Clock Status</span>
-                          <button 
-                            onClick={() => handleToggleClock(member)}
-                            disabled={toggleClock.isPending}
-                            className="text-primary-500 hover:text-primary-600 transition-colors shrink-0 disabled:opacity-50"
-                          >
-                            {isClockedIn ? (
-                              <ToggleRight className="h-7 w-7 text-emerald-500" />
-                            ) : (
-                              <ToggleLeft className="h-7 w-7 text-slate-300 dark:text-slate-600" />
-                            )}
-                          </button>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase">Clock Status / Remove</span>
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => handleToggleClock(member)}
+                              disabled={toggleClock.isPending}
+                              className="text-primary-500 hover:text-primary-600 transition-colors shrink-0 disabled:opacity-50"
+                              title="Toggle Clock"
+                            >
+                              {isClockedIn ? (
+                                <ToggleRight className="h-7 w-7 text-emerald-500" />
+                              ) : (
+                                <ToggleLeft className="h-7 w-7 text-slate-300 dark:text-slate-600" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Remove ${member.name} from store staff?`)) {
+                                  deleteStaff.mutate({ storeId, staffId: member.id }, {
+                                    onSuccess: () => toast.success('Staff member deleted successfully!'),
+                                    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to delete staff member'),
+                                  });
+                                }
+                              }}
+                              disabled={deleteStaff.isPending}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                              title="Delete Staff"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

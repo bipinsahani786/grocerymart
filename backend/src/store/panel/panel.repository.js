@@ -623,136 +623,73 @@ export class StorePanelRepository {
 
   // ── Staff ──
   async staff(storeId) {
-    const staffMembers = await prisma.user.findMany({
+    const storeStaffList = await prisma.storeStaff.findMany({
       where: { storeId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        pin: true,
-        avatar: true,
-        status: true,
-        role: true,
-        createdAt: true,
-        shifts: { orderBy: { createdAt: "desc" } },
-        staffOrders: {
-          select: {
-            id: true,
-            totalAmount: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
+      include: {
+        user: true,
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return staffMembers.map((member) => {
-      const totalOrders = member.staffOrders.length;
-      const totalShiftOrders = member.shifts.reduce((sum, s) => sum + (s.ordersHandled || 0), 0);
-      const processedOrders = Math.max(totalOrders, totalShiftOrders);
-
-      let avgHandlingMinutes = 0;
-      if (member.staffOrders.length > 0) {
-        const totalDurationMs = member.staffOrders.reduce((sum, order) => {
-          const diff = new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime();
-          return sum + (diff > 0 ? diff : 180000);
-        }, 0);
-        avgHandlingMinutes = Math.max(1, Math.round(totalDurationMs / (member.staffOrders.length * 60000)));
-      }
-
-      const completedOrders = member.staffOrders.filter(
-        (o) => o.status === "DELIVERED" || o.status === "COMPLETED" || o.status === "COLLECTED"
-      ).length;
-
-      let rating = null;
-      if (processedOrders > 0) {
-        const successRatio = completedOrders > 0 ? completedOrders / processedOrders : 0.8;
-        rating = (4.0 + successRatio * 1.0).toFixed(1);
-      }
-
-      return {
-        ...member,
-        performance: {
-          ordersProcessed: processedOrders,
-          avgPackTimeMinutes: avgHandlingMinutes,
-          rating: rating,
-        },
-      };
-    });
+    return storeStaffList.map((member) => ({
+      id: member.id,
+      name: member.name || member.user?.name || "Staff Member",
+      email: member.email || member.user?.email || "",
+      phone: member.phone || member.user?.phone || "",
+      role: member.role || "CASHIER",
+      shift: member.shift || "General",
+      status: member.isActive ? "active" : "inactive",
+      createdAt: member.createdAt,
+      performance: {
+        ordersProcessed: 0,
+        avgPackTimeMinutes: 0,
+        rating: "5.0",
+      },
+    }));
   }
 
-  async createStaff(storeId, userData, roleName) {
-    const roleToCreate = userData.role || roleName || "CASHIER";
-
-    const existingUser = await prisma.user.findFirst({
-      where: { phone: userData.phone },
-      include: { role: true },
-    });
-
-    if (existingUser) {
-      const updatedUser = await prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
-          name: userData.name,
-          email: userData.email || existingUser.email,
-          pin: userData.pin || existingUser.pin,
-          storeId,
-          status: "active",
-        },
-        include: { role: true, shifts: { orderBy: { createdAt: "desc" }, take: 1 } },
+  async createStaff(storeId, userData) {
+    let userId = null;
+    if (userData.phone) {
+      const existingUser = await prisma.user.findFirst({
+        where: { phone: userData.phone },
       });
-
-      if (existingUser.role) {
-        await prisma.userRole.update({
-          where: { id: existingUser.role.id },
-          data: { roleName: roleToCreate },
-        });
-      } else {
-        await prisma.userRole.create({
-          data: {
-            userId: existingUser.id,
-            roleName: roleToCreate,
-          },
-        });
+      if (existingUser) {
+        userId = existingUser.id;
       }
-
-      if (userData.shift) {
-        await prisma.staffShift.create({
-          data: {
-            storeId,
-            staffId: existingUser.id,
-            shiftName: userData.shift,
-          },
-        });
-      }
-
-      return updatedUser;
     }
 
-    return await prisma.user.create({
+    return await prisma.storeStaff.create({
       data: {
+        storeId,
+        userId,
         name: userData.name,
         email: userData.email || null,
         phone: userData.phone,
-        pin: userData.pin || null,
-        storeId,
-        status: "active",
-        role: {
-          create: {
-            roleName: roleToCreate,
-          },
-        },
-        shifts: userData.shift ? {
-          create: {
-            storeId,
-            shiftName: userData.shift,
-          }
-        } : undefined
+        role: userData.role || "CASHIER",
+        shift: userData.shift || "General",
+        isActive: true,
       },
-      include: { role: true, shifts: { orderBy: { createdAt: "desc" }, take: 1 } },
+    });
+  }
+
+  async updateStaff(storeId, staffId, userData) {
+    return await prisma.storeStaff.update({
+      where: { id: staffId },
+      data: {
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        role: userData.role,
+        shift: userData.shift,
+        isActive: userData.isActive !== undefined ? userData.isActive : (userData.status === "active"),
+      },
+    });
+  }
+
+  async deleteStaff(storeId, staffId) {
+    return await prisma.storeStaff.delete({
+      where: { id: staffId },
     });
   }
 
