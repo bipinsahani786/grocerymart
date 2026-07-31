@@ -10,6 +10,7 @@ import authRoutes from "./common/auth/auth.routes.js";
 import uploadRoutes from "./common/upload/upload.routes.js";
 import adminRoutes from "./admin/index.js";
 import storePanelRoutes from "./store/panel/panel.routes.js";
+import purchasesRoutes from "./store/purchases/purchases.routes.js";
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/store", storePanelRoutes);
+app.use("/api/store/purchases", purchasesRoutes);
 
 // Platform System Readiness Check Endpoint
 app.get("/", (req, res) => {
@@ -69,9 +71,26 @@ app.get("/", (req, res) => {
 // Centralized Unhandled Exception Interceptor
 app.use((err, req, res, next) => {
   console.error("Global Error Interceptor Log:", err);
-  res.status(err.status || 500).json({
+
+  let statusCode = err.status || err.statusCode || 500;
+  let message = err.message || "Internal Server Error";
+
+  // Catch Prisma runtime or validation errors gracefully
+  if (err.name === "PrismaClientValidationError" || err.code?.startsWith("P")) {
+    statusCode = 400;
+    if (err.name === "PrismaClientValidationError") {
+      message = "Invalid input value provided for database operation";
+    } else if (err.code === "P2002") {
+      statusCode = 409;
+      message = "A record with this information already exists";
+    } else {
+      message = "Database operation failed due to invalid request data";
+    }
+  }
+
+  res.status(statusCode).json({
     status: "error",
-    message: err.message || "Internal Server Error",
+    message,
   });
 });
 

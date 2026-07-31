@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Boxes,
-  Search,
   Plus,
   Edit3,
   ArrowUpRight,
@@ -41,11 +40,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DataTable } from '@/components/ui/data-table';
 import { useAuthStore } from '@/store/authStore';
 import {
   useStoreInventory,
   useAllStoreCategories,
-  useCreateStoreProduct,
   useUpdateStoreProduct,
   useAdjustStoreStock,
   useDeleteStoreProduct,
@@ -75,7 +74,6 @@ export default function StoreInventoryPage() {
   const { data: productsData } = useStoreInventory(storeId, searchQuery);
   const { data: categoriesData } = useAllStoreCategories(storeId);
 
-  const createProduct = useCreateStoreProduct();
   const updateProductMutation = useUpdateStoreProduct();
   const adjustStockMutation = useAdjustStoreStock();
   const deleteProductMutation = useDeleteStoreProduct();
@@ -274,10 +272,6 @@ export default function StoreInventoryPage() {
       { id: 'All', name: 'All Categories', parentId: null },
       ...categories
     ];
-  }, [categories]);
-
-  const formCategoryOptions = useMemo(() => {
-    return categories.map((c: any) => ({ value: c.id, label: c.name }));
   }, [categories]);
 
   const unitOptions = [
@@ -551,107 +545,127 @@ export default function StoreInventoryPage() {
             </div>
 
             {/* Datatable */}
-            <Card>
-              <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-muted/40 border-b border-border text-[10px] font-black uppercase tracking-wider text-muted-foreground">
-                      <th className="p-4">Barcode / SKU</th>
-                      <th className="p-4">Product Details</th>
-                      <th className="p-4">Category</th>
-                      <th className="p-4">Base Cost</th>
-                      <th className="p-4">Selling Price</th>
-                      <th className="p-4 text-center">Stock Level</th>
-                      <th className="p-4">Location</th>
-                      <th className="p-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {filteredProducts.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="p-12 text-center text-muted-foreground font-semibold">
-                          No matching products found in store catalog.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredProducts.map((p: any) => {
-                        const catName = categories.find((c: any) => c.id === p.categoryId)?.name || 'Unknown';
-                        const inv = p.inventory?.[0];
-                        const stockQty = inv?.quantity ?? p.stock ?? 0;
-                        const lowStockAt = inv?.lowStockAt ?? p.lowStockAt ?? 10;
-                        const isLowStock = stockQty <= lowStockAt;
-                        const rackLocation = inv?.rack?.name || p.rackLocation || '-';
-                        const costPriceDisplay = p.costPrice !== null && p.costPrice !== undefined ? p.costPrice : (p.basePrice || 0);
-                        const sellingPriceDisplay = p.basePrice || p.sellingPrice || 0;
-
-                        return (
-                          <tr key={p.id} className="hover:bg-muted/10 transition-colors">
-                            <td className="p-4">
-                              <p className="font-bold text-slate-800 dark:text-white">{p.barcode}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">{p.sku}</p>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <SafeCategoryImage
-                                  src={p.imageUrls || p.imageUrl}
-                                  alt={p.name}
-                                  className="w-10 h-10 rounded-md object-cover border border-border shrink-0"
-                                />
-                                <div>
-                                  <div className="font-bold text-slate-900 dark:text-white">
-                                    {p.name}
-                                  </div>
-                                  <div className="text-[10px] font-semibold text-muted-foreground">Unit: {p.unit}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <Badge variant="outline" className="font-bold text-[10px]">
-                                {catName}
-                              </Badge>
-                            </td>
-                            <td className="p-4 font-semibold text-muted-foreground">₹{costPriceDisplay}</td>
-                            <td className="p-4 font-black text-emerald-600 dark:text-emerald-400">₹{sellingPriceDisplay}</td>
-                            <td className="p-4 text-center">
-                              {isLowStock ? (
-                                <Badge variant="destructive" className="font-extrabold text-[10px] animate-pulse">
-                                  {stockQty} Qty (Low)
-                                </Badge>
-                              ) : (
-                                <Badge variant="success" className="font-extrabold text-[10px]">
-                                  {stockQty} Qty
-                                </Badge>
-                              )}
-                            </td>
-                            <td className="p-4 font-medium text-slate-600 dark:text-slate-400">{rackLocation}</td>
-                            <td className="p-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleStartEdit(p)}
-                                >
-                                  <Edit3 className="h-4 w-4 text-primary-500" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                                  onClick={() => setDeletingProduct(p)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
+            <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+              <DataTable
+                data={filteredProducts}
+                columns={[
+                  {
+                    header: 'Barcode / SKU',
+                    cell: (item: any) => (
+                      <div>
+                        <p className="font-bold text-foreground font-mono">{item.barcode || '-'}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{item.sku || '-'}</p>
+                      </div>
+                    ),
+                  },
+                  {
+                    header: 'Product Details',
+                    cell: (item: any) => (
+                      <div className="flex items-center gap-3">
+                        <SafeCategoryImage
+                          src={item.imageUrls || item.imageUrl}
+                          alt={item.name}
+                          className="w-10 h-10 rounded-md object-cover border border-border shrink-0"
+                        />
+                        <div>
+                          <div className="font-bold text-foreground text-xs">{item.name}</div>
+                          <div className="text-[10px] font-semibold text-muted-foreground">Unit: {item.unit || 'pcs'}</div>
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    header: 'Category',
+                    cell: (item: any) => {
+                      const catName = categories.find((c: any) => c.id === item.categoryId)?.name || 'General';
+                      return <Badge variant="outline" className="text-[10px] font-bold">{catName}</Badge>;
+                    },
+                  },
+                  {
+                    header: 'Base Cost',
+                    cell: (item: any) => (
+                      <span className="font-mono font-bold text-muted-foreground text-xs">
+                        ₹{item.costPrice !== null && item.costPrice !== undefined ? item.costPrice : (item.basePrice || 0)}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: 'Selling Price',
+                    cell: (item: any) => (
+                      <div>
+                        <span className="font-mono font-black text-xs text-foreground">
+                          ₹{item.basePrice || item.sellingPrice || 0}
+                        </span>
+                        {item.mrp && item.mrp > (item.basePrice || item.sellingPrice || 0) && (
+                          <div className="text-[9px] text-muted-foreground line-through">MRP: ₹{item.mrp}</div>
+                        )}
+                      </div>
+                    ),
+                  },
+                  {
+                    header: 'Stock Level',
+                    cell: (item: any) => {
+                      const inv = item.inventory?.[0];
+                      const stockQty = inv?.quantity ?? item.stock ?? 0;
+                      const lowStockAt = inv?.lowStockAt ?? item.lowStockAt ?? 10;
+                      const isLow = stockQty <= lowStockAt;
+                      return (
+                        <div className="flex items-center justify-center">
+                          <Badge
+                            variant={stockQty > lowStockAt ? 'success' : stockQty > 0 ? 'warning' : 'destructive'}
+                            className={`font-mono text-[10px] uppercase font-extrabold ${isLow && stockQty > 0 ? 'animate-pulse' : ''}`}
+                          >
+                            {stockQty > 0 ? `${stockQty} ${item.unit || 'pcs'}` : 'OUT OF STOCK'}
+                          </Badge>
+                        </div>
+                      );
+                    },
+                  },
+                  {
+                    header: 'Location',
+                    cell: (item: any) => {
+                      const inv = item.inventory?.[0];
+                      const rackLocation = inv?.rack?.name || item.rackLocation || '-';
+                      return <span className="font-mono text-xs text-muted-foreground">{rackLocation}</span>;
+                    },
+                  },
+                  {
+                    header: 'Actions',
+                    className: 'text-right',
+                    cell: (item: any) => (
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEdit(item);
+                          }}
+                        >
+                          <Edit3 className="h-4 w-4 text-primary-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-rose-50 hover:text-rose-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingProduct(item);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-rose-500" />
+                        </Button>
+                      </div>
+                    ),
+                  },
+                ]}
+                searchable={false}
+                itemsPerPage={10}
+                emptyIcon={<PackageSearch className="h-8 w-8 text-muted-foreground/40" />}
+                emptyMessage="No matching products found in store catalog."
+              />
+            </div>
           </div>
         )}
 

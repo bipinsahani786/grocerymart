@@ -59,7 +59,7 @@ export default function StoreCategoriesPage() {
     ? 'null'
     : (selectedParentId || 'not_null');
 
-  const { data: categoriesData, isFetching } = useStoreCategories(storeId, {
+  const { data: categoriesData } = useStoreCategories(storeId, {
     page,
     limit,
     search: searchQuery,
@@ -72,10 +72,9 @@ export default function StoreCategoriesPage() {
   const importMasterCategories = useImportMasterCategories();
   const uploadImage = useUploadStoreImage();
 
-  const categories = categoriesData?.data || [];
+  const categories = Array.isArray(categoriesData?.data) ? categoriesData.data : [];
   const meta = categoriesData?.meta;
-  const flatCategories = allCategories || [];
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const flatCategories = Array.isArray(allCategories) ? allCategories : (Array.isArray(allCategories?.data) ? allCategories.data : []);
 
   // KPI computations
   const totalCategories = flatCategories.length;
@@ -99,7 +98,6 @@ export default function StoreCategoriesPage() {
       {
         onSuccess: (res: any) => {
           toast.success(res.message || 'Master categories imported successfully!');
-          setIsImportModalOpen(false);
         },
         onError: (err: any) => {
           toast.error(err.response?.data?.message || 'Failed to import master categories');

@@ -31,6 +31,8 @@ router.patch("/inventory/:productId/adjust", storePanelController.adjustInventor
 
 router.get("/orders", storePanelController.getOrders);
 router.get("/orders/:id", storePanelController.getOrderById);
+router.get("/orders/:id/pdf", storePanelController.getOrderInvoicePdf);
+router.post("/orders/pos", storePanelController.createPosOrder);
 router.patch("/orders/:id/status", storePanelController.updateOrderStatus);
 
 router.get("/pickup", storePanelController.getPickupQueue);
@@ -38,6 +40,9 @@ router.post("/pickup/:id/verify", storePanelController.verifyPickupPin);
 
 router.get("/bills", storePanelController.getBills);
 router.get("/customers", storePanelController.getCustomers);
+router.post("/customers", storePanelController.createCustomer);
+router.patch("/customers/:id", storePanelController.updateCustomer);
+router.delete("/customers/:id", storePanelController.deleteCustomer);
 
 router.get("/staff", storePanelController.getStaff);
 router.post("/staff", storePanelController.createStaff);

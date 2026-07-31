@@ -29,6 +29,7 @@ const StoreSearchPage = lazy(() => import('@/features/store/search/pages/StoreSe
 const StoreAnalyticsPage = lazy(() => import('@/features/store/analytics/pages/StoreAnalyticsPage'));
 const StoreCategoriesPage = lazy(() => import('@/features/store/categories/pages/StoreCategoriesPage'));
 const StoreCustomersPage = lazy(() => import('@/features/store/customers/pages/StoreCustomersPage'));
+const StorePurchasesPage = lazy(() => import('@/features/store/purchases/pages/StorePurchasesPage'));
 const StoreSettingsPage = lazy(() => import('@/features/store/settings/pages/StoreSettingsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
@@ -152,6 +153,7 @@ function App() {
             <Route path="/store/inventory" element={<StoreManagerRoute><StoreInventoryPage /></StoreManagerRoute>} />
             <Route path="/store/categories" element={<StoreManagerRoute><StoreCategoriesPage /></StoreManagerRoute>} />
             <Route path="/store/customers" element={<StoreManagerRoute><StoreCustomersPage /></StoreManagerRoute>} />
+            <Route path="/store/purchases" element={<StoreManagerRoute><StorePurchasesPage /></StoreManagerRoute>} />
             <Route path="/store/billing" element={<StoreManagerRoute><StoreBillingPage /></StoreManagerRoute>} />
             <Route path="/store/staff" element={<StoreManagerRoute><StoreStaffPage /></StoreManagerRoute>} />
             <Route path="/store/search" element={<StoreManagerRoute><StoreSearchPage /></StoreManagerRoute>} />

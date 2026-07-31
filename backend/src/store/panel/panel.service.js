@@ -1,15 +1,18 @@
 import { storePanelRepository } from "./panel.repository.js";
 import { AppError } from "../../utils/AppError.js";
+import { normalizeStaffRole } from "../../utils/roleUtils.js";
+import { generateInvoicePdf } from "../../utils/pdfGenerator.js";
 
 export class StorePanelService {
   async resolveStoreId(user, queryStoreId) {
     if (queryStoreId) return queryStoreId;
     const store = await storePanelRepository.getUserStore(user.id);
-    if (!store) {
-      // Fallback: If user is superadmin or testing, get first active store in system
-      throw new AppError("No active store associated with this account.", 400);
-    }
-    return store.id;
+    if (store) return store.id;
+    
+    const firstStore = await storePanelRepository.getFirstStore();
+    if (firstStore) return firstStore.id;
+
+    throw new AppError("No active store associated with this account.", 400);
   }
 
   async getDashboard(user, storeIdParam) {
@@ -127,6 +130,32 @@ export class StorePanelService {
     return { success: true, data, message: "Order status updated" };
   }
 
+  async createPosOrder(user, storeIdParam, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const data = await storePanelRepository.createPosOrder(storeId, payload, user?.id);
+
+    // Database -> Invoice Data -> invoice.hbs -> HTML -> Puppeteer -> invoice.pdf
+    try {
+      const pdfResult = await generateInvoicePdf(data);
+      if (pdfResult?.relativeUrl) {
+        await storePanelRepository.updateBillPdfUrl(data.id, pdfResult.relativeUrl);
+        data.invoicePdfUrl = pdfResult.relativeUrl;
+      }
+    } catch (err) {
+      console.error("PDF generation skipped in background:", err.message);
+    }
+
+    return { success: true, data, message: "POS Counter sale completed successfully" };
+  }
+
+  async generateOrderInvoicePdf(user, storeIdParam, orderId) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const order = await storePanelRepository.getOrderById(storeId, orderId);
+    if (!order) throw new AppError("Order not found", 404);
+
+    return await generateInvoicePdf(order);
+  }
+
   async getPickupQueue(user, storeIdParam) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
     const data = await storePanelRepository.getPickupQueue(storeId);
@@ -151,6 +180,83 @@ export class StorePanelService {
     return { success: true, data };
   }
 
+  async createCustomer(user, storeIdParam, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+
+    const name = payload.name?.trim();
+    const phone = payload.phone?.trim();
+    const email = payload.email?.trim();
+
+    if (!name || name.length < 2) {
+      throw new AppError("Customer name must be at least 2 characters long", 400);
+    }
+    if (!phone || !/^\d{10}$/.test(phone)) {
+      throw new AppError("Valid 10-digit mobile phone number is compulsory", 400);
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new AppError("Valid email address is compulsory", 400);
+    }
+
+    const data = await storePanelRepository.createCustomer(storeId, {
+      name,
+      phone,
+      email,
+      notes: payload.notes?.trim() || null,
+      khataBalance: parseFloat(payload.khataBalance) || 0,
+      loyaltyPoints: parseInt(payload.loyaltyPoints) || 0,
+    });
+
+    return { success: true, data, message: "Customer created successfully" };
+  }
+
+  async updateCustomer(user, storeIdParam, customerId, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+
+    const updateData = {};
+    if (payload.name !== undefined) {
+      const name = payload.name?.trim();
+      if (!name || name.length < 2) {
+        throw new AppError("Customer name must be at least 2 characters long", 400);
+      }
+      updateData.name = name;
+    }
+
+    if (payload.phone !== undefined) {
+      const phone = payload.phone?.trim();
+      if (!phone || !/^\d{10}$/.test(phone)) {
+        throw new AppError("Valid 10-digit mobile phone number is compulsory", 400);
+      }
+      updateData.phone = phone;
+    }
+
+    if (payload.email !== undefined) {
+      const email = payload.email?.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new AppError("Valid email address is compulsory", 400);
+      }
+      updateData.email = email;
+    }
+
+    if (payload.khataBalance !== undefined) {
+      updateData.khataBalance = parseFloat(payload.khataBalance) || 0;
+    }
+    if (payload.loyaltyPoints !== undefined) {
+      updateData.loyaltyPoints = parseInt(payload.loyaltyPoints) || 0;
+    }
+    if (payload.notes !== undefined) {
+      updateData.notes = payload.notes?.trim() || null;
+    }
+
+    const data = await storePanelRepository.updateCustomer(storeId, customerId, updateData);
+    return { success: true, data, message: "Customer updated successfully" };
+  }
+
+  async deleteCustomer(user, storeIdParam, customerId) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    await storePanelRepository.deleteCustomer(storeId, customerId);
+    return { success: true, message: "Customer deleted successfully" };
+  }
+
   async getStaff(user, storeIdParam) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
     const data = await storePanelRepository.staff(storeId);
@@ -167,36 +273,94 @@ export class StorePanelService {
 
     const cleanPhone = String(payload.phone || "").replace(/\D/g, "");
     if (!cleanPhone || cleanPhone.length !== 10) {
-      throw new AppError("Enter Valid phone number!", 400);
+      throw new AppError("Phone number is required and must be exactly 10 digits!", 400);
     }
 
-    if (payload.email && payload.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(payload.email.trim())) {
-        throw new AppError("Enter a valid email address", 400);
-      }
+    const email = payload.email?.trim();
+    if (!email) {
+      throw new AppError("Email address is compulsory!", 400);
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new AppError("Enter a valid email address!", 400);
     }
 
     const cleanPin = String(payload.pin || "").replace(/\D/g, "");
     if (!cleanPin || cleanPin.length !== 4) {
-      throw new AppError("Secure PIN must be exactly 4 digits", 400);
+      throw new AppError("Secure PIN is required and must be exactly 4 digits!", 400);
     }
+
+    const role = normalizeStaffRole(payload.role || payload.roleName);
 
     const normalizedPayload = {
       ...payload,
       name,
       phone: cleanPhone,
-      email: payload.email?.trim() || null,
+      email,
       pin: cleanPin,
+      role,
+      shift: payload.shift || "Morning",
     };
 
-    const data = await storePanelRepository.createStaff(storeId, normalizedPayload, payload.role);
+    const data = await storePanelRepository.createStaff(storeId, normalizedPayload);
     return { success: true, data, message: "Staff member created successfully" };
   }
 
   async updateStaff(user, storeIdParam, staffId, payload) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
-    const data = await storePanelRepository.updateStaff(storeId, staffId, payload);
+    const updatePayload = {};
+
+    if (payload.name !== undefined) {
+      const name = payload.name?.trim();
+      if (!name || name.length < 2) {
+        throw new AppError("Full Name must be at least 2 characters", 400);
+      }
+      updatePayload.name = name;
+    }
+
+    if (payload.email !== undefined) {
+      const email = payload.email?.trim();
+      if (!email) {
+        throw new AppError("Email address is compulsory!", 400);
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new AppError("Enter a valid email address!", 400);
+      }
+      updatePayload.email = email;
+    }
+
+    if (payload.phone !== undefined) {
+      const cleanPhone = String(payload.phone || "").replace(/\D/g, "");
+      if (!cleanPhone || cleanPhone.length !== 10) {
+        throw new AppError("Phone number must be exactly 10 digits", 400);
+      }
+      updatePayload.phone = cleanPhone;
+    }
+
+    if (payload.pin !== undefined && payload.pin !== null && String(payload.pin).trim() !== "") {
+      const cleanPin = String(payload.pin).replace(/\D/g, "");
+      if (cleanPin.length !== 4) {
+        throw new AppError("Login PIN must be exactly 4 digits", 400);
+      }
+      updatePayload.pin = cleanPin;
+    }
+
+    if (payload.role || payload.roleName) {
+      updatePayload.role = normalizeStaffRole(payload.role || payload.roleName);
+    }
+
+    if (payload.shift !== undefined) {
+      updatePayload.shift = payload.shift;
+    }
+
+    if (payload.isActive !== undefined) {
+      updatePayload.isActive = Boolean(payload.isActive);
+    } else if (payload.status !== undefined) {
+      updatePayload.isActive = payload.status === "active";
+    }
+
+    const data = await storePanelRepository.updateStaff(storeId, staffId, updatePayload);
     return { success: true, data, message: "Staff member updated successfully" };
   }
 

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 
 // ── Store Dashboard ──
 export const useStoreDashboard = (storeId?: string) => {
@@ -10,6 +11,19 @@ export const useStoreDashboard = (storeId?: string) => {
       return data.data;
     },
     refetchInterval: 30000,
+  });
+};
+
+export const useStoreProducts = (storeId?: string) => {
+  return useQuery({
+    queryKey: ['store-products', storeId],
+    queryFn: async () => {
+      const { data } = await api.get('/store/inventory', { params: { storeId } });
+      const inventory = data.data || [];
+      return inventory
+        .map((item: any) => item.product)
+        .filter(Boolean);
+    },
   });
 };
 
@@ -44,7 +58,10 @@ export const useStoreCategories = (storeId?: string, params?: { page?: number; l
     queryKey: ['store-categories', storeId, params],
     queryFn: async () => {
       const { data } = await api.get('/store/categories', { params: { storeId, ...params } });
-      return data.data; // returning { data, meta }
+      const res = data?.data;
+      if (res && res.data) return res;
+      if (Array.isArray(res)) return { data: res, meta: { total: res.length, page: 1, limit: res.length, totalPages: 1 } };
+      return { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } };
     },
   });
 };
@@ -54,7 +71,10 @@ export const useAllStoreCategories = (storeId?: string) => {
     queryKey: ['store-categories-all', storeId],
     queryFn: async () => {
       const { data } = await api.get('/store/categories', { params: { storeId, all: 'true' } });
-      return data.data.data; // returning just the array
+      const res = data?.data;
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.data)) return res.data;
+      return [];
     },
   });
 };
@@ -223,6 +243,46 @@ export const useStoreOrders = (storeId?: string, filters?: { type?: string; stat
   });
 };
 
+export interface CreatePosOrderItemPayload {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  price?: number;
+  taxRate?: number;
+}
+
+export interface CreatePosOrderPayload {
+  storeId?: string;
+  customerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  discount?: number;
+  paymentMethod: 'CASH' | 'CARD' | 'UPI' | 'CREDIT' | 'SPLIT';
+  notes?: string;
+  items: CreatePosOrderItemPayload[];
+}
+
+export const useCreatePosOrder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, ...payload }: CreatePosOrderPayload) => {
+      const { data } = await api.post('/store/orders/pos', payload, { params: { storeId } });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['store-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['store-batches'] });
+      queryClient.invalidateQueries({ queryKey: ['store-customers'] });
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
+      toast.success('POS Counter Sale completed successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to complete POS sale.');
+    },
+  });
+};
+
 export const useUpdateStoreOrderStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -283,6 +343,57 @@ export const useStoreCustomers = (storeId?: string) => {
     queryFn: async () => {
       const { data } = await api.get('/store/customers', { params: { storeId } });
       return data.data;
+    },
+  });
+};
+
+export const useCreateStoreCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, ...payload }: { storeId?: string; name: string; phone: string; email: string; notes?: string; khataBalance?: number }) => {
+      const { data } = await api.post('/store/customers', payload, { params: { storeId } });
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['store-customers', variables.storeId] });
+      toast.success('Customer registered successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to register customer.');
+    },
+  });
+};
+
+export const useUpdateStoreCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, storeId, ...payload }: { id: string; storeId?: string; name?: string; phone?: string; email?: string; notes?: string; khataBalance?: number; loyaltyPoints?: number }) => {
+      const { data } = await api.patch(`/store/customers/${id}`, payload, { params: { storeId } });
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['store-customers', variables.storeId] });
+      toast.success('Customer updated successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to update customer.');
+    },
+  });
+};
+
+export const useDeleteStoreCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, storeId }: { id: string; storeId?: string }) => {
+      const { data } = await api.delete(`/store/customers/${id}`, { params: { storeId } });
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['store-customers', variables.storeId] });
+      toast.success('Customer deleted successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to delete customer.');
     },
   });
 };

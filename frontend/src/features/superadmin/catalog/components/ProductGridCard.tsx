@@ -10,7 +10,6 @@ interface ProductGridCardProps {
 }
 
 export function ProductGridCard({ product, onEdit, onDelete }: ProductGridCardProps) {
-  const imageUrl = Array.isArray(product.imageUrls) ? product.imageUrls[0] : (typeof product.imageUrls === 'string' ? product.imageUrls : '');
   const discountPercent =
     product.mrp && product.mrp > product.basePrice
       ? Math.round(((product.mrp - product.basePrice) / product.mrp) * 100)
