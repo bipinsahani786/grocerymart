@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, Check, Search, Plus } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface DropdownOption {
@@ -37,8 +38,8 @@ export function CustomDropdown({
 }: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 180 });
 
   const selectedOption = options.find((opt) => String(opt.value) === String(value));
 
@@ -56,37 +57,35 @@ export function CustomDropdown({
     }
   }, [isOpen]);
 
-  // Close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const handleToggle = () => {
+    if (disabled) return;
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: Math.max(180, rect.width),
+      });
+    }
+    setIsOpen(!isOpen);
+  };
 
   const handleCreate = async () => {
     if (!onCreate || !searchTerm.trim()) return;
-    try {
-      setIsCreating(true);
-      await onCreate(searchTerm.trim());
-      setSearchTerm('');
-      setIsOpen(false);
-    } finally {
-      setIsCreating(false);
-    }
+    await onCreate(searchTerm.trim());
+    setSearchTerm('');
+    setIsOpen(false);
   };
 
   return (
-    <div className={cn("relative w-full z-40 select-none", className)} ref={dropdownRef}>
+    <div className={cn("relative w-full text-xs select-none", className)}>
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className={cn(
-          "flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-[11px] font-medium tracking-widest text-slate-700 dark:text-zinc-300 uppercase shadow-xs focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer text-left",
+          "flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-medium text-slate-700 dark:text-zinc-300 shadow-2xs focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer text-left",
           triggerClassName
         )}
       >
@@ -100,92 +99,150 @@ export function CustomDropdown({
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ml-1",
             isOpen && "rotate-180"
           )}
         />
       </button>
 
-      {isOpen && (
-        <div className={cn(
-          "absolute left-0 right-auto z-[100] mt-1 max-h-60 min-w-full overflow-hidden rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl flex flex-col animate-in fade-in-50 slide-in-from-top-1 duration-100",
-          menuClassName || "min-w-[150px]"
-        )}>
-          {(searchable || creatable) && (
-            <div className="flex items-center border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-2.5 py-1.5 shrink-0">
-              <Search className="mr-2 h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search..."
-                className="w-full bg-transparent border-0 p-0 focus:outline-none focus:ring-0 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 font-medium"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (creatable && searchTerm && !options.some(opt => opt.label.toLowerCase() === searchTerm.toLowerCase())) {
-                      handleCreate();
-                    } else if (filteredOptions.length > 0) {
-                      onChange(filteredOptions[0].value);
-                      setIsOpen(false);
-                    }
-                  }
-                }}
-              />
-            </div>
-          )}
+      {/* PORTAL DROPDOWN MENU - NEVER CUT OFF BY PARENT CONTAINERS */}
+      {isOpen && createPortal(
+        <>
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 z-[9998] bg-black/30 backdrop-blur-2xs sm:bg-transparent sm:backdrop-blur-none"
+            onClick={() => setIsOpen(false)}
+          />
 
-          <div className="overflow-y-auto max-h-48 py-1">
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((opt) => {
-                const isSelected = String(opt.value) === String(value);
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(opt.value);
-                      setIsOpen(false);
-                    }}
-                    className={cn(
-                      "relative flex w-full cursor-pointer select-none items-center justify-between rounded-none px-3 py-1.5 text-[11px] font-medium tracking-wide transition-colors text-left uppercase",
-                      isSelected
-                        ? "bg-primary-500 text-white font-bold"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400"
-                    )}
-                  >
-                    <span className="flex items-center gap-2 truncate">
-                      {opt.icon}
-                      {opt.label}
-                    </span>
-                    {isSelected && (
-                      <Check className="h-3.5 w-3.5 text-white shrink-0 ml-2" />
-                    )}
-                  </button>
-                );
-              })
-            ) : (
-              <div className="px-3 py-2 text-xs text-slate-400 italic">
-                No options found
+          {/* Mobile Bottom Sheet Modal (Phone Screens) */}
+          <div className="fixed inset-x-0 bottom-0 z-[9999] sm:hidden bg-white dark:bg-zinc-950 rounded-t-2xl border-t border-slate-200 dark:border-zinc-800 p-4 shadow-2xl space-y-3 max-h-[80vh] flex flex-col animate-in slide-in-from-bottom duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2">
+              <h3 className="font-extrabold text-xs uppercase tracking-wider text-foreground">{placeholder}</h3>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1 text-slate-400 hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {(searchable || creatable) && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && creatable) {
+                      e.preventDefault();
+                      handleCreate();
+                    }
+                  }}
+                  placeholder="Search..."
+                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-100 dark:bg-zinc-800 text-xs border-none outline-none font-medium"
+                />
               </div>
             )}
 
-            {creatable && searchTerm && !options.some(opt => opt.label.toLowerCase() === searchTerm.toLowerCase()) && (
-              <button
-                type="button"
-                disabled={isCreating}
-                onClick={handleCreate}
-                className="flex w-full items-center justify-between px-3 py-1.5 text-xs text-left font-semibold text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-500/10 border-t border-slate-100 dark:border-zinc-800 uppercase"
-              >
-                <span className="truncate">
-                  {isCreating ? `Creating "${searchTerm}"...` : `Create "${searchTerm}"`}
-                </span>
-                <Plus className={cn("h-3.5 w-3.5 shrink-0 ml-2", isCreating && "animate-spin")} />
-              </button>
-            )}
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((opt) => {
+                  const isSelected = String(opt.value) === String(value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(opt.value);
+                        setIsOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full items-center justify-between p-2.5 rounded-lg text-xs font-semibold transition-colors text-left",
+                        isSelected
+                          ? "bg-primary-500 text-white"
+                          : "hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200"
+                      )}
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        {opt.icon}
+                        {opt.label}
+                      </span>
+                      {isSelected && <Check className="h-4 w-4 shrink-0 text-white" />}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="p-4 text-center text-xs text-slate-400 italic">No options found</div>
+              )}
+            </div>
           </div>
-        </div>
+
+          {/* Desktop Portal Positioned Menu */}
+          <div
+            className={cn(
+              "cascading-dropdown-portal fixed z-[9999] hidden sm:block animate-in fade-in-50 slide-in-from-top-1 duration-100",
+              menuClassName
+            )}
+            style={{
+              top: coords.top + 4,
+              left: coords.left,
+              width: coords.width,
+            }}
+          >
+            <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl overflow-hidden flex flex-col p-1 space-y-1">
+              {(searchable || creatable) && (
+                <div className="flex items-center border-b border-slate-100 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-900 px-2.5 py-1.5 shrink-0 rounded-t-lg">
+                  <Search className="mr-2 h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search..."
+                    className="w-full bg-transparent border-0 p-0 focus:outline-none text-xs text-slate-900 dark:text-white placeholder:text-slate-400 font-medium"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              )}
+
+              <div className="overflow-y-auto max-h-52 custom-scrollbar p-0.5 space-y-0.5">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((opt) => {
+                    const isSelected = String(opt.value) === String(value);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          onChange(opt.value);
+                          setIsOpen(false);
+                        }}
+                        className={cn(
+                          "relative flex w-full cursor-pointer select-none items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-colors text-left",
+                          isSelected
+                            ? "bg-primary-500 text-white"
+                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                        )}
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          {opt.icon}
+                          {opt.label}
+                        </span>
+                        {isSelected && <Check className="h-3.5 w-3.5 text-white shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-3 py-3 text-center text-xs text-slate-400 italic">
+                    No options found
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );

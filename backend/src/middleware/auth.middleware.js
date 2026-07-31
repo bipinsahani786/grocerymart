@@ -2,13 +2,18 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../../config/prisma.js";
 
 export const verifyToken = async (req, res, next) => {
+  let token;
   const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({ status: "error", code: "NO_TOKEN", message: "No token provided" });
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if (req.query && req.query.token) {
+    token = req.query.token;
   }
 
-  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ status: "error", code: "NO_TOKEN", message: "No token provided" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret");

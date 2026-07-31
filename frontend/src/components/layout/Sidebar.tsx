@@ -19,6 +19,7 @@ import {
   Search,
   ShieldAlert,
   FolderTree,
+  ShoppingBag,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -88,6 +89,12 @@ export const businessMenuGroups = [
         href: "/store/inventory",
         icon: Boxes,
         subtitle: "Stock levels, batch tracking, purchase orders and audits",
+      },
+      {
+        name: "Purchases & Inward",
+        href: "/store/purchases",
+        icon: ShoppingBag,
+        subtitle: "Inward purchase bills, suppliers, and frozen tax batches",
       },
     ],
   },

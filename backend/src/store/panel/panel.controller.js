@@ -104,6 +104,18 @@ export class StorePanelController {
     res.json(result);
   });
 
+  createPosOrder = catchAsync(async (req, res) => {
+    const result = await storePanelService.createPosOrder(req.user, req.query.storeId, req.body);
+    res.status(201).json(result);
+  });
+
+  getOrderInvoicePdf = catchAsync(async (req, res) => {
+    const pdfResult = await storePanelService.generateOrderInvoicePdf(req.user, req.query.storeId, req.params.id);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${pdfResult.filename}"`);
+    res.send(pdfResult.pdfBuffer);
+  });
+
   getPickupQueue = catchAsync(async (req, res) => {
     const result = await storePanelService.getPickupQueue(req.user, req.query.storeId);
     res.json(result);
@@ -121,6 +133,21 @@ export class StorePanelController {
 
   getCustomers = catchAsync(async (req, res) => {
     const result = await storePanelService.getCustomers(req.user, req.query.storeId);
+    res.json(result);
+  });
+
+  createCustomer = catchAsync(async (req, res) => {
+    const result = await storePanelService.createCustomer(req.user, req.query.storeId, req.body);
+    res.status(201).json(result);
+  });
+
+  updateCustomer = catchAsync(async (req, res) => {
+    const result = await storePanelService.updateCustomer(req.user, req.query.storeId, req.params.id, req.body);
+    res.json(result);
+  });
+
+  deleteCustomer = catchAsync(async (req, res) => {
+    const result = await storePanelService.deleteCustomer(req.user, req.query.storeId, req.params.id);
     res.json(result);
   });
 

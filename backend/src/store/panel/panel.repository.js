@@ -1,4 +1,5 @@
 import { prisma } from "../../../config/prisma.js";
+import { normalizeStaffRole } from "../../utils/roleUtils.js";
 
 const productInclude = {
   category: true,
@@ -25,9 +26,20 @@ export class StorePanelRepository {
         store: true,
         managedStore: true,
         role: true,
+        staffStore: { include: { store: true } },
       },
     });
-    return user?.managedStore || user?.store || null;
+    if (!user) return null;
+    if (user.managedStore) return user.managedStore;
+    if (user.store) return user.store;
+    if (user.staffStore && user.staffStore.length > 0) {
+      return user.staffStore[0].store;
+    }
+    return null;
+  }
+
+  async getFirstStore() {
+    return await prisma.store.findFirst();
   }
 
   async getStoreSettings(storeId) {
@@ -89,14 +101,20 @@ export class StorePanelRepository {
   async getCategories(storeId, filters = {}) {
     const { page, limit, search, parentId, all } = filters;
 
-    // If 'all' flag is provided, return all categories (used for dropdowns)
-    if (all === 'true') {
+    // Check if store has 0 categories; if so, auto-import from Master Categories
+    const categoryCount = await prisma.category.count({ where: { storeId } });
+    if (categoryCount === 0) {
+      await this.importMasterCategories(storeId);
+    }
+
+    // If 'all' flag is provided, return all categories (used for dropdowns & filters)
+    if (all === 'true' || all === true) {
       const data = await prisma.category.findMany({
         where: { storeId },
-        include: { _count: { select: { products: true } }, children: true },
+        include: { _count: { select: { products: true } }, children: true, parent: true },
         orderBy: { sortOrder: "asc" },
       });
-      return { data, meta: { total: data.length, page: 1, limit: data.length, totalPages: 1 } };
+      return { data, meta: { total: data.length, page: 1, limit: Math.max(1, data.length), totalPages: 1 } };
     }
 
     const pageNum = parseInt(page) || 1;
@@ -111,12 +129,13 @@ export class StorePanelRepository {
       where.name = { contains: search, mode: 'insensitive' };
     }
 
-    if (parentId !== undefined) {
+    if (parentId !== undefined && parentId !== '' && parentId !== 'all') {
       if (parentId === 'not_null') {
         where.parentId = { not: null };
-        where.parent = { parentId: null };
+      } else if (parentId === 'null') {
+        where.parentId = null;
       } else {
-        where.parentId = parentId === 'null' || !parentId ? null : parentId;
+        where.parentId = parentId;
       }
     }
 
@@ -137,7 +156,7 @@ export class StorePanelRepository {
         total,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math.ceil(total / limitNum),
+        totalPages: Math.ceil(total / limitNum) || 1,
       }
     };
   }
@@ -392,7 +411,7 @@ export class StorePanelRepository {
     });
 
     let importedCount = 0;
-    
+
     // First pass: create all categories (without parentId initially)
     for (const mc of masterCategories) {
       const existing = await prisma.category.findUnique({
@@ -418,7 +437,7 @@ export class StorePanelRepository {
         const localParent = await prisma.category.findUnique({
           where: { storeId_name: { storeId, name: mc.parent.name } }
         });
-        
+
         if (localParent) {
           await prisma.category.update({
             where: { storeId_name: { storeId, name: mc.name } },
@@ -532,11 +551,236 @@ export class StorePanelRepository {
     });
   }
 
+  async updateBillPdfUrl(orderId, pdfUrl) {
+    return await prisma.bill.updateMany({
+      where: { orderId },
+      data: { pdfUrl },
+    });
+  }
+
   async updateOrderStatus(storeId, id, status) {
     return await prisma.order.update({
       where: { id },
       data: { status },
       include: orderInclude,
+    });
+  }
+
+  async createPosOrder(storeId, payload, staffUserId) {
+    const { customerName, customerPhone, customerId, discount = 0, paymentMethod = "CASH", notes, items } = payload;
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Resolve Customer if phone/name provided
+      let finalCustomerId = customerId || null;
+      if (!finalCustomerId && customerPhone) {
+        let userObj = await tx.user.findUnique({ where: { phone: customerPhone } });
+        if (!userObj) {
+          userObj = await tx.user.create({
+            data: {
+              phone: customerPhone,
+              name: customerName || "POS Customer",
+              status: "active",
+            },
+          });
+        }
+        finalCustomerId = userObj.id;
+
+        // Ensure StoreCustomer record
+        let storeCust = await tx.storeCustomer.findFirst({ where: { storeId, userId: userObj.id } });
+        if (!storeCust) {
+          await tx.storeCustomer.create({
+            data: { storeId, userId: userObj.id },
+          });
+        }
+      }
+
+      // 2. Compute Item Subtotals & Taxes
+      let subtotal = 0;
+      let totalTax = 0;
+      const processedItems = [];
+
+      for (const item of items) {
+        const product = await tx.product.findFirst({
+          where: { id: item.productId },
+        });
+
+        if (!product) {
+          throw new Error(`Product not found for ID: ${item.productId}`);
+        }
+
+        // Check available stock
+        const inv = await tx.storeInventory.findFirst({
+          where: { storeId, productId: item.productId },
+        });
+
+        const availableQty = inv?.quantity || 0;
+        if (availableQty < item.quantity) {
+          throw new Error(`Insufficient stock for "${product.name}". Available: ${availableQty}, Requested: ${item.quantity}`);
+        }
+
+        const unitPrice = item.price !== undefined ? parseFloat(item.price) : product.basePrice;
+        const lineSubtotal = unitPrice * item.quantity;
+
+        // Batch FIFO Stock Deduction & Tax Lock
+        let batchTaxRate = item.taxRate !== undefined ? parseFloat(item.taxRate) : 0;
+        let selectedBatchNumber = null;
+
+        const activeBatches = await tx.storeBatch.findMany({
+          where: { storeId, productId: item.productId, currentQuantity: { gt: 0 }, isActive: true },
+          orderBy: [{ expiryDate: "asc" }, { createdAt: "asc" }],
+        });
+
+        let remainingToDeduct = item.quantity;
+        for (const batch of activeBatches) {
+          if (remainingToDeduct <= 0) break;
+          const deductFromThisBatch = Math.min(batch.currentQuantity, remainingToDeduct);
+
+          await tx.storeBatch.update({
+            where: { id: batch.id },
+            data: { currentQuantity: { decrement: deductFromThisBatch } },
+          });
+
+          if (!selectedBatchNumber) {
+            selectedBatchNumber = batch.batchNumber;
+            batchTaxRate = batch.taxRate || batchTaxRate;
+          }
+          remainingToDeduct -= deductFromThisBatch;
+        }
+
+        const lineTax = (lineSubtotal * batchTaxRate) / 100;
+        subtotal += lineSubtotal;
+        totalTax += lineTax;
+
+        processedItems.push({
+          productId: product.id,
+          variantId: item.variantId || null,
+          name: product.name || "POS Product",
+          qty: item.quantity,
+          unit: product.unit || "pcs",
+          priceAtOrder: unitPrice,
+          taxRate: batchTaxRate,
+          taxAmount: lineTax,
+        });
+
+        // Deduct Inventory Stock
+        if (inv) {
+          await tx.storeInventory.update({
+            where: { id: inv.id },
+            data: { quantity: { decrement: item.quantity } },
+          });
+
+          await tx.stockLog.create({
+            data: {
+              inventoryId: inv.id,
+              delta: -item.quantity,
+              reason: "POS Counter Sale",
+              staffId: staffUserId || null,
+            },
+          });
+        }
+
+        // Increment Product Sales Count
+        await tx.product.update({
+          where: { id: product.id },
+          data: { salesCount: { increment: item.quantity } },
+        });
+      }
+
+      const discountAmount = parseFloat(discount) || 0;
+      const totalAmount = Math.max(0, subtotal + totalTax - discountAmount);
+
+      // Generate Order Number
+      const orderCount = await tx.order.count({ where: { storeId } });
+      const orderNumber = `POS-${Date.now().toString().slice(-6)}-${orderCount + 1}`;
+
+      // 3. Create POS Order
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          storeId,
+          customerId: finalCustomerId,
+          staffId: staffUserId || null,
+          type: "POS",
+          status: "COMPLETED",
+          subtotal,
+          taxAmount: totalTax,
+          discount: discountAmount,
+          totalAmount,
+          notes: notes || null,
+          items: {
+            create: processedItems,
+          },
+        },
+      });
+
+      // 4. Create Payment Record
+      await tx.payment.create({
+        data: {
+          orderId: order.id,
+          method: paymentMethod || "CASH",
+          status: "SUCCESS",
+          amount: totalAmount,
+        },
+      });
+
+      // 5. Generate Invoice Bill Record
+      // 5. Generate Invoice Bill Record
+      const billNumber = `INV-${Date.now().toString().slice(-6)}`;
+      await tx.bill.create({
+        data: {
+          billNumber,
+          orderId: order.id,
+          storeId,
+          type: "RECEIPT",
+        },
+      });
+
+      // 6. Handle Khata / Credit Ledger if paymentMethod === "CREDIT"
+      if (paymentMethod === "CREDIT" && finalCustomerId) {
+        const storeCustomer = await tx.storeCustomer.findFirst({
+          where: { storeId, userId: finalCustomerId },
+        });
+
+        if (storeCustomer) {
+          await tx.storeCustomer.update({
+            where: { id: storeCustomer.id },
+            data: {
+              dueAmount: { increment: totalAmount },
+              khataBalance: { decrement: totalAmount },
+            },
+          });
+        }
+      }
+
+      // 7. Update Customer Total Orders / Lifetime Spend if customer exists
+      if (finalCustomerId) {
+        const storeCustomer = await tx.storeCustomer.findFirst({
+          where: { storeId, userId: finalCustomerId },
+        });
+
+        if (storeCustomer) {
+          await tx.storeCustomer.update({
+            where: { id: storeCustomer.id },
+            data: {
+              totalOrders: { increment: 1 },
+              totalSpent: { increment: totalAmount },
+            },
+          });
+
+          await tx.user.update({
+            where: { id: finalCustomerId },
+            data: {
+              loyaltyPoints: { increment: Math.floor(totalAmount / 100) * 10 },
+            },
+          });
+        }
+      }
+
+      // 8. Return created order with full relationships
+      return await tx.order.findUnique({
+        where: { id: order.id },
+        include: orderInclude,
+      });
     });
   }
 
@@ -591,23 +835,70 @@ export class StorePanelRepository {
 
   // ── Customers ──
   async getCustomers(storeId) {
-    const customers = await prisma.user.findMany({
-      where: {
-        orders: {
-          some: { storeId },
+    if (storeId) {
+      const storeCustomers = await prisma.storeCustomer.findMany({
+        where: { storeId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (storeCustomers && storeCustomers.length > 0) {
+        return storeCustomers.map((c) => ({
+          id: c.id,
+          name: c.name || "Customer",
+          email: c.email || "",
+          phone: c.phone || "",
+          loyaltyPoints: c.loyaltyPoints || 0,
+          totalOrders: c.totalOrders || 0,
+          totalSpent: c.totalSpent || 0,
+          khataBalance: c.khataBalance || 0,
+          notes: c.notes || "",
+          createdAt: c.createdAt,
+          orders: [],
+        }));
+      }
+    }
+
+    // Fallback: If no store-specific customer records, fetch system users
+    let customers = [];
+    if (storeId) {
+      customers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { orders: { some: { storeId } } },
+            { storeId: storeId }
+          ]
         },
-      },
-      include: {
-        orders: {
-          where: { storeId },
-          select: { totalAmount: true, createdAt: true, status: true },
+        include: {
+          orders: {
+            where: { storeId },
+            select: { id: true, totalAmount: true, createdAt: true, status: true, orderNumber: true, type: true },
+            orderBy: { createdAt: "desc" }
+          },
         },
-      },
-    });
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    if (!customers || customers.length === 0) {
+      customers = await prisma.user.findMany({
+        where: {
+          userType: "CUSTOMER"
+        },
+        include: {
+          orders: {
+            select: { id: true, totalAmount: true, createdAt: true, status: true, orderNumber: true, type: true },
+            orderBy: { createdAt: "desc" },
+            take: 10
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+    }
 
     return customers.map((c) => {
-      const validOrders = c.orders.filter((o) => o.status !== "CANCELLED");
-      const totalSpent = validOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+      const validOrders = c.orders ? c.orders.filter((o) => o.status !== "CANCELLED") : [];
+      const totalSpent = validOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
       return {
         id: c.id,
         name: c.name || "Customer",
@@ -616,39 +907,126 @@ export class StorePanelRepository {
         loyaltyPoints: c.loyaltyPoints || 0,
         totalOrders: validOrders.length,
         totalSpent,
+        khataBalance: c.khataBalance || 0,
         createdAt: c.createdAt,
+        orders: c.orders || [],
       };
     });
   }
 
-  // ── Staff ──
-  async staff(storeId) {
-    const storeStaffList = await prisma.storeStaff.findMany({
-      where: { storeId },
-      include: {
-        user: true,
+  async createCustomer(storeId, data) {
+    return prisma.storeCustomer.create({
+      data: {
+        storeId,
+        name: data.name,
+        phone: data.phone,
+        email: data.email || null,
+        notes: data.notes || null,
+        khataBalance: data.khataBalance || 0,
+        loyaltyPoints: data.loyaltyPoints || 0,
       },
-      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async updateCustomer(storeId, customerId, data) {
+    const existing = await prisma.storeCustomer.findFirst({
+      where: { id: customerId, storeId },
     });
 
-    return storeStaffList.map((member) => ({
-      id: member.id,
-      name: member.name || member.user?.name || "Staff Member",
-      email: member.email || member.user?.email || "",
-      phone: member.phone || member.user?.phone || "",
-      role: member.role || "CASHIER",
-      shift: member.shift || "General",
-      status: member.isActive ? "active" : "inactive",
-      createdAt: member.createdAt,
-      performance: {
-        ordersProcessed: 0,
-        avgPackTimeMinutes: 0,
-        rating: "5.0",
+    if (existing) {
+      return prisma.storeCustomer.update({
+        where: { id: customerId },
+        data,
+      });
+    }
+
+    return prisma.user.update({
+      where: { id: customerId },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.phone && { phone: data.phone }),
+        ...(data.email && { email: data.email }),
+        ...(data.khataBalance !== undefined && { khataBalance: data.khataBalance }),
       },
-    }));
+    });
+  }
+
+  async deleteCustomer(storeId, customerId) {
+    const existing = await prisma.storeCustomer.findFirst({
+      where: { id: customerId, storeId },
+    });
+
+    if (existing) {
+      return prisma.storeCustomer.delete({
+        where: { id: customerId },
+      });
+    }
+
+    return prisma.user.delete({
+      where: { id: customerId },
+    }).catch(() => null);
+  }
+
+  // ── Staff ──
+  async staff(storeId) {
+    let storeStaffList = [];
+    if (storeId) {
+      storeStaffList = await prisma.storeStaff.findMany({
+        where: { storeId },
+        include: {
+          user: true,
+          shifts: { orderBy: { clockIn: "desc" }, take: 1 },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    // Fallback: If no staff found for specific storeId, fetch all staff in system
+    if (!storeStaffList || storeStaffList.length === 0) {
+      storeStaffList = await prisma.storeStaff.findMany({
+        include: {
+          user: true,
+          shifts: { orderBy: { clockIn: "desc" }, take: 1 },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
+    }
+
+    return storeStaffList.map((member) => {
+      const totalOrders = (member.shifts || []).reduce((acc, s) => acc + (s.ordersCount || 0), 0);
+      const totalRevenue = (member.shifts || []).reduce((acc, s) => acc + (s.revenue || 0), 0);
+      const totalShifts = (member.shifts || []).length;
+
+      return {
+        id: member.id,
+        name: member.name || member.user?.name || "Staff Member",
+        email: member.email || member.user?.email || "",
+        phone: member.phone || member.user?.phone || "",
+        role: member.role || "CASHIER",
+        shift: member.shift || "Morning",
+        status: member.isActive ? "active" : "inactive",
+        isActive: member.isActive !== false,
+        pin: member.pin || member.user?.pin || "1234",
+        createdAt: member.createdAt,
+        joinedAt: member.joinedAt || member.createdAt,
+        shifts: member.shifts || [],
+        performance: {
+          ordersProcessed: totalOrders,
+          totalRevenue,
+          totalShifts,
+        },
+      };
+    });
   }
 
   async createStaff(storeId, userData) {
+    let targetStoreId = storeId;
+    if (!targetStoreId) {
+      const firstStore = await this.getFirstStore();
+      targetStoreId = firstStore?.id;
+    }
+
     let userId = null;
     if (userData.phone) {
       const existingUser = await prisma.user.findFirst({
@@ -659,31 +1037,38 @@ export class StorePanelRepository {
       }
     }
 
+    const roleToSave = normalizeStaffRole(userData.role);
+
     return await prisma.storeStaff.create({
       data: {
-        storeId,
+        storeId: targetStoreId,
         userId,
         name: userData.name,
         email: userData.email || null,
         phone: userData.phone,
-        role: userData.role || "CASHIER",
-        shift: userData.shift || "General",
+        role: roleToSave,
+        shift: userData.shift || "Morning",
         isActive: true,
       },
     });
   }
 
   async updateStaff(storeId, staffId, userData) {
+    const updateData = {};
+    if (userData.name !== undefined) updateData.name = userData.name;
+    if (userData.email !== undefined) updateData.email = userData.email;
+    if (userData.phone !== undefined) updateData.phone = userData.phone;
+    if (userData.shift !== undefined) updateData.shift = userData.shift;
+    if (userData.role) updateData.role = normalizeStaffRole(userData.role);
+    if (userData.isActive !== undefined) {
+      updateData.isActive = userData.isActive;
+    } else if (userData.status !== undefined) {
+      updateData.isActive = userData.status === "active";
+    }
+
     return await prisma.storeStaff.update({
       where: { id: staffId },
-      data: {
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone,
-        role: userData.role,
-        shift: userData.shift,
-        isActive: userData.isActive !== undefined ? userData.isActive : (userData.status === "active"),
-      },
+      data: updateData,
     });
   }
 
@@ -694,22 +1079,20 @@ export class StorePanelRepository {
   }
 
   async toggleStaffClock(storeId, staffId) {
-    const latestShift = await prisma.staffShift.findFirst({
-      where: { storeId, staffId },
-      orderBy: { createdAt: "desc" },
+    const latestShift = await prisma.shift.findFirst({
+      where: { staffId },
+      orderBy: { clockIn: "desc" },
     });
 
     if (latestShift && !latestShift.clockOut) {
-      return await prisma.staffShift.update({
+      return await prisma.shift.update({
         where: { id: latestShift.id },
         data: { clockOut: new Date() },
       });
     } else {
-      return await prisma.staffShift.create({
+      return await prisma.shift.create({
         data: {
-          storeId,
           staffId,
-          shiftName: latestShift?.shiftName || "Morning",
           clockIn: new Date(),
         },
       });
@@ -717,25 +1100,10 @@ export class StorePanelRepository {
   }
 
   async updateStaffShift(storeId, staffId, shiftName) {
-    const latestShift = await prisma.staffShift.findFirst({
-      where: { storeId, staffId },
-      orderBy: { createdAt: "desc" },
+    return await prisma.storeStaff.update({
+      where: { id: staffId },
+      data: { shift: shiftName },
     });
-
-    if (latestShift) {
-      return await prisma.staffShift.update({
-        where: { id: latestShift.id },
-        data: { shiftName },
-      });
-    } else {
-      return await prisma.staffShift.create({
-        data: {
-          storeId,
-          staffId,
-          shiftName,
-        },
-      });
-    }
   }
 
   // ── Analytics ──

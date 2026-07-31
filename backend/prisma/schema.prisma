@@ -174,6 +174,10 @@ model Store {
 
   racks               Rack[]
   staff               StoreStaff[]
+  customers           StoreCustomer[]
+  suppliers           Supplier[]
+  purchaseOrders      PurchaseOrder[]
+  batches             StoreBatch[]
   deliveryPartners    DeliveryPartnerStore[]
   pickupSlots         PickupSlot[]
 
@@ -285,6 +289,8 @@ model Product {
   variants              ProductVariant[]
   inventory             StoreInventory[]
   orderItems            OrderItem[]
+  batches               StoreBatch[]
+  purchaseItems         PurchaseOrderItem[]
   @@map("products")
 }
 
@@ -300,6 +306,8 @@ model ProductVariant {
   imageUrl    String?
   inventory   StoreInventory[]
   orderItems  OrderItem[]
+  batches     StoreBatch[]
+  purchaseItems PurchaseOrderItem[]
   @@map("product_variants")
 }
 
@@ -320,6 +328,7 @@ model StoreInventory {
   expiryDate    DateTime?
   lastUpdated   DateTime @updatedAt
   stockLogs     StockLog[]
+  batches       StoreBatch[]
 
   @@unique([storeId, productId, variantId])
   @@map("store_inventory")
@@ -368,6 +377,24 @@ model StoreStaff {
   shifts      Shift[]
 
   @@map("store_staff")
+}
+
+model StoreCustomer {
+  id            String   @id @default(uuid())
+  storeId       String   @map("store_id")
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  email         String?
+  khataBalance  Float    @default(0) @map("khata_balance")
+  loyaltyPoints Int      @default(0) @map("loyalty_points")
+  totalOrders   Int      @default(0) @map("total_orders")
+  totalSpent    Float    @default(0) @map("total_spent")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @default(now()) @map("updated_at")
+
+  @@map("store_customers")
 }
 
 model Shift {
@@ -618,4 +645,106 @@ model TaxComponent {
   rate        Float     // e.g., 9.0
   
   @@map("tax_components")
+}
+
+enum PurchaseStatus {
+  DRAFT
+  ORDERED
+  RECEIVED
+  CANCELLED
+}
+
+// ─── SUPPLIERS & PURCHASES ──────────────────────────────────────────────────
+model Supplier {
+  id            String   @id @default(uuid())
+  storeId       String   @map("store_id")
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  contactPerson String?  @map("contact_person")
+  phone         String
+  email         String?
+  gstin         String?
+  address       String?
+  city          String?
+  state         String?
+  pincode       String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @default(now()) @map("updated_at")
+
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id            String          @id @default(uuid())
+  poNumber      String          @unique @map("po_number")
+  storeId       String          @map("store_id")
+  store         Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplierId    String          @map("supplier_id")
+  supplier      Supplier        @relation(fields: [supplierId], references: [id])
+  status        PurchaseStatus  @default(RECEIVED)
+  totalAmount   Float           @default(0) @map("total_amount")
+  totalTax      Float           @default(0) @map("total_tax")
+  invoiceNumber String?         @map("invoice_number")
+  invoiceDate   DateTime?       @map("invoice_date")
+  notes         String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @default(now()) @map("updated_at")
+
+  items         PurchaseOrderItem[]
+  batches       StoreBatch[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String        @map("purchase_order_id")
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       String        @map("product_id")
+  product         Product       @relation(fields: [productId], references: [id])
+  variantId       String?       @map("variant_id")
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+  batchNumber     String        @map("batch_number")
+  quantity        Int
+  costPrice       Float         @map("cost_price")
+  mrp             Float?
+  sellingPrice    Float         @map("selling_price")
+  taxRate         Float         @default(0) @map("tax_rate") // Locked GST % at purchase time
+  hsnCode         String?       @map("hsn_code")
+  expiryDate      DateTime?     @map("expiry_date")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@map("purchase_order_items")
+}
+
+model StoreBatch {
+  id              String         @id @default(uuid())
+  batchNumber     String         @map("batch_number")
+  storeId         String         @map("store_id")
+  store           Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  inventoryId     String?        @map("inventory_id")
+  inventory       StoreInventory? @relation(fields: [inventoryId], references: [id])
+  productId       String         @map("product_id")
+  product         Product        @relation(fields: [productId], references: [id])
+  variantId       String?        @map("variant_id")
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+  purchaseOrderId String?        @map("purchase_order_id")
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+
+  costPrice       Float          @map("cost_price")
+  mrp             Float?
+  sellingPrice    Float          @map("selling_price")
+  taxRate         Float          @default(0) @map("tax_rate") // FROZEN TAX RATE %
+  hsnCode         String?        @map("hsn_code")
+  initialQuantity Int            @map("initial_quantity")
+  currentQuantity Int            @map("current_quantity")
+  expiryDate      DateTime?      @map("expiry_date")
+  isActive        Boolean        @default(true) @map("is_active")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @default(now()) @map("updated_at")
+
+  @@map("store_batches")
 }
