@@ -68,9 +68,39 @@ export default function StoreManagerDashboardPage() {
   const [dismissedProductIds, setDismissedProductIds] = useState<string[]>([]);
 
   // 1. Dashboard summary metrics
+  // 0. Filter orders by selected sales channel
+  const channelFilteredOrders = useMemo(() => {
+    if (!recentOrders || !Array.isArray(recentOrders)) return [];
+    if (channelFilter === "ALL") return recentOrders;
+    return recentOrders.filter((o: any) => {
+      const typeUpper = String(o.type || "").toUpperCase();
+      if (channelFilter === "POS") return typeUpper === "POS";
+      if (channelFilter === "DELIVERY" || channelFilter === "ONLINE") {
+        return typeUpper === "ONLINE" || typeUpper === "DELIVERY";
+      }
+      if (channelFilter === "PICKUP" || channelFilter === "CLICK_COLLECT") {
+        return typeUpper === "CLICK_COLLECT" || typeUpper === "PICKUP";
+      }
+      return typeUpper === channelFilter.toUpperCase();
+    });
+  }, [recentOrders, channelFilter]);
+
+  // 1. Dashboard summary metrics
   const stats = useMemo(() => {
-    const revenue = summary?.revenueToday || 0;
-    const ordersCount = summary?.ordersToday || 0;
+    const todayStr = new Date().toISOString().split("T")[0];
+    const todayOrders = channelFilteredOrders.filter((o: any) => {
+      if (!o.createdAt?.startsWith(todayStr)) return false;
+      return o.status !== "CANCELLED" && o.status !== "REFUNDED";
+    });
+
+    const revenue = channelFilter === "ALL" && summary?.revenueToday !== undefined
+      ? summary.revenueToday
+      : todayOrders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0);
+
+    const ordersCount = channelFilter === "ALL" && summary?.ordersToday !== undefined
+      ? summary.ordersToday
+      : todayOrders.length;
+
     const avgBill = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
     const activeStaff = summary?.staff || 0;
     const lowStockCount = summary?.lowStock || 0;
@@ -83,7 +113,7 @@ export default function StoreManagerDashboardPage() {
       lowStockCount,
       slaRate: 98,
     };
-  }, [summary]);
+  }, [summary, channelFilteredOrders, channelFilter]);
 
   // 2. Chart data builder
   const chartData = useMemo(() => {
@@ -92,7 +122,7 @@ export default function StoreManagerDashboardPage() {
 
     return hours.map((hour) => {
       const hourInt = parseInt(hour.split(":")[0]);
-      const matchedOrders = recentOrders.filter((o: any) => {
+      const matchedOrders = channelFilteredOrders.filter((o: any) => {
         if (!o.createdAt?.startsWith(todayStr)) return false;
         if (o.status === "CANCELLED" || o.status === "REFUNDED") return false;
         const orderHour = new Date(o.createdAt).getHours();
@@ -106,11 +136,11 @@ export default function StoreManagerDashboardPage() {
         value: chartMetric === "revenue" ? sales : matchedOrders.length,
       };
     });
-  }, [recentOrders, chartMetric]);
+  }, [channelFilteredOrders, chartMetric]);
 
   // 3. Highlighted feeds with search and channel filter
   const recentFeed = useMemo(() => {
-    let feed = recentOrders;
+    let feed = channelFilteredOrders;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       feed = feed.filter((o: any) =>
@@ -119,11 +149,8 @@ export default function StoreManagerDashboardPage() {
         (o.status || "").toLowerCase().includes(q)
       );
     }
-    if (channelFilter !== "ALL") {
-      feed = feed.filter((o: any) => o.type?.toUpperCase() === channelFilter.toUpperCase());
-    }
     return feed.slice(0, 5);
-  }, [recentOrders, searchQuery, channelFilter]);
+  }, [channelFilteredOrders, searchQuery]);
 
   const warningList = useMemo(() => {
     return inventory
@@ -641,13 +668,13 @@ export default function StoreManagerDashboardPage() {
                   />
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 </div>
-                <div className="w-full sm:w-[130px] shrink-0 z-20">
+                <div className="w-full sm:w-[150px] shrink-0 z-20">
                   <CustomDropdown
                     options={[
                       { value: 'ALL', label: 'All Channels' },
                       { value: 'POS', label: 'POS Billing' },
                       { value: 'DELIVERY', label: 'Delivery' },
-                      { value: 'PICKUP', label: 'Pickup/TV' }
+                      { value: 'PICKUP', label: 'Click & Collect' }
                     ]}
                     value={channelFilter}
                     onChange={setChannelFilter}

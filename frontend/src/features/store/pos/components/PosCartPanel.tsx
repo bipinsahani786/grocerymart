@@ -41,6 +41,7 @@ interface PosCartPanelProps {
   selectedCustomerId: string;
   setSelectedCustomerId: (id: string) => void;
   setShowNewCustomerModal: (show: boolean) => void;
+  handleOpenNewCustomerModal?: (initialInput?: string) => void;
   selectedCustomerObj: any;
   cart: CartItem[];
   handleUpdateQuantity: (productId: string, delta: number) => void;
@@ -70,6 +71,7 @@ export function PosCartPanel({
   selectedCustomerId,
   setSelectedCustomerId,
   setShowNewCustomerModal,
+  handleOpenNewCustomerModal,
   selectedCustomerObj,
   cart,
   handleUpdateQuantity,
@@ -108,16 +110,16 @@ export function PosCartPanel({
           </span>
         </div>
 
-        {/* Active Staff Selection Dropdown (ONLY STAFF NAMES - Persisted & Searchable) */}
+        {/* Active Cashier Selection Dropdown (ONLY CASHIERS - Persisted & Searchable) */}
         <div className="space-y-1">
           <label className="text-[10px] font-black uppercase text-muted-foreground tracking-wider flex items-center gap-1">
-            <UserCheck className="h-3.5 w-3.5 text-primary-500" /> Select Staff Member
+            <UserCheck className="h-3.5 w-3.5 text-primary-500" /> Cashier Name
           </label>
           <CustomDropdown
             options={staffOptions}
             value={selectedStaffId}
             onChange={handleSelectStaff}
-            placeholder="Select Staff Member"
+            placeholder="Select Cashier Name"
             searchable
           />
         </div>
@@ -131,7 +133,13 @@ export function PosCartPanel({
           </label>
           <button
             type="button"
-            onClick={() => setShowNewCustomerModal(true)}
+            onClick={() => {
+              if (handleOpenNewCustomerModal) {
+                handleOpenNewCustomerModal();
+              } else {
+                setShowNewCustomerModal(true);
+              }
+            }}
             className="text-[11px] font-extrabold text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
           >
             <UserPlus className="h-3.5 w-3.5" /> Add Customer
@@ -142,8 +150,16 @@ export function PosCartPanel({
           options={customerOptions}
           value={selectedCustomerId}
           onChange={(val) => setSelectedCustomerId(val)}
-          placeholder="Select Customer Profile"
+          placeholder="Search customer by name or phone..."
           searchable
+          creatable
+          onCreate={(searchTerm) => {
+            if (handleOpenNewCustomerModal) {
+              handleOpenNewCustomerModal(searchTerm);
+            } else {
+              setShowNewCustomerModal(true);
+            }
+          }}
         />
 
         {selectedCustomerObj && (

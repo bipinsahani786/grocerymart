@@ -57,18 +57,22 @@ export const adjustInventorySchema = z.object({
 
 export const createPosOrderSchema = z.object({
   body: z.object({
+    customerId: optionalText,
     customerName: optionalText,
     customerPhone: optionalText,
+    staffId: optionalText,
     discount: z.coerce.number().min(0).default(0),
     paymentMethod: z.enum(["CASH", "CARD", "UPI", "SPLIT", "CREDIT"]).default("CASH"),
     notes: optionalText,
     items: z.array(z.object({
-      productId: z.string().uuid(),
+      productId: z.string().min(1, "Product ID is required"),
       quantity: z.coerce.number().positive(),
+      price: z.coerce.number().optional(),
+      taxRate: z.coerce.number().optional(),
     })).min(1, "At least one item is required"),
-  }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  }).passthrough(),
+  query: z.object({}).passthrough().optional(),
+  params: z.object({}).passthrough().optional(),
 });
 
 export const updateOrderStatusSchema = z.object({

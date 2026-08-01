@@ -87,8 +87,8 @@ export default function StoreCustomersPage() {
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim() || !emailRegex.test(email.trim())) {
-      toast.error('Compulsory: Valid email address is required.');
+    if (email.trim() && !emailRegex.test(email.trim())) {
+      toast.error('Invalid email address format.');
       return false;
     }
     return true;
@@ -627,13 +627,12 @@ export default function StoreCustomersPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Email Address *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">Email Address (Optional)</label>
             <Input
               type="email"
               placeholder="e.g. ramesh@example.com"
               value={newCustForm.email}
               onChange={(e) => setNewCustForm(p => ({ ...p, email: e.target.value }))}
-              required
             />
           </div>
 
@@ -686,13 +685,12 @@ export default function StoreCustomersPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Email Address *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">Email Address (Optional)</label>
             <Input
               type="email"
               placeholder="Email address"
               value={editCustForm.email}
               onChange={(e) => setEditCustForm(p => ({ ...p, email: e.target.value }))}
-              required
             />
           </div>
 

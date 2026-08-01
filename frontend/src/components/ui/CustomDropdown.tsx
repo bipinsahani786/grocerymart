@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check, Search, X } from 'lucide-react';
+import { ChevronDown, Check, Search, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface DropdownOption {
@@ -57,24 +57,54 @@ export function CustomDropdown({
     }
   }, [isOpen]);
 
+  // Recalculate portal position and prevent right screen clipping
+  useEffect(() => {
+    if (!isOpen) return;
+    const updateCoords = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        const menuWidth = Math.max(180, rect.width);
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let calculatedLeft = rect.left;
+        if (calculatedLeft + menuWidth > viewportWidth - 16) {
+          calculatedLeft = Math.max(16, viewportWidth - menuWidth - 16);
+        }
+
+        let calculatedTop = rect.bottom;
+        if (rect.bottom + 220 > viewportHeight && rect.top > 220) {
+          calculatedTop = Math.max(8, rect.top - 220);
+        }
+
+        setCoords({
+          top: calculatedTop,
+          left: calculatedLeft,
+          width: menuWidth,
+        });
+      }
+    };
+
+    updateCoords();
+    window.addEventListener('resize', updateCoords);
+    window.addEventListener('scroll', updateCoords, true);
+    return () => {
+      window.removeEventListener('resize', updateCoords);
+      window.removeEventListener('scroll', updateCoords, true);
+    };
+  }, [isOpen]);
+
   const handleToggle = () => {
     if (disabled) return;
-    if (!isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: Math.max(180, rect.width),
-      });
-    }
     setIsOpen(!isOpen);
   };
 
   const handleCreate = async () => {
     if (!onCreate || !searchTerm.trim()) return;
-    await onCreate(searchTerm.trim());
+    const termToCreate = searchTerm.trim();
     setSearchTerm('');
     setIsOpen(false);
+    await onCreate(termToCreate);
   };
 
   return (
@@ -147,6 +177,17 @@ export function CustomDropdown({
             )}
 
             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+              {creatable && searchTerm.trim() && (
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  className="flex w-full items-center gap-2 p-2.5 rounded-lg text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 hover:bg-primary-100 dark:hover:bg-primary-900/60 border border-dashed border-primary-500/40 transition-colors text-left"
+                >
+                  <Plus className="h-4 w-4 shrink-0 text-primary-500" />
+                  <span className="truncate">Create New Customer "{searchTerm.trim()}"</span>
+                </button>
+              )}
+
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((opt) => {
                   const isSelected = String(opt.value) === String(value);
@@ -173,9 +214,9 @@ export function CustomDropdown({
                     </button>
                   );
                 })
-              ) : (
+              ) : !creatable || !searchTerm.trim() ? (
                 <div className="p-4 text-center text-xs text-slate-400 italic">No options found</div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -199,7 +240,13 @@ export function CustomDropdown({
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && creatable) {
+                        e.preventDefault();
+                        handleCreate();
+                      }
+                    }}
+                    placeholder="Search customer name or phone..."
                     className="w-full bg-transparent border-0 p-0 focus:outline-none text-xs text-slate-900 dark:text-white placeholder:text-slate-400 font-medium"
                     onClick={(e) => e.stopPropagation()}
                   />
@@ -207,6 +254,17 @@ export function CustomDropdown({
               )}
 
               <div className="overflow-y-auto max-h-52 custom-scrollbar p-0.5 space-y-0.5">
+                {creatable && searchTerm.trim() && (
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 hover:bg-primary-100 dark:hover:bg-primary-900/60 border border-dashed border-primary-500/40 transition-colors text-left"
+                  >
+                    <Plus className="h-4 w-4 shrink-0 text-primary-500" />
+                    <span className="truncate">Create New Customer "{searchTerm.trim()}"</span>
+                  </button>
+                )}
+
                 {filteredOptions.length > 0 ? (
                   filteredOptions.map((opt) => {
                     const isSelected = String(opt.value) === String(value);
@@ -233,11 +291,11 @@ export function CustomDropdown({
                       </button>
                     );
                   })
-                ) : (
+                ) : !creatable || !searchTerm.trim() ? (
                   <div className="px-3 py-3 text-center text-xs text-slate-400 italic">
                     No options found
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

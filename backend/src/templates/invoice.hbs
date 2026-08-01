@@ -172,11 +172,19 @@
     <!-- Header -->
     <div class="header">
       <div class="store-brand">
-        <div class="store-logo">GM</div>
+        {{#if storeLogo}}
+        <img src="{{storeLogo}}" alt="{{storeName}}" style="max-width: 48px; max-height: 48px; object-fit: contain; border-radius: 6px;" />
+        {{else}}
+        <div class="store-logo">{{storeInitials}}</div>
+        {{/if}}
         <div>
           <div class="store-title">{{storeName}}</div>
-          <div class="store-sub">{{storeAddress}}</div>
-          <div class="store-sub font-mono">GSTIN: {{storeGstin}} | FSSAI: {{storeFssai}}</div>
+          {{#if storeAddress}}<div class="store-sub">{{storeAddress}}</div>{{/if}}
+          <div class="store-sub font-mono">
+            {{#if storeGstin}}GSTIN: {{storeGstin}}{{/if}}
+            {{#if storeGstin}}{{#if storeFssai}} | {{/if}}{{/if}}
+            {{#if storeFssai}}FSSAI: {{storeFssai}}{{/if}}
+          </div>
         </div>
       </div>
       <div class="text-right">
@@ -193,10 +201,10 @@
         <div class="meta-row">Payment Mode: <strong style="color: #16a34a; text-transform: uppercase;">{{paymentMethod}}</strong></div>
       </div>
       <div class="meta-col text-right">
-        <div class="meta-row">Billed By: <strong>{{cashierName}}</strong></div>
-        <div class="meta-row">Customer: <strong>{{customerName}}</strong></div>
+        <div class="meta-row">Cashier (Billed By): <strong>{{cashierName}}</strong></div>
+        <div class="meta-row">Customer Name: <strong>{{customerName}}</strong></div>
         {{#if customerPhone}}
-        <div class="meta-row">Phone: <strong class="font-mono">{{customerPhone}}</strong></div>
+        <div class="meta-row">Customer Phone: <strong class="font-mono">{{customerPhone}}</strong></div>
         {{/if}}
       </div>
     </div>

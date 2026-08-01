@@ -11,6 +11,7 @@ const productInclude = {
 };
 
 const orderInclude = {
+  store: { select: { id: true, name: true, address: true, phone: true, gstin: true } },
   items: { include: { product: true, variant: true } },
   payment: true,
   bill: true,
@@ -567,34 +568,112 @@ export class StorePanelRepository {
   }
 
   async createPosOrder(storeId, payload, staffUserId) {
-    const { customerName, customerPhone, customerId, discount = 0, paymentMethod = "CASH", notes, items } = payload;
+    const { customerName, customerPhone, customerId, staffId, discount = 0, paymentMethod = "CASH", notes, items } = payload;
 
     return await prisma.$transaction(async (tx) => {
-      // 1. Resolve Customer if phone/name provided
-      let finalCustomerId = customerId || null;
-      if (!finalCustomerId && customerPhone) {
-        let userObj = await tx.user.findUnique({ where: { phone: customerPhone } });
+      // 1. Resolve Customer (StoreCustomer & User mapping)
+      let finalCustomerId = null;
+      let targetStoreCustomer = null;
+      let targetPhone = customerPhone?.trim() || null;
+      let targetName = customerName?.trim() || "POS Customer";
+
+      // If customerId is supplied from frontend (can be StoreCustomer.id or User.id)
+      if (customerId) {
+        targetStoreCustomer = await tx.storeCustomer.findFirst({
+          where: { id: customerId, storeId },
+        });
+
+        if (!targetStoreCustomer) {
+          targetStoreCustomer = await tx.storeCustomer.findUnique({
+            where: { id: customerId },
+          }).catch(() => null);
+        }
+
+        if (targetStoreCustomer) {
+          targetPhone = targetStoreCustomer.phone || targetPhone;
+          targetName = targetStoreCustomer.name || targetName;
+        } else {
+          const directUser = await tx.user.findUnique({ where: { id: customerId } }).catch(() => null);
+          if (directUser) {
+            finalCustomerId = directUser.id;
+            targetPhone = directUser.phone || targetPhone;
+            targetName = directUser.name || targetName;
+          }
+        }
+      }
+
+      // If phone is available, resolve or create User and StoreCustomer records
+      if (targetPhone) {
+        let userObj = await tx.user.findUnique({ where: { phone: targetPhone } });
         if (!userObj) {
           userObj = await tx.user.create({
             data: {
-              phone: customerPhone,
-              name: customerName || "POS Customer",
+              phone: targetPhone,
+              name: targetName,
               status: "active",
             },
           });
         }
         finalCustomerId = userObj.id;
 
-        // Ensure StoreCustomer record
-        let storeCust = await tx.storeCustomer.findFirst({ where: { storeId, userId: userObj.id } });
-        if (!storeCust) {
-          await tx.storeCustomer.create({
-            data: { storeId, userId: userObj.id },
+        // Ensure StoreCustomer record exists for this store
+        if (!targetStoreCustomer) {
+          targetStoreCustomer = await tx.storeCustomer.findFirst({
+            where: { storeId, phone: targetPhone },
           });
+
+          if (!targetStoreCustomer) {
+            targetStoreCustomer = await tx.storeCustomer.create({
+              data: {
+                storeId,
+                name: targetName,
+                phone: targetPhone,
+              },
+            });
+          }
         }
       }
 
-      // 2. Compute Item Subtotals & Taxes
+      // 2. Resolve Staff / Cashier (StoreStaff -> User mapping)
+      let finalStaffId = staffUserId || null;
+      const targetStaffId = staffId || staffUserId;
+
+      if (targetStaffId) {
+        const storeStaffObj = await tx.storeStaff.findFirst({
+          where: { id: targetStaffId },
+          include: { user: true },
+        }).catch(() => null);
+
+        if (storeStaffObj) {
+          if (storeStaffObj.userId) {
+            finalStaffId = storeStaffObj.userId;
+          } else if (storeStaffObj.phone) {
+            let staffUser = await tx.user.findUnique({ where: { phone: storeStaffObj.phone } });
+            if (!staffUser) {
+              staffUser = await tx.user.create({
+                data: {
+                  phone: storeStaffObj.phone,
+                  name: storeStaffObj.name || "Cashier Staff",
+                  email: storeStaffObj.email || undefined,
+                  status: "active",
+                },
+              });
+              await tx.storeStaff.update({
+                where: { id: storeStaffObj.id },
+                data: { userId: staffUser.id },
+              }).catch(() => {});
+            }
+            finalStaffId = staffUser.id;
+          }
+        } else {
+          const directStaffUser = await tx.user.findUnique({ where: { id: targetStaffId } }).catch(() => null);
+          if (directStaffUser) {
+            finalStaffId = directStaffUser.id;
+          }
+        }
+      }
+
+      // 3. Compute Item Subtotals & Taxes
       let subtotal = 0;
       let totalTax = 0;
       const processedItems = [];
@@ -608,12 +687,12 @@ export class StorePanelRepository {
           throw new Error(`Product not found for ID: ${item.productId}`);
         }
 
-        // Check available stock
+        // Check available stock (from StoreInventory or Product fallback)
         const inv = await tx.storeInventory.findFirst({
           where: { storeId, productId: item.productId },
         });
 
-        const availableQty = inv?.quantity || 0;
+        const availableQty = inv ? inv.quantity : (product.quantity ?? 9999);
         if (availableQty < item.quantity) {
           throw new Error(`Insufficient stock for "${product.name}". Available: ${availableQty}, Requested: ${item.quantity}`);
         }
@@ -663,6 +742,7 @@ export class StorePanelRepository {
         });
 
         // Deduct Inventory Stock
+        const deltaQty = Math.round(-item.quantity);
         if (inv) {
           await tx.storeInventory.update({
             where: { id: inv.id },
@@ -672,9 +752,26 @@ export class StorePanelRepository {
           await tx.stockLog.create({
             data: {
               inventoryId: inv.id,
-              delta: -item.quantity,
+              delta: deltaQty,
               reason: "POS Counter Sale",
-              staffId: staffUserId || null,
+              staffId: finalStaffId,
+            },
+          });
+        } else {
+          const newInv = await tx.storeInventory.create({
+            data: {
+              storeId,
+              productId: product.id,
+              quantity: Math.max(0, (product.quantity || 0) - item.quantity),
+            },
+          });
+
+          await tx.stockLog.create({
+            data: {
+              inventoryId: newInv.id,
+              delta: deltaQty,
+              reason: "POS Counter Sale",
+              staffId: finalStaffId,
             },
           });
         }
@@ -693,13 +790,13 @@ export class StorePanelRepository {
       const orderCount = await tx.order.count({ where: { storeId } });
       const orderNumber = `POS-${Date.now().toString().slice(-6)}-${orderCount + 1}`;
 
-      // 3. Create POS Order
+      // 4. Create POS Order
       const order = await tx.order.create({
         data: {
           orderNumber,
           storeId,
           customerId: finalCustomerId,
-          staffId: staffUserId || null,
+          staffId: finalStaffId,
           type: "POS",
           status: "COMPLETED",
           subtotal,
@@ -724,7 +821,6 @@ export class StorePanelRepository {
       });
 
       // 5. Generate Invoice Bill Record
-      // 5. Generate Invoice Bill Record
       const billNumber = `INV-${Date.now().toString().slice(-6)}`;
       await tx.bill.create({
         data: {
@@ -736,44 +832,33 @@ export class StorePanelRepository {
       });
 
       // 6. Handle Khata / Credit Ledger if paymentMethod === "CREDIT"
-      if (paymentMethod === "CREDIT" && finalCustomerId) {
-        const storeCustomer = await tx.storeCustomer.findFirst({
-          where: { storeId, userId: finalCustomerId },
+      if (paymentMethod === "CREDIT" && targetStoreCustomer) {
+        await tx.storeCustomer.update({
+          where: { id: targetStoreCustomer.id },
+          data: {
+            khataBalance: { increment: totalAmount },
+          },
         });
-
-        if (storeCustomer) {
-          await tx.storeCustomer.update({
-            where: { id: storeCustomer.id },
-            data: {
-              dueAmount: { increment: totalAmount },
-              khataBalance: { decrement: totalAmount },
-            },
-          });
-        }
       }
 
-      // 7. Update Customer Total Orders / Lifetime Spend if customer exists
-      if (finalCustomerId) {
-        const storeCustomer = await tx.storeCustomer.findFirst({
-          where: { storeId, userId: finalCustomerId },
+      // 7. Update Customer Total Orders / Lifetime Spend if store customer exists
+      if (targetStoreCustomer) {
+        await tx.storeCustomer.update({
+          where: { id: targetStoreCustomer.id },
+          data: {
+            totalOrders: { increment: 1 },
+            totalSpent: { increment: totalAmount },
+          },
         });
+      }
 
-        if (storeCustomer) {
-          await tx.storeCustomer.update({
-            where: { id: storeCustomer.id },
-            data: {
-              totalOrders: { increment: 1 },
-              totalSpent: { increment: totalAmount },
-            },
-          });
-
-          await tx.user.update({
-            where: { id: finalCustomerId },
-            data: {
-              loyaltyPoints: { increment: Math.floor(totalAmount / 100) * 10 },
-            },
-          });
-        }
+      if (finalCustomerId) {
+        await tx.user.update({
+          where: { id: finalCustomerId },
+          data: {
+            loyaltyPoints: { increment: Math.floor(totalAmount / 100) * 10 },
+          },
+        }).catch(() => {});
       }
 
       // 8. Return created order with full relationships
@@ -881,9 +966,7 @@ export class StorePanelRepository {
 
     if (!customers || customers.length === 0) {
       customers = await prisma.user.findMany({
-        where: {
-          userType: "CUSTOMER"
-        },
+        where: {},
         include: {
           orders: {
             select: { id: true, totalAmount: true, createdAt: true, status: true, orderNumber: true, type: true },

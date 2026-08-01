@@ -275,7 +275,6 @@ export const useCreatePosOrder = () => {
       queryClient.invalidateQueries({ queryKey: ['store-batches'] });
       queryClient.invalidateQueries({ queryKey: ['store-customers'] });
       queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
-      toast.success('POS Counter Sale completed successfully!');
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to complete POS sale.');
