@@ -185,7 +185,7 @@ export class StorePanelService {
 
     const name = payload.name?.trim();
     const phone = payload.phone?.trim();
-    const email = payload.email?.trim();
+    const email = payload.email?.trim() || null;
 
     if (!name || name.length < 2) {
       throw new AppError("Customer name must be at least 2 characters long", 400);
@@ -193,8 +193,8 @@ export class StorePanelService {
     if (!phone || !/^\d{10}$/.test(phone)) {
       throw new AppError("Valid 10-digit mobile phone number is compulsory", 400);
     }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new AppError("Valid email address is compulsory", 400);
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new AppError("Invalid email address format", 400);
     }
 
     const data = await storePanelRepository.createCustomer(storeId, {
@@ -230,9 +230,9 @@ export class StorePanelService {
     }
 
     if (payload.email !== undefined) {
-      const email = payload.email?.trim();
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new AppError("Valid email address is compulsory", 400);
+      const email = payload.email?.trim() || null;
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new AppError("Invalid email address format", 400);
       }
       updateData.email = email;
     }

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import handlebars from 'handlebars';
 import puppeteer from 'puppeteer';
+import { uploadToCloudflare } from './cloudflare.js';
 
 // Register Handlebars helpers
 handlebars.registerHelper('increment', function (value) {
@@ -31,16 +32,43 @@ export async function generateInvoicePdf(orderData) {
     });
 
     const taxAmount = Number(orderData.taxAmount || 0);
+
+    // Format Date & Time accurately in Asia/Kolkata timezone
+    const rawDate = orderData.createdAt ? new Date(orderData.createdAt) : new Date();
+    const validDate = isNaN(rawDate.getTime()) ? new Date() : rawDate;
+    const formattedDate = validDate.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    const storeName = orderData.store?.name || orderData.storeName || 'Store Invoice';
+    const storeAddress = orderData.store?.address || orderData.storeAddress || '';
+    const storeGstin = orderData.store?.gstin || '';
+    const storeLogo = orderData.store?.logo || orderData.store?.logoUrl || orderData.store?.imageUrl || orderData.storeLogo || null;
+
+    // Compute store initials / abbreviation (e.g., "Indiranagar Supermarket" -> "IS")
+    const storeInitials = storeName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word[0])
+      .join('')
+      .substring(0, 3)
+      .toUpperCase() || 'ST';
+
     const invoiceContext = {
-      orderNumber: orderData.orderNumber || `POS-${orderData.id.slice(-6)}`,
-      invoiceDate: new Date(orderData.createdAt || Date.now()).toLocaleString('en-IN', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }),
-      storeName: orderData.store?.name || 'GROCERY MART STORE',
-      storeAddress: orderData.store?.address || 'Main Commercial Market',
-      storeGstin: orderData.store?.gstin || '07AAAAA0000A1Z5',
-      storeFssai: '10021011000123',
+      orderNumber: orderData.orderNumber || `POS-${orderData.id?.slice(-6) || '000000'}`,
+      invoiceDate: formattedDate,
+      storeName,
+      storeLogo,
+      storeInitials,
+      storeAddress,
+      storeGstin,
+      storeFssai: orderData.store?.fssai || '10021011000123',
       paymentMethod: orderData.payment?.method || orderData.paymentMethod || 'CASH',
       cashierName: orderData.staff?.name || 'Store Cashier',
       customerName: orderData.customer?.name || 'Walk-in Customer',
@@ -79,17 +107,35 @@ export async function generateInvoicePdf(orderData) {
 
     await browser.close();
 
-    // 4. Save PDF to public/uploads/invoices directory
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'invoices');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+    // 4. Save PDF to Cloudflare R2 bucket (with local disk fallback for dev)
+    const filename = `invoice-${orderData.orderNumber || orderData.id}.pdf`;
+    const r2Key = `invoices/${filename}`;
+    let relativeUrl = `/uploads/invoices/${filename}`;
+    let filePath = null;
+
+    try {
+      if (process.env.R2_BUCKET_NAME && process.env.R2_ACCOUNT_ID) {
+        relativeUrl = await uploadToCloudflare(pdfBuffer, 'application/pdf', filename, r2Key);
+      } else {
+        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'invoices');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        filePath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filePath, pdfBuffer);
+        relativeUrl = `/uploads/invoices/${filename}`;
+      }
+    } catch (r2Err) {
+      console.warn('Cloudflare R2 invoice upload failed, using local fallback:', r2Err.message);
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'invoices');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      filePath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filePath, pdfBuffer);
+      relativeUrl = `/uploads/invoices/${filename}`;
     }
 
-    const filename = `invoice-${orderData.orderNumber || orderData.id}.pdf`;
-    const filePath = path.join(uploadsDir, filename);
-    fs.writeFileSync(filePath, pdfBuffer);
-
-    const relativeUrl = `/uploads/invoices/${filename}`;
     return { pdfBuffer, filename, filePath, relativeUrl };
   } catch (error) {
     console.error('Failed to generate PDF via Puppeteer:', error);

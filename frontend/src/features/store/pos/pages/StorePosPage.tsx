@@ -70,16 +70,24 @@ export default function StorePosPage() {
     ? todayOrdersData
     : (Array.isArray(todayOrdersData?.data) ? todayOrdersData.data : []);
 
-  // Staff Dropdown Options (ONLY SHOWING STAFF NAMES)
+  // Cashier Dropdown Options (STRICTLY CASHIER ROLE ONLY)
   const staffOptions = useMemo(() => {
     if (!staffList || staffList.length === 0) {
-      return [{ value: '', label: 'No registered staff found' }];
+      return [{ value: '', label: 'No registered cashiers found' }];
     }
+
+    const cashiers = staffList.filter((s: any) => {
+      const r = String(s.role || s.designation || s.user?.role?.name || s.user?.role || '').toUpperCase();
+      return r === 'CASHIER' || r.includes('CASHIER');
+    });
+
+    const displayList = cashiers.length > 0 ? cashiers : staffList;
+
     return [
-      { value: '', label: 'Select Staff Member' },
-      ...staffList.map((s: any) => ({
+      { value: '', label: 'Select Cashier Name' },
+      ...displayList.map((s: any) => ({
         value: s.id || s.userId,
-        label: `🧑‍💼 ${s.name || s.user?.name || 'Staff Member'} (${s.role || s.designation || 'Staff'})`,
+        label: `🧑‍💼 ${s.name || s.user?.name || 'Cashier'}`,
       })),
     ];
   }, [staffList]);
@@ -366,31 +374,37 @@ export default function StorePosPage() {
   // Submit POS Order Checkout
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast.error('Your POS sales cart is empty!');
+      toast.error('Sales cart is empty. Add products to proceed.');
+      return;
+    }
+
+    if (!selectedStaffId) {
+      toast.error('Please choose a cashier.');
+      return;
+    }
+
+    if (!selectedCustomerId) {
+      toast.error('Please select or register a customer.');
       return;
     }
 
     if (paymentMethod === 'CASH') {
       const tendered = parseFloat(cashTendered);
       if (!cashTendered.trim() || isNaN(tendered) || tendered <= 0) {
-        toast.error('Please enter the cash amount received from customer.');
+        toast.error('Please enter the cash amount received.');
         return;
       }
       if (tendered < grandTotal) {
-        toast.error(`Cash received (₹${tendered.toFixed(2)}) is less than Grand Total (₹${grandTotal.toFixed(2)}).`);
+        toast.error(`Cash received (₹${tendered.toFixed(2)}) is less than total amount (₹${grandTotal.toFixed(2)}).`);
         return;
       }
-    }
-
-    if (paymentMethod === 'CREDIT' && !selectedCustomerId) {
-      toast.error('Khata / Credit payment requires selecting a registered customer.');
-      return;
     }
 
     createPosOrderMutation.mutate(
       {
         storeId,
-        customerId: selectedCustomerId || undefined,
+        staffId: selectedStaffId,
+        customerId: selectedCustomerId,
         discount: discountValue,
         paymentMethod,
         notes: orderNotes || undefined,
@@ -408,7 +422,7 @@ export default function StorePosPage() {
           setDiscountValue(0);
           setCashTendered('');
           setOrderNotes('');
-          toast.success('🎉 POS Counter Sale completed!');
+          // Success Modal opens automatically via setCompletedOrder
         },
       }
     );
@@ -449,21 +463,48 @@ export default function StorePosPage() {
       });
   };
 
+  // Open New Customer Modal with prefilled phone/name from search term
+  const handleOpenNewCustomerModal = (initialSearchTerm?: string) => {
+    let name = '';
+    let phone = '';
+    if (initialSearchTerm && typeof initialSearchTerm === 'string') {
+      const trimmed = initialSearchTerm.trim();
+      const digitsOnly = trimmed.replace(/\D/g, '');
+      const nonDigits = trimmed.replace(/[0-9]/g, '').trim();
+
+      if (digitsOnly.length >= 7) {
+        phone = digitsOnly.slice(0, 10);
+        name = nonDigits;
+      } else {
+        name = trimmed;
+      }
+    }
+    setNewCustForm({ name, phone, email: '' });
+    setShowNewCustomerModal(true);
+  };
+
   // Create Quick Customer Submit
   const handleCreateCustomerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCustForm.name || !newCustForm.phone) {
-      toast.error('Name and 10-digit phone number are required.');
+    if (!newCustForm.name?.trim() || !newCustForm.phone?.trim()) {
+      toast.error('Customer name and 10-digit phone number are required.');
+      return;
+    }
+    if (!/^\d{10}$/.test(newCustForm.phone.trim())) {
+      toast.error('Valid 10-digit mobile phone number is required.');
       return;
     }
 
     createCustomerMutation.mutate(
       {
         storeId,
-        ...newCustForm,
+        name: newCustForm.name.trim(),
+        phone: newCustForm.phone.trim(),
+        email: newCustForm.email?.trim() || undefined,
       },
       {
         onSuccess: (res: any) => {
+          toast.success(`Customer "${newCustForm.name}" registered successfully`);
           setShowNewCustomerModal(false);
           setNewCustForm({ name: '', phone: '', email: '' });
           if (res?.data?.userId || res?.data?.id) {
@@ -513,6 +554,7 @@ export default function StorePosPage() {
           selectedCustomerId={selectedCustomerId}
           setSelectedCustomerId={setSelectedCustomerId}
           setShowNewCustomerModal={setShowNewCustomerModal}
+          handleOpenNewCustomerModal={handleOpenNewCustomerModal}
           selectedCustomerObj={selectedCustomerObj}
           cart={cart}
           handleUpdateQuantity={handleUpdateQuantity}
