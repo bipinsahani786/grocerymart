@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format, parseISO, isValid, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from 'date-fns';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createPortal } from 'react-dom';
 
@@ -30,7 +30,7 @@ export function CustomDatePicker({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
-  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties | null>(null);
 
   // Parse the currently selected date
   const selectedDate = value ? parseISO(value) : null;
@@ -63,24 +63,55 @@ export function CustomDatePicker({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
+  const handleToggle = () => {
+    if (disabled) return;
+    const nextOpen = !isOpen;
+    if (nextOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      
-      // Basic positioning
       let top = rect.bottom + window.scrollY + 8;
       const left = rect.left + window.scrollX;
       
-      // Check if it goes off bottom of screen
       if (top + 320 > window.scrollY + window.innerHeight) {
-        top = rect.top + window.scrollY - 320 - 8; // pop up instead
+        top = rect.top + window.scrollY - 320 - 8;
       }
-
       setPopupStyle({
         top: `${top}px`,
         left: `${left}px`,
       });
+    } else {
+      setPopupStyle(null);
     }
+    setIsOpen(nextOpen);
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPopupStyle(null);
+      return;
+    }
+    const updateCoords = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        let top = rect.bottom + window.scrollY + 8;
+        const left = rect.left + window.scrollX;
+        
+        if (top + 320 > window.scrollY + window.innerHeight) {
+          top = rect.top + window.scrollY - 320 - 8;
+        }
+
+        setPopupStyle({
+          top: `${top}px`,
+          left: `${left}px`,
+        });
+      }
+    };
+
+    window.addEventListener('resize', updateCoords);
+    window.addEventListener('scroll', updateCoords, true);
+    return () => {
+      window.removeEventListener('resize', updateCoords);
+      window.removeEventListener('scroll', updateCoords, true);
+    };
   }, [isOpen]);
 
   const handlePreviousMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
@@ -111,7 +142,7 @@ export function CustomDatePicker({
           <button
             type="button"
             onClick={handlePreviousMonth}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -121,7 +152,7 @@ export function CustomDatePicker({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -162,7 +193,7 @@ export function CustomDatePicker({
     );
   };
 
-  const popoverContent = isOpen ? (
+  const popoverContent = isOpen && popupStyle ? (
     <div 
       ref={popupRef}
       style={popupStyle}
@@ -181,7 +212,7 @@ export function CustomDatePicker({
         <button
           type="button"
           disabled={disabled}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={handleToggle}
           className={cn(
             "flex w-full h-full items-center justify-between px-2.5 py-1 text-sm text-left transition-all",
             "bg-transparent focus:outline-none focus:ring-0",
@@ -189,24 +220,26 @@ export function CustomDatePicker({
           )}
         >
           <div className="flex items-center gap-2 overflow-hidden flex-1">
-            <CalendarIcon className="h-4 w-4 text-slate-400 shrink-0" />
+            <CalendarIcon className="h-4 w-4 text-slate-400 dark:text-zinc-400 shrink-0" />
             <span className={cn("truncate font-medium", !isSelectedValid && "text-slate-400 dark:text-slate-500")}>
               {isSelectedValid ? format(selectedDate, "MMM d, yyyy") : placeholder}
             </span>
           </div>
-          {isSelectedValid && !disabled && (
+          {isSelectedValid && !disabled ? (
             <div 
               role="button"
               tabIndex={0}
               onClick={handleClear}
-              className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ml-1 transition-colors"
+              className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-400 dark:text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 ml-1 transition-colors"
             >
               <X className="h-3.5 w-3.5" />
             </div>
+          ) : (
+            <ChevronDown className="h-4 w-4 text-slate-400 dark:text-zinc-500 shrink-0 ml-1" />
           )}
         </button>
       </div>
-      {isOpen && createPortal(popoverContent, document.body)}
+      {isOpen && popupStyle && createPortal(popoverContent, document.body)}
     </>
   );
 }

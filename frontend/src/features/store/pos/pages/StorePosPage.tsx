@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -372,13 +372,23 @@ export default function StorePosPage() {
   }, [cart]);
 
   const grandTotal = useMemo(() => {
-    return Math.max(0, cartSubtotal + totalTaxAmount - (discountValue || 0));
+    const discountAmt = (cartSubtotal * (discountValue || 0)) / 100;
+    return Math.max(0, cartSubtotal + totalTaxAmount - discountAmt);
   }, [cartSubtotal, totalTaxAmount, discountValue]);
 
   const cashChangeDue = useMemo(() => {
     const tendered = parseFloat(cashTendered) || 0;
     return Math.max(0, tendered - grandTotal);
   }, [cashTendered, grandTotal]);
+
+  // Auto-fill cash received (cashTendered) with grandTotal by default
+  useEffect(() => {
+    if (paymentMethod === 'CASH') {
+      setCashTendered(grandTotal > 0 ? grandTotal.toFixed(2) : '');
+    } else {
+      setCashTendered('');
+    }
+  }, [grandTotal, paymentMethod]);
 
   // Submit POS Order Checkout
   const handleCheckout = () => {
@@ -414,7 +424,7 @@ export default function StorePosPage() {
         storeId,
         staffId: selectedStaffId,
         customerId: selectedCustomerId,
-        discount: discountValue,
+        discount: (cartSubtotal * (discountValue || 0)) / 100,
         paymentMethod,
         notes: orderNotes || undefined,
         items: cart.map((item) => ({

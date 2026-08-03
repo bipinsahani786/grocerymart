@@ -193,7 +193,7 @@ export function OrderDetail({
               >
                 <div className="min-w-0">
                   <p className="font-bold text-slate-900 dark:text-white truncate">
-                    {item.productName || item.product?.name}
+                    {item.name || item.productName || item.product?.name}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-[10px] font-semibold text-muted-foreground">
@@ -206,7 +206,7 @@ export function OrderDetail({
                   </div>
                 </div>
                 <span className="font-extrabold shrink-0 text-slate-950 dark:text-white">
-                  ₹{(item.price !== undefined ? item.price : (item.product?.basePrice || 0)) * (item.qty || item.quantity || 1)}
+                  ₹{((item.priceAtOrder !== undefined && item.priceAtOrder !== null) ? item.priceAtOrder : (item.price !== undefined ? item.price : (item.product?.basePrice || 0))) * (item.qty || item.quantity || 1)}
                 </span>
               </div>
             ))}

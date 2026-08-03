@@ -31,6 +31,7 @@ import { useStoreProducts } from '@/features/store/api/useStorePanel';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 import { Modal } from '@/components/ui/modal';
 import { toast } from 'sonner';
 
@@ -714,12 +715,14 @@ export default function StorePurchasesPage() {
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-muted-foreground uppercase">Invoice Date</label>
-              <Input
-                type="date"
-                value={poForm.invoiceDate}
-                onChange={(e) => setPoForm((p) => ({ ...p, invoiceDate: e.target.value }))}
-                className="text-xs font-mono"
-              />
+              <div className="flex items-center bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg overflow-hidden h-9 shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all">
+                <CustomDatePicker
+                  value={poForm.invoiceDate}
+                  onChange={(val) => setPoForm((p) => ({ ...p, invoiceDate: val }))}
+                  placeholder="Select Invoice Date"
+                  className="h-full font-mono text-xs"
+                />
+              </div>
             </div>
           </div>
 
@@ -784,12 +787,14 @@ export default function StorePurchasesPage() {
 
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-muted-foreground uppercase">Expiry Date</label>
-                        <Input
-                          type="date"
-                          value={item.expiryDate}
-                          onChange={(e) => handleUpdatePOItem(idx, 'expiryDate', e.target.value)}
-                          className="text-xs font-mono"
-                        />
+                        <div className="flex items-center bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg overflow-hidden h-9 shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all">
+                          <CustomDatePicker
+                            value={item.expiryDate || ''}
+                            onChange={(val) => handleUpdatePOItem(idx, 'expiryDate', val)}
+                            placeholder="Select Expiry"
+                            className="h-full font-mono text-xs"
+                          />
+                        </div>
                       </div>
                     </div>
 
