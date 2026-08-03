@@ -8,14 +8,13 @@ import {
   Percent,
   Check,
   Eye,
-  TrendingUp,
-  Sparkles,
   ShieldCheck,
   Receipt,
   Calendar,
   Trash2
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -538,86 +537,41 @@ export default function StorePurchasesPage() {
         {/* ── RICH MODERN KPI CARDS ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-page-enter">
           
-          {/* Card 1: Total Purchase Volume */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 p-5 shadow-xs transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  Total Purchase Spend
-                </p>
-                <h3 className="font-mono font-black text-2xl text-foreground mt-1">
-                  ₹{totalPurchaseVolume.toLocaleString('en-IN')}
-                </h3>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-md">
-                <ShoppingBag className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1 font-medium">
-              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" /> Total inward invoice volume
-            </p>
-          </div>
+          <CustomKpiCard
+            title="Total Purchase Spend"
+            value={`₹${totalPurchaseVolume.toLocaleString('en-IN')}`}
+            subtitle="Total inward invoice volume"
+            icon={<ShoppingBag />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
 
-          {/* Card 2: Active Stock Batches */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 p-5 shadow-xs transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                  Active Stock Batches
-                </p>
-                <h3 className="font-mono font-black text-2xl text-foreground mt-1">
-                  {activeBatchesCount}
-                </h3>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-blue-500 text-white flex items-center justify-center shadow-md">
-                <Layers className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1 font-medium">
-              <ShieldCheck className="h-3.5 w-3.5 text-blue-500" /> Locked tax rates per batch
-            </p>
-          </div>
+          <CustomKpiCard
+            title="Active Stock Batches"
+            value={activeBatchesCount}
+            subtitle="Locked tax rates per batch"
+            icon={<Layers />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
 
-          {/* Card 3: Registered Suppliers */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 p-5 shadow-xs transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                  Registered Vendors
-                </p>
-                <h3 className="font-mono font-black text-2xl text-foreground mt-1">
-                  {suppliersCount}
-                </h3>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-md">
-                <Building2 className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1 font-medium">
-              <Sparkles className="h-3.5 w-3.5 text-indigo-500" /> Verified supplier accounts
-            </p>
-          </div>
+          <CustomKpiCard
+            title="Registered Vendors"
+            value={suppliersCount}
+            subtitle="Verified supplier accounts"
+            icon={<Building2 />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
 
-          {/* Card 4: Purchase Bills Logged */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-5 shadow-xs transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                  Inward Orders Logged
-                </p>
-                <h3 className="font-mono font-black text-2xl text-foreground mt-1">
-                  {purchaseOrders.length}
-                </h3>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md">
-                <FileText className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1 font-medium">
-              <Receipt className="h-3.5 w-3.5 text-amber-500" /> Goods receipt notes (GRN)
-            </p>
-          </div>
-
+          <CustomKpiCard
+            title="Inward Orders Logged"
+            value={purchaseOrders.length}
+            subtitle="Goods receipt notes (GRN)"
+            icon={<FileText />}
+            colorClass="bg-primary-500"
+            iconColorClass="bg-white/20 text-white"
+          />
         </div>
 
         {/* ── SLEEK TABS NAVIGATION ── */}

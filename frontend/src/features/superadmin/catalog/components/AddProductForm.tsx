@@ -20,6 +20,7 @@ import {
   Building,
 } from 'lucide-react';
 import { useMasterCatalog } from '../api/useMasterCatalog';
+import { useTaxes } from '../../taxes/api/useTaxes';
 import type { MasterProduct } from '../schemas/catalogSchemas';
 import { toast } from 'sonner';
 
@@ -45,6 +46,7 @@ const parseImageUrls = (urls: any): string[] => {
 
 export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductFormProps) {
   const { flatCategories, createProduct, updateProduct } = useMasterCatalog();
+  const { taxes } = useTaxes();
   const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState<Partial<MasterProduct>>({
@@ -56,6 +58,8 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
     basePrice: initialData?.basePrice || 0,
     mrp: initialData?.mrp || 0,
     barcode: initialData?.barcode || '',
+    hsnCode: initialData?.hsnCode || '',
+    taxClassId: initialData?.taxClassId || '',
     imageUrls: parseImageUrls(initialData?.imageUrls),
     variants: initialData?.variants || [],
   });
@@ -282,6 +286,36 @@ export function AddProductForm({ onSuccess, onCancel, initialData }: AddProductF
               onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
               placeholder="8901234567890"
               icon={<Barcode className="w-4 h-4 text-slate-400" />}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              HSN Code
+            </label>
+            <Input
+              value={formData.hsnCode || ''}
+              onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
+              placeholder="e.g. 1905"
+              icon={<Tag className="w-4 h-4 text-slate-400" />}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Tax Class
+            </label>
+            <CustomDropdown
+              options={[
+                { value: '', label: 'No Tax / Default 0%' },
+                ...(taxes || []).filter(t => t.isActive).map(t => ({
+                  value: t.id,
+                  label: t.name
+                }))
+              ]}
+              value={formData.taxClassId || ''}
+              onChange={(val) => setFormData({ ...formData, taxClassId: String(val) })}
+              placeholder="Select Tax Class"
             />
           </div>
         </div>

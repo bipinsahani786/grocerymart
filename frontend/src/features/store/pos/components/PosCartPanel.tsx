@@ -27,6 +27,7 @@ export interface CartItem {
   mrp?: number;
   unit?: string;
   taxRate: number;
+  taxSplit?: any;
   quantity: number;
   availableQty: number;
 }

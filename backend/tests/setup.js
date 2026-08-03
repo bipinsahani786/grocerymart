@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 import { prisma } from '../config/prisma.js';
 
 beforeEach(() => {
-  const models = ['user', 'store', 'product', 'order', 'category', 'bill', 'inventory', 'shift', 'settings'];
+  const models = ['user', 'store', 'product', 'order', 'category', 'bill', 'inventory', 'shift', 'settings', 'systemSetting'];
   
   const genericMock = {
     id: 'generic-id', phone: '9876543210', email: 'test@example.com', passwordHash: 'hash',
