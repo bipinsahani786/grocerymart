@@ -263,15 +263,23 @@ export function PosCartPanel({
             <span className="font-mono font-bold text-foreground">₹{totalTaxAmount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center text-muted-foreground pt-1">
-            <span>Discount (₹)</span>
-            <Input
-              type="number"
-              min={0}
-              value={discountValue || ''}
-              onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-              placeholder="0"
-              className="w-20 h-7 text-right font-mono text-xs font-bold"
-            />
+            <span>Discount (%)</span>
+            <div className="flex items-center gap-1.5">
+              {discountValue > 0 && (
+                <span className="text-[10px] text-amber-500 font-bold">
+                  -₹{((cartSubtotal * discountValue) / 100).toFixed(2)}
+                </span>
+              )}
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={discountValue || ''}
+                onChange={(e) => setDiscountValue(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                placeholder="0"
+                className="w-20 h-7 text-right font-mono text-xs font-bold"
+              />
+            </div>
           </div>
 
           <div className="flex justify-between items-center pt-2 border-t border-border text-base font-black">

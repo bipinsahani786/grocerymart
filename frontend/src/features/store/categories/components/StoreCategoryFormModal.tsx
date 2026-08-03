@@ -98,14 +98,20 @@ export function StoreCategoryFormModal({
             {imageUrl ? (
               <div className="relative w-16 h-16 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 shadow-sm">
                 <SafeCategoryImage src={imageUrl} alt="Category preview" type="category" className="w-full h-full object-cover" iconSize="w-6 h-6" />
-                <button
-                  type="button"
-                  onClick={() => setImageUrl('')}
-                  className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md transition-colors cursor-pointer"
-                  title="Remove image"
-                >
-                  ×
-                </button>
+                {isUploading ? (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-white" />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md transition-colors cursor-pointer"
+                    title="Remove image"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             ) : (
               <label className="flex-1 flex flex-col items-center justify-center py-4 px-3 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl hover:border-primary-500/60 bg-white dark:bg-slate-900 cursor-pointer transition-colors">
