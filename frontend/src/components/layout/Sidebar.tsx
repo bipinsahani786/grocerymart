@@ -55,7 +55,7 @@ export const businessMenuGroups = [
         subtitle: "Daily store operations, orders, catalog and revenue",
       },
       {
-        name: "Live Orders",
+        name: "Orders",
         href: "/store/orders",
         icon: ClipboardCheck,
         subtitle: "Accept, pack and track POS, delivery and online store orders",

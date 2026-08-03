@@ -66,9 +66,11 @@ export default function StorePosPage() {
     ? staffData
     : (Array.isArray(staffData?.data) ? staffData.data : []);
 
-  const todayPosOrders = Array.isArray(todayOrdersData)
-    ? todayOrdersData
-    : (Array.isArray(todayOrdersData?.data) ? todayOrdersData.data : []);
+  const todayPosOrders = Array.isArray(todayOrdersData?.orders)
+    ? todayOrdersData.orders
+    : (Array.isArray(todayOrdersData)
+      ? todayOrdersData
+      : (Array.isArray(todayOrdersData?.data) ? todayOrdersData.data : []));
 
   // Cashier Dropdown Options (STRICTLY CASHIER ROLE ONLY)
   const staffOptions = useMemo(() => {
@@ -125,6 +127,11 @@ export default function StorePosPage() {
       const taxRate = prod.taxRate ||
         prod.taxClass?.rates?.[0]?.components?.reduce((sum: number, c: any) => sum + (c.rate || 0), 0) || 0;
 
+      const taxSplit = prod.taxClass?.rates?.[0]?.components?.reduce((acc: any, c: any) => {
+        acc[c.name] = c.rate;
+        return acc;
+      }, {}) || null;
+
       return {
         id: prod.id,
         name: prod.name || 'Unnamed Product',
@@ -134,6 +141,7 @@ export default function StorePosPage() {
         mrp: prod.mrp,
         unit: prod.unit || 'pcs',
         taxRate: taxRate,
+        taxSplit: taxSplit,
         categoryId: prod.categoryId,
         categoryName: prod.category?.name || 'General',
         availableQty: availableQty,
@@ -300,6 +308,7 @@ export default function StorePosPage() {
           mrp: product.mrp,
           unit: product.unit,
           taxRate: product.taxRate || 0,
+          taxSplit: product.taxSplit || null,
           quantity: 1,
           availableQty: product.availableQty,
         },
@@ -413,6 +422,7 @@ export default function StorePosPage() {
           quantity: item.quantity,
           price: item.price,
           taxRate: item.taxRate,
+          taxSplit: item.taxSplit,
         })),
       },
       {
@@ -486,6 +496,7 @@ export default function StorePosPage() {
   // Create Quick Customer Submit
   const handleCreateCustomerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!storeId) return;
     if (!newCustForm.name?.trim() || !newCustForm.phone?.trim()) {
       toast.error('Customer name and 10-digit phone number are required.');
       return;

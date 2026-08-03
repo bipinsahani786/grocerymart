@@ -8,6 +8,15 @@ const productInclude = {
       rack: true,
     },
   },
+  taxClass: {
+    include: {
+      rates: {
+        include: {
+          components: true,
+        },
+      },
+    },
+  },
 };
 
 const orderInclude = {
@@ -98,7 +107,21 @@ export class StorePanelRepository {
     };
   }
 
-  // ── Categories ──
+  // ====== Taxes ======
+  async getTaxes() {
+    return await prisma.taxClass.findMany({
+      where: { isActive: true },
+      include: {
+        rates: {
+          include: { components: true },
+          orderBy: { effectiveFrom: 'desc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // ====== Categories ──
   async getCategories(storeId, filters = {}) {
     const { page, limit, search, parentId, all } = filters;
 
@@ -254,6 +277,7 @@ export class StorePanelRepository {
           mrp: payload.mrp ? parseFloat(payload.mrp) : null,
           costPrice: payload.costPrice ? parseFloat(payload.costPrice) : null,
           hsnCode: payload.hsnCode || null,
+          ...(payload.taxClassId ? { taxClass: { connect: { id: payload.taxClassId } } } : {}),
           imageUrls: payload.imageUrls || [],
           showOnApp: payload.showOnApp !== undefined ? payload.showOnApp : (payload.showOnline !== undefined ? payload.showOnline : true),
           showOnPOS: payload.showOnPOS !== undefined ? payload.showOnPOS : (payload.showPOS !== undefined ? payload.showPOS : true),
@@ -334,6 +358,7 @@ export class StorePanelRepository {
         ...(payload.mrp !== undefined ? { mrp: payload.mrp !== null && payload.mrp !== '' ? parseFloat(payload.mrp) : null } : {}),
         ...(payload.costPrice !== undefined ? { costPrice: payload.costPrice !== null && payload.costPrice !== '' ? parseFloat(payload.costPrice) : null } : {}),
         ...(payload.hsnCode !== undefined ? { hsnCode: payload.hsnCode } : {}),
+        ...(payload.taxClassId !== undefined ? { taxClassId: payload.taxClassId } : {}),
         ...(payload.imageUrls !== undefined ? { imageUrls: payload.imageUrls } : {}),
         ...(payload.showOnApp !== undefined || payload.showOnline !== undefined ? { showOnApp: payload.showOnApp ?? payload.showOnline } : {}),
         ...(payload.showOnPOS !== undefined || payload.showPOS !== undefined ? { showOnPOS: payload.showOnPOS ?? payload.showPOS } : {}),
@@ -451,8 +476,22 @@ export class StorePanelRepository {
     return { importedCount, totalMaster: masterCategories.length };
   }
 
-  async importMasterProducts(storeId) {
+  async getMasterCatalog() {
+    return await prisma.masterProduct.findMany({
+      include: { category: true, variants: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async importMasterProducts(storeId, productIds = []) {
+    if (!productIds || productIds.length === 0) {
+      return { importedCount: 0, totalMaster: 0 };
+    }
+
     const masterProducts = await prisma.masterProduct.findMany({
+      where: {
+        id: { in: productIds }
+      },
       include: { category: true, variants: true },
       orderBy: { createdAt: "asc" },
     });
@@ -518,7 +557,7 @@ export class StorePanelRepository {
             inventory: {
               create: {
                 storeId,
-                quantity: 20,
+                quantity: 0,
                 lowStockAt: 5,
               },
             },
@@ -533,16 +572,64 @@ export class StorePanelRepository {
 
   // ── Orders ──
   async orders(storeId, filters = {}) {
-    return await prisma.order.findMany({
-      where: {
-        storeId,
-        ...(filters.type ? { type: filters.type } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
+    const page = parseInt(filters.page || 1, 10);
+    const limit = parseInt(filters.limit || 10, 10);
+    const skip = (page - 1) * limit;
+
+    const where = {
+      storeId,
+    };
+
+    if (filters.type && filters.type !== "All") {
+      where.type = filters.type;
+    }
+
+    if (filters.status && filters.status !== "All") {
+      if (filters.status === "ACTIVE") {
+        where.status = {
+          notIn: ["DELIVERED", "CANCELLED", "REFUNDED", "COLLECTED", "COMPLETED"],
+        };
+      } else {
+        where.status = filters.status;
+      }
+    }
+
+    if (filters.search) {
+      const q = filters.search.trim();
+      where.OR = [
+        { orderNumber: { contains: q, mode: "insensitive" } },
+        { id: { contains: q, mode: "insensitive" } },
+        {
+          customer: {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { phone: { contains: q } },
+            ],
+          },
+        },
+      ];
+    }
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: orderInclude,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return {
+      orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      include: orderInclude,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    };
   }
 
   async getOrderById(storeId, id) {
@@ -739,6 +826,7 @@ export class StorePanelRepository {
           priceAtOrder: unitPrice,
           taxRate: batchTaxRate,
           taxAmount: lineTax,
+          taxSplit: item.taxSplit || null,
         });
 
         // Deduct Inventory Stock

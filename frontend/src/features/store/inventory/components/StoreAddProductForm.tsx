@@ -27,7 +27,7 @@ import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import { toast } from 'sonner';
-import { useCreateStoreProduct, useUploadStoreImage } from '@/features/store/api/useStorePanel';
+import { useCreateStoreProduct, useUploadStoreImage, useStoreTaxes } from '@/features/store/api/useStorePanel';
 
 export const unitOptions = [
   { value: 'pcs', label: 'Piece (pcs)' },
@@ -56,6 +56,7 @@ interface StoreAddProductFormProps {
 export function StoreAddProductForm({ storeId, categories, onCancel, onSuccess }: StoreAddProductFormProps) {
   const createProduct = useCreateStoreProduct();
   const uploadImageMutation = useUploadStoreImage();
+  const { data: taxes } = useStoreTaxes(storeId);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -73,6 +74,7 @@ export function StoreAddProductForm({ storeId, categories, onCancel, onSuccess }
     lowStockAlert: 5,
     rackLocation: '',
     hsnCode: '',
+    taxClassId: '',
     description: '',
     imageUrls: [] as string[],
     showOnApp: true,
@@ -176,6 +178,8 @@ export function StoreAddProductForm({ storeId, categories, onCancel, onSuccess }
       showPOS: formData.showOnPOS,
       deliveryEnabled: formData.availableForDelivery,
       clickCollectEnabled: formData.availableForClickCollect,
+      taxClassId: formData.taxClassId || null,
+      hsnCode: formData.hsnCode,
     };
 
     createProduct.mutate(
@@ -333,7 +337,25 @@ export function StoreAddProductForm({ storeId, categories, onCancel, onSuccess }
                 </h3>
               </div>
               <CardContent className="p-6 space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Tax Class
+                    </label>
+                    <CustomDropdown
+                      options={[
+                        { value: '', label: 'No Tax / Default 0%' },
+                        ...(taxes || []).filter((t: any) => t.isActive).map((t: any) => ({
+                          value: t.id,
+                          label: t.name
+                        }))
+                      ]}
+                      value={formData.taxClassId}
+                      onChange={(val) => setFormData({ ...formData, taxClassId: String(val) })}
+                      placeholder="Select Tax Class"
+                    />
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                       Selling Price <span className="text-rose-500">*</span>

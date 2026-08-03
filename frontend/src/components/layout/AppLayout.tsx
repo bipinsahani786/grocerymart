@@ -14,7 +14,7 @@ export function AppLayout() {
   const location = useLocation();
   const isSemiDark = theme === 'semi-dark';
 
-  // Real-time session status heartbeat (verifies user & store active status every 3s)
+  // Real-time session status heartbeat (verifies user & store active status periodically)
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -26,11 +26,11 @@ export function AppLayout() {
       }
     };
 
-    // Run immediately on route change / mount
+    // Run immediately on mount or login
     checkSessionStatus();
 
-    // Fast polling every 3 seconds for instant real-time logout
-    const interval = setInterval(checkSessionStatus, 3000);
+    // Poll every 15 seconds for real-time logout checks (reduced from 3s to prevent server flood)
+    const interval = setInterval(checkSessionStatus, 15000);
 
     // Re-check when window is focused or tab becomes visible
     const handleFocus = () => checkSessionStatus();
@@ -42,7 +42,7 @@ export function AppLayout() {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleFocus);
     };
-  }, [isAuthenticated, location.pathname]);
+  }, [isAuthenticated]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans selection:bg-primary-500 selection:text-brand-on-accent transition-colors">

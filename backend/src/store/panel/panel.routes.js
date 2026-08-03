@@ -16,6 +16,8 @@ router.get("/settings", storePanelController.getSettings);
 router.patch("/settings", storePanelController.updateSettings);
 router.put("/settings", storePanelController.updateSettings);
 
+router.get("/taxes", storePanelController.getTaxes);
+
 router.get("/categories", storePanelController.getCategories);
 router.post("/categories", storePanelController.createCategory);
 router.post("/categories/import-master", storePanelController.importMasterCategories);
@@ -24,6 +26,7 @@ router.delete("/categories/:id", storePanelController.deleteCategory);
 
 router.get("/inventory", storePanelController.getInventory);
 router.post("/inventory", storePanelController.createProduct);
+router.get("/inventory/master-catalog", storePanelController.getMasterCatalog);
 router.post("/inventory/import-master", storePanelController.importMasterProducts);
 router.patch("/inventory/:id", storePanelController.updateProduct);
 router.delete("/inventory/:id", storePanelController.deleteProduct);

@@ -79,3 +79,26 @@ export function getFileUrl(path: any): string {
 
   return `${baseUrl}${clean.startsWith('/') ? '' : '/'}${clean}`;
 }
+
+export function extractErrorMessage(error: any, fallback = 'An unexpected error occurred'): string {
+  if (!error) return fallback;
+  if (typeof error === 'string') return error;
+
+  // Check if it's an Axios-like error
+  if (error.response?.data) {
+    const data = error.response.data;
+    if (typeof data.message === 'string') return data.message;
+    if (typeof data.error === 'string') return data.error;
+    
+    // Sometimes validation errors return an array of messages
+    if (Array.isArray(data.errors)) {
+      return data.errors.map((e: any) => e.msg || e.message || String(e)).join(', ');
+    }
+  }
+
+  if (error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}

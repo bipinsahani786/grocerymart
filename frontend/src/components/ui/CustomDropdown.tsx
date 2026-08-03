@@ -39,7 +39,7 @@ export function CustomDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 180 });
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const selectedOption = options.find((opt) => String(opt.value) === String(value));
 
@@ -50,10 +50,11 @@ export function CustomDropdown({
     return options.filter((opt) => opt.label.toLowerCase().includes(q));
   }, [options, searchTerm]);
 
-  // Reset search term when dropdown closes
+  // Reset search term and coordinates when dropdown closes
   useEffect(() => {
     if (!isOpen) {
       setSearchTerm('');
+      setCoords(null);
     }
   }, [isOpen]);
 
@@ -96,7 +97,32 @@ export function CustomDropdown({
 
   const handleToggle = () => {
     if (disabled) return;
-    setIsOpen(!isOpen);
+    const nextOpen = !isOpen;
+    if (nextOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const menuWidth = Math.max(180, rect.width);
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      let calculatedLeft = rect.left;
+      if (calculatedLeft + menuWidth > viewportWidth - 16) {
+        calculatedLeft = Math.max(16, viewportWidth - menuWidth - 16);
+      }
+
+      let calculatedTop = rect.bottom;
+      if (rect.bottom + 220 > viewportHeight && rect.top > 220) {
+        calculatedTop = Math.max(8, rect.top - 220);
+      }
+
+      setCoords({
+        top: calculatedTop,
+        left: calculatedLeft,
+        width: menuWidth,
+      });
+    } else {
+      setCoords(null);
+    }
+    setIsOpen(nextOpen);
   };
 
   const handleCreate = async () => {
@@ -136,7 +162,7 @@ export function CustomDropdown({
       </button>
 
       {/* PORTAL DROPDOWN MENU - NEVER CUT OFF BY PARENT CONTAINERS */}
-      {isOpen && createPortal(
+      {isOpen && coords && createPortal(
         <>
           {/* Backdrop Overlay */}
           <div

@@ -33,6 +33,14 @@ export class StorePanelService {
     return { success: true, data, message: "Store settings updated successfully" };
   }
 
+  async getTaxes(user, storeIdParam) {
+    // Validate store access
+    await this.resolveStoreId(user, storeIdParam);
+    // Fetch global taxes
+    const data = await storePanelRepository.getTaxes();
+    return { success: true, data };
+  }
+
   async getCategories(user, storeIdParam, filters) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
     const data = await storePanelRepository.getCategories(storeId, filters);
@@ -95,14 +103,20 @@ export class StorePanelService {
     };
   }
 
-  async importMasterProducts(user, storeIdParam) {
+  async importMasterProducts(user, storeIdParam, productIds) {
     const storeId = await this.resolveStoreId(user, storeIdParam);
-    const data = await storePanelRepository.importMasterProducts(storeId);
+    const data = await storePanelRepository.importMasterProducts(storeId, productIds);
     return {
       success: true,
       data,
-      message: `Successfully imported ${data.importedCount} master products into your store catalog!`,
+      message: `Successfully imported ${data.importedCount} products into your store!`,
     };
+  }
+
+  async getMasterCatalog(user) {
+    // Optionally resolve storeId if we want to log who is viewing
+    const data = await storePanelRepository.getMasterCatalog();
+    return { success: true, data };
   }
 
   async adjustInventory(user, storeIdParam, productId, delta) {

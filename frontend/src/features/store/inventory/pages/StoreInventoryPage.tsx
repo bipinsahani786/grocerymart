@@ -48,16 +48,16 @@ import {
   useUpdateStoreProduct,
   useAdjustStoreStock,
   useDeleteStoreProduct,
-  useImportMasterProducts,
-  useUploadStoreImage
+  useUploadStoreImage,
+  useStoreTaxes
 } from '@/features/store/api/useStorePanel';
 import { toast } from 'sonner';
 import { CascadingCategoryDropdown } from '@/components/ui/CascadingCategoryDropdown';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
-import { Modal } from '@/components/ui/modal';
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
+import { StoreCatalogImportModal } from '../components/StoreCatalogImportModal';
 import { StoreAddProductForm } from '../components/StoreAddProductForm';
 
 type ActiveTab = 'list' | 'add' | 'edit' | 'stock' | 'bulk';
@@ -77,28 +77,11 @@ export default function StoreInventoryPage() {
   const updateProductMutation = useUpdateStoreProduct();
   const adjustStockMutation = useAdjustStoreStock();
   const deleteProductMutation = useDeleteStoreProduct();
-  const importMasterProducts = useImportMasterProducts();
   const uploadImageMutation = useUploadStoreImage();
-
-  const handleImportMaster = () => {
-    setIsImportModalOpen(true);
-  };
-
-  const confirmImportMaster = () => {
-    importMasterProducts.mutate({ storeId }, {
-      onSuccess: (res) => {
-        toast.success(res.message || `Successfully imported ${res.data?.importedCount || 0} new products!`);
-        setIsImportModalOpen(false);
-      },
-      onError: (err: any) => {
-        toast.error(err.response?.data?.message || 'Failed to import master products');
-        setIsImportModalOpen(false);
-      }
-    });
-  };
 
   const products = productsData || [];
   const categories = categoriesData || [];
+  const { data: taxes } = useStoreTaxes(storeId);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('list');
 
@@ -124,6 +107,7 @@ export default function StoreInventoryPage() {
     rackLocation: '',
     description: '',
     hsnCode: '',
+    taxClassId: '',
     productType: 'simple',
     imageUrls: [] as string[],
     showOnApp: true,
@@ -149,6 +133,7 @@ export default function StoreInventoryPage() {
       rackLocation: '',
       description: '',
       hsnCode: '',
+      taxClassId: '',
       productType: 'simple',
       imageUrls: [] as string[],
       showOnApp: true,
@@ -238,6 +223,8 @@ export default function StoreInventoryPage() {
       showPOS: editForm.showOnPOS,
       deliveryEnabled: editForm.availableForDelivery,
       clickCollectEnabled: editForm.availableForClickCollect,
+      taxClassId: editForm.taxClassId || null,
+      hsnCode: editForm.hsnCode,
     };
 
     updateProductMutation.mutate(
@@ -354,6 +341,7 @@ export default function StoreInventoryPage() {
       rackLocation: inv?.rack?.name || product.rackLocation || '',
       description: product.description || '',
       hsnCode: product.hsnCode || '',
+      taxClassId: product.taxClassId || '',
       productType: product.productType || product.type || 'simple',
       imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []),
       showOnApp: product.showOnApp ?? product.showOnline ?? true,
@@ -497,12 +485,11 @@ export default function StoreInventoryPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleImportMaster}
-            disabled={importMasterProducts.isPending}
+            onClick={() => setIsImportModalOpen(true)}
             className="text-xs font-bold gap-1.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hidden sm:flex shrink-0 mb-1"
           >
             <Download className="h-4 w-4 text-emerald-500" />
-            Import Master Products
+            Add From Catalog
           </Button>
         </div>
 
@@ -819,7 +806,25 @@ export default function StoreInventoryPage() {
                       </h3>
                     </div>
                     <CardContent className="p-6 space-y-5">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            Tax Class
+                          </label>
+                          <CustomDropdown
+                            options={[
+                              { value: '', label: 'No Tax / Default 0%' },
+                              ...(taxes || []).filter((t: any) => t.isActive).map((t: any) => ({
+                                value: t.id,
+                                label: t.name
+                              }))
+                            ]}
+                            value={editForm.taxClassId}
+                            onChange={(val) => setEditForm(prev => ({ ...prev, taxClassId: String(val) }))}
+                            placeholder="Select Tax Class"
+                          />
+                        </div>
+
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                             Selling Price <span className="text-rose-500">*</span>
@@ -1215,35 +1220,11 @@ export default function StoreInventoryPage() {
 
       </div>
       
-      <Modal
+      <StoreCatalogImportModal 
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        title="Confirm Import"
-        footer={
-          <div className="flex justify-end gap-3 w-full">
-            <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(false)}>Cancel</Button>
-            <Button variant="brand" size="sm" onClick={confirmImportMaster} isLoading={importMasterProducts.isPending}>Import Now</Button>
-          </div>
-        }
-        maxWidth="md"
-      >
-        <div className="space-y-4 text-left">
-          <div className="flex gap-4 items-start p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
-            <div className="w-10 h-10 shrink-0 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <Download className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
-                Import Master Catalog
-              </h4>
-              <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1 leading-relaxed">
-                This will automatically add all new master products into your store catalog. Products that already exist (matched by name, SKU, or barcode) will be skipped safely.
-              </p>
-            </div>
-          </div>
-          <p className="text-xs font-medium text-slate-700 dark:text-slate-300">Are you sure you want to proceed with the import?</p>
-        </div>
-      </Modal>
+        storeId={storeId}
+      />
 
       <DeleteConfirmModal
         isOpen={!!deletingProduct}

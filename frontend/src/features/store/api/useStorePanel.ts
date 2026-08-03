@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { extractErrorMessage } from '@/lib/utils';
 
 // ── Store Dashboard ──
 export const useStoreDashboard = (storeId?: string) => {
@@ -161,11 +162,22 @@ export const useCreateStoreProduct = () => {
   });
 };
 
+export const useStoreMasterCatalog = (storeId?: string) => {
+  return useQuery({
+    queryKey: ['store-master-catalog', storeId],
+    queryFn: async () => {
+      const { data } = await api.get('/store/inventory/master-catalog', { params: { storeId } });
+      return data.data;
+    },
+    enabled: true,
+  });
+};
+
 export const useImportMasterProducts = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ storeId }: { storeId?: string } = {}) => {
-      const { data } = await api.post('/store/inventory/import-master', {}, { params: { storeId } });
+    mutationFn: async ({ storeId, productIds }: { storeId?: string, productIds: string[] }) => {
+      const { data } = await api.post('/store/inventory/import-master', { productIds }, { params: { storeId } });
       return data;
     },
     onSuccess: () => {
@@ -232,7 +244,16 @@ export const useAdjustStoreStock = () => {
 };
 
 // ── Store Orders ──
-export const useStoreOrders = (storeId?: string, filters?: { type?: string; status?: string }) => {
+export const useStoreOrders = (
+  storeId?: string,
+  filters?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    type?: string;
+    status?: string;
+  }
+) => {
   return useQuery({
     queryKey: ['store-orders', storeId, filters],
     queryFn: async () => {
@@ -249,6 +270,7 @@ export interface CreatePosOrderItemPayload {
   quantity: number;
   price?: number;
   taxRate?: number;
+  taxSplit?: any;
 }
 
 export interface CreatePosOrderPayload {
@@ -260,6 +282,7 @@ export interface CreatePosOrderPayload {
   paymentMethod: 'CASH' | 'CARD' | 'UPI' | 'CREDIT' | 'SPLIT';
   notes?: string;
   items: CreatePosOrderItemPayload[];
+  staffId?: string;
 }
 
 export const useCreatePosOrder = () => {
@@ -277,7 +300,7 @@ export const useCreatePosOrder = () => {
       queryClient.invalidateQueries({ queryKey: ['store-dashboard'] });
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to complete POS sale.');
+      toast.error(extractErrorMessage(error, 'Failed to complete POS sale.'));
     },
   });
 };
@@ -349,7 +372,7 @@ export const useStoreCustomers = (storeId?: string) => {
 export const useCreateStoreCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ storeId, ...payload }: { storeId?: string; name: string; phone: string; email: string; notes?: string; khataBalance?: number }) => {
+    mutationFn: async ({ storeId, ...payload }: { storeId?: string; name: string; phone: string; email?: string; notes?: string; khataBalance?: number }) => {
       const { data } = await api.post('/store/customers', payload, { params: { storeId } });
       return data;
     },
@@ -358,7 +381,7 @@ export const useCreateStoreCustomer = () => {
       toast.success('Customer registered successfully!');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to register customer.');
+      toast.error(extractErrorMessage(error, 'Failed to register customer.'));
     },
   });
 };
@@ -375,7 +398,7 @@ export const useUpdateStoreCustomer = () => {
       toast.success('Customer updated successfully!');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to update customer.');
+      toast.error(extractErrorMessage(error, 'Failed to update customer.'));
     },
   });
 };
@@ -392,7 +415,7 @@ export const useDeleteStoreCustomer = () => {
       toast.success('Customer deleted successfully!');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to delete customer.');
+      toast.error(extractErrorMessage(error, 'Failed to delete customer.'));
     },
   });
 };
@@ -482,6 +505,17 @@ export const useStoreAnalytics = (storeId?: string) => {
     queryKey: ['store-analytics', storeId],
     queryFn: async () => {
       const { data } = await api.get('/store/analytics', { params: { storeId } });
+      return data.data;
+    },
+  });
+};
+
+// ── Taxes ──
+export const useStoreTaxes = (storeId?: string) => {
+  return useQuery({
+    queryKey: ['store-taxes', storeId],
+    queryFn: async () => {
+      const { data } = await api.get('/store/taxes', { params: { storeId } });
       return data.data;
     },
   });

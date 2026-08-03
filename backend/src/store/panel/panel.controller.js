@@ -27,6 +27,11 @@ export class StorePanelController {
     res.json(result);
   });
 
+  getTaxes = catchAsync(async (req, res) => {
+    const result = await storePanelService.getTaxes(req.user, req.query.storeId);
+    res.json(result);
+  });
+
   getCategories = catchAsync(async (req, res) => {
     const filters = {
       page: req.query.page,
@@ -80,7 +85,12 @@ export class StorePanelController {
   });
 
   importMasterProducts = catchAsync(async (req, res) => {
-    const result = await storePanelService.importMasterProducts(req.user, req.query.storeId);
+    const result = await storePanelService.importMasterProducts(req.user, req.query.storeId, req.body.productIds);
+    res.json(result);
+  });
+
+  getMasterCatalog = catchAsync(async (req, res) => {
+    const result = await storePanelService.getMasterCatalog(req.user);
     res.json(result);
   });
 
