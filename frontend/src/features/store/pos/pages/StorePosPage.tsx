@@ -413,7 +413,9 @@ export default function StorePosPage() {
         toast.error('Please enter the cash amount received.');
         return;
       }
-      if (tendered < grandTotal) {
+      const roundedTendered = Math.round(tendered * 100);
+      const roundedGrandTotal = Math.round(grandTotal * 100);
+      if (roundedTendered < roundedGrandTotal) {
         toast.error(`Cash received (₹${tendered.toFixed(2)}) is less than total amount (₹${grandTotal.toFixed(2)}).`);
         return;
       }
