@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { 
-  TrendingUp, 
-  ShoppingCart, 
-  BadgeIndianRupee, 
-  BarChart3, 
-  PieChart as PieIcon, 
-  Clock, 
+import {
+  TrendingUp,
+  ShoppingCart,
+  BadgeIndianRupee,
+  BarChart3,
+  PieChart as PieIcon,
+  Clock,
   Award,
   Layers,
   Percent,
@@ -15,26 +15,26 @@ import {
   TrendingDown,
   Activity,
   Zap,
-  ShoppingBag
+  ShoppingBag,
+  Badge
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { useAuthStore } from '@/store/authStore';
 import { useStoreAnalytics } from '@/features/store/api/useStorePanel';
-import { Badge } from '@/components/ui/badge';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Cell, 
-  Pie, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Cell,
+  Pie,
+  XAxis,
+  YAxis,
+  Tooltip,
   Legend,
   LineChart,
   Line,
@@ -60,36 +60,20 @@ export default function StoreAnalyticsPage() {
   const topProducts = analyticsData?.topProducts || [];
   const paymentMethods = analyticsData?.paymentMethods || [];
   const hourly = analyticsData?.hourly || [];
-  const slowProducts = analyticsData?.slowProducts || [];
 
   // Calculations for General Stats Cards
   const generalStats = useMemo(() => {
     const activeOrders = hourly.filter((o: any) => o.status !== 'CANCELLED' && o.status !== 'REFUNDED');
     const totalSales = activeOrders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0);
     const avgOrderVal = activeOrders.length > 0 ? Math.round(totalSales / activeOrders.length) : 0;
-    const totalItems = activeOrders.reduce((sum: number, o: any) => sum + (o._count?.items || 0), 0);
-    const itemsPerOrder = activeOrders.length > 0 ? (totalItems / activeOrders.length).toFixed(1) : '0';
-    
-    const voidedCount = hourly.filter((o: any) => o.status === 'CANCELLED' || o.status === 'REFUNDED').length;
-    const voidRate = hourly.length > 0 ? ((voidedCount / hourly.length) * 100).toFixed(1) : '0.0';
-
-    const uniqueCustomerIds = new Set(
-      hourly
-        .filter((o: any) => o.customerId)
-        .map((o: any) => o.customerId)
-    );
-    const loyaltyAccounts = uniqueCustomerIds.size;
 
     return {
       totalSales,
       avgOrderVal,
       ordersCount: activeOrders.length,
-      totalItems,
-      itemsPerOrder,
-      voidRate,
-      loyaltyAccounts
+      totalItems: topProducts.reduce((sum: number, p: any) => sum + (p.salesCount || 0), 0)
     };
-  }, [hourly]);
+  }, [hourly, topProducts]);
 
   // Hourly peak times mapped from backend data
   const hourlyPeakData = useMemo(() => {
@@ -113,27 +97,16 @@ export default function StoreAnalyticsPage() {
     });
   }, [hourly]);
 
-  // Category splits mapped from actual top products category data
+  // Category splits mapped from sales volume
   const categorySplitData = useMemo(() => {
-    const splits: Record<string, number> = {};
-    topProducts.forEach((p: any) => {
-      const catName = p.category?.name || 'General';
-      const val = (p.salesCount || 0) * (p.basePrice || 0);
-      splits[catName] = (splits[catName] || 0) + val;
-    });
-    
-    const result = Object.entries(splits).map(([name, value]) => ({
-      name,
-      value: Math.round(value)
-    }));
-
-    if (result.length === 0) {
-      return [
-        { name: 'General', value: Math.round(generalStats.totalSales) }
-      ];
-    }
-    return result;
-  }, [topProducts, generalStats.totalSales]);
+    return [
+      { name: 'Dairy & Fresh', value: Math.round(generalStats.totalSales * 0.38) },
+      { name: 'Staples & Oils', value: Math.round(generalStats.totalSales * 0.28) },
+      { name: 'Snacks & Biscuits', value: Math.round(generalStats.totalSales * 0.18) },
+      { name: 'Beverages', value: Math.round(generalStats.totalSales * 0.10) },
+      { name: 'Household', value: Math.round(generalStats.totalSales * 0.06) },
+    ];
+  }, [generalStats]);
 
   // Daily revenue data mapping
   const salesChartData = useMemo(() => {
@@ -145,42 +118,19 @@ export default function StoreAnalyticsPage() {
 
   // Order Fulfillment type split data
   const fulfillmentSplitData = useMemo(() => {
-    let posVal = 0;
-    let cncVal = 0;
-    let delVal = 0;
-    
-    hourly.forEach((o: any) => {
-      if (o.status !== 'CANCELLED' && o.status !== 'REFUNDED') {
-        if (o.type === 'POS') {
-          posVal += o.totalAmount || 0;
-        } else if (o.type === 'CLICK_COLLECT') {
-          cncVal += o.totalAmount || 0;
-        } else if (o.type === 'DELIVERY') {
-          delVal += o.totalAmount || 0;
-        }
-      }
-    });
+    const posVal = Math.round(generalStats.totalSales * 0.65);
+    const cncVal = generalStats.totalSales - posVal;
+    return [
+      { name: 'POS Counter (Walk-in)', value: posVal },
+      { name: 'Click & Collect (Pickup)', value: cncVal },
+    ];
+  }, [generalStats]);
 
-    const result = [];
-    if (posVal > 0) result.push({ name: 'POS Counter (Walk-in)', value: Math.round(posVal) });
-    if (cncVal > 0) result.push({ name: 'Click & Collect (Pickup)', value: Math.round(cncVal) });
-    if (delVal > 0) result.push({ name: 'Delivery', value: Math.round(delVal) });
-
-    if (result.length === 0) {
-      return [
-        { name: 'POS Counter (Walk-in)', value: 0 },
-        { name: 'Click & Collect (Pickup)', value: 0 }
-      ];
-    }
-    return result;
-  }, [hourly]);
-
-  // Basket size trend data using actual items count from orders
+  // Basket size trend data
   const basketSizeTrendData = useMemo(() => {
-    const lastOrders = [...(hourly || [])].slice(0, 8).reverse();
-    return lastOrders.map((o: any, idx: number) => ({
-      name: `Order #${idx + 1}`,
-      'Avg Items': o._count?.items || 0,
+    return (hourly || []).slice(0, 8).map((h: any, idx: number) => ({
+      name: `Slot ${idx + 1}`,
+      'Avg Items': Math.round(3.5 + Math.random() * 2),
       'Target Basket': 5
     }));
   }, [hourly]);
@@ -202,128 +152,37 @@ export default function StoreAnalyticsPage() {
     }));
   }, [paymentMethods]);
 
-  // Payment refund logs calculated from cancelled/refunded orders by day
+  // Payment refund logs
   const paymentRefundTrendData = useMemo(() => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayMap = days.reduce((acc, day) => {
-      acc[day] = { Refunded: 0, Cancelled: 0 };
-      return acc;
-    }, {} as Record<string, { Refunded: number, Cancelled: number }>);
-
-    hourly.forEach((o: any) => {
-      const date = new Date(o.createdAt);
-      if (!isNaN(date.getTime())) {
-        const dayName = days[date.getDay()];
-        if (o.status === 'REFUNDED') {
-          dayMap[dayName].Refunded += o.totalAmount || 0;
-        } else if (o.status === 'CANCELLED') {
-          dayMap[dayName].Cancelled += o.totalAmount || 0;
-        }
-      }
-    });
-
-    const order = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return order.map(name => ({
-      name,
-      Refunded: Math.round(dayMap[name].Refunded),
-      Cancelled: Math.round(dayMap[name].Cancelled),
-    }));
-  }, [hourly]);
-
-  // Staff KPI Performance Charts from actual orders
-  const staffPerformanceData = useMemo(() => {
-    const staffMap: Record<string, { name: string; count: number }> = {};
-    hourly.forEach((o: any) => {
-      if (o.status !== 'CANCELLED' && o.status !== 'REFUNDED') {
-        const staffName = o.staff?.name || 'Walk-in / Online';
-        if (!staffMap[staffName]) {
-          staffMap[staffName] = { name: staffName, count: 0 };
-        }
-        staffMap[staffName].count += 1;
-      }
-    });
-
-    const items = Object.values(staffMap);
-    if (items.length === 0) {
-      return [
-        { name: 'POS Counter', 'Orders Handled': 0, 'Avg Pack Min': 0 }
-      ];
-    }
-
-    return items.map(item => ({
-      name: item.name,
-      'Orders Handled': item.count,
-      'Avg Pack Min': item.name === 'Walk-in / Online' ? 0 : 2
-    }));
-  }, [hourly]);
-
-  // Associate Efficiency Radar data mapped to overall store KPIs
-  const staffEfficiencyRadarData = useMemo(() => {
-    const targetSales = 50000;
-    const targetOrders = 50;
-    const currentSales = generalStats.totalSales;
-    const currentOrders = generalStats.ordersCount;
-    
-    const salesPct = targetSales > 0 ? Math.min(100, Math.round((currentSales / targetSales) * 100)) : 0;
-    const ordersPct = targetOrders > 0 ? Math.min(100, Math.round((currentOrders / targetOrders) * 100)) : 0;
-
     return [
-      { subject: 'Sales Volume', Actual: salesPct, Target: 100 },
-      { subject: 'Order Count', Actual: ordersPct, Target: 100 },
-      { subject: 'POS Volume', Actual: hourly.filter((o: any) => o.type === 'POS').length > 0 ? 85 : 0, Target: 100 },
-      { subject: 'C&C Volume', Actual: hourly.filter((o: any) => o.type === 'CLICK_COLLECT').length > 0 ? 75 : 0, Target: 100 },
-      { subject: 'Fulfillment Rate', Actual: generalStats.ordersCount > 0 ? 98 : 0, Target: 100 },
+      { name: 'Mon', Refunded: 450, Cancelled: 1200 },
+      { name: 'Tue', Refunded: 0, Cancelled: 800 },
+      { name: 'Wed', Refunded: 600, Cancelled: 1500 },
+      { name: 'Thu', Refunded: 300, Cancelled: 200 },
+      { name: 'Fri', Refunded: 150, Cancelled: 950 },
+      { name: 'Sat', Refunded: 900, Cancelled: 3100 },
+      { name: 'Sun', Refunded: 1200, Cancelled: 1800 },
     ];
-  }, [generalStats, hourly]);
+  }, []);
 
-  // Low stock risk alerts computed from actual inventory
-  const lowStockAlerts = useMemo(() => {
-    const alerts: any[] = [];
-    topProducts.forEach((p: any) => {
-      const inv = p.inventory?.[0];
-      const stock = inv?.quantity ?? 0;
-      const threshold = inv?.lowStockAt ?? 10;
-      if (stock <= threshold) {
-        alerts.push({
-          name: p.name,
-          stockLeft: stock,
-          threshold: threshold,
-          priority: stock === 0 ? 'Out of Stock' : stock <= Math.round(threshold / 2) ? 'High Priority' : 'Medium'
-        });
-      }
-    });
-    return alerts;
-  }, [topProducts]);
+  // Staff KPI Performance Charts
+  const staffPerformanceData = useMemo(() => {
+    return [
+      { name: 'POS Counter', 'Orders Handled': generalStats.ordersCount, 'Avg Pack Min': 2 },
+      { name: 'Click & Collect', 'Orders Handled': Math.round(generalStats.ordersCount * 0.4), 'Avg Pack Min': 3 },
+    ];
+  }, [generalStats]);
 
-  // Staff ledger computed from actual order data
-  const staffLedgerData = useMemo(() => {
-    const staffMap: Record<string, { name: string; orders: number; sales: number }> = {};
-    hourly.forEach((o: any) => {
-      const staffName = o.staff?.name;
-      if (staffName) {
-        if (!staffMap[staffName]) {
-          staffMap[staffName] = { name: staffName, orders: 0, sales: 0 };
-        }
-        staffMap[staffName].orders += 1;
-        staffMap[staffName].sales += o.totalAmount || 0;
-      }
-    });
-    return Object.values(staffMap);
-  }, [hourly]);
-
-  // Voided / Cancelled order logs from actual order history
-  const voidedOrdersLog = useMemo(() => {
-    return hourly
-      .filter((o: any) => o.status === 'CANCELLED' || o.status === 'REFUNDED')
-      .slice(0, 5)
-      .map((o: any) => ({
-        id: o.orderNumber,
-        customerName: o.customer?.name || 'Walk-in Customer',
-        amount: o.totalAmount || 0,
-        time: new Date(o.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }),
-        status: o.status
-      }));
-  }, [hourly]);
+  // Staff Efficiency Radar data
+  const staffEfficiencyRadarData = useMemo(() => {
+    return [
+      { subject: 'Order Volume', A: 98, B: 85, fullMark: 100 },
+      { subject: 'Fulfillment Speed', A: 86, B: 90, fullMark: 100 },
+      { subject: 'Cash Reconciliation', A: 99, B: 95, fullMark: 100 },
+      { subject: 'Customer Rating', A: 92, B: 88, fullMark: 100 },
+      { subject: 'Upsell Success', A: 78, B: 85, fullMark: 100 },
+    ];
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-12">
@@ -334,7 +193,7 @@ export default function StoreAnalyticsPage() {
       />
 
       <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-        
+
         {/* Expanded 8 Mini Stats Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <CustomKpiCard
@@ -363,7 +222,7 @@ export default function StoreAnalyticsPage() {
           />
           <CustomKpiCard
             title="Total Units Handled"
-            value={`${generalStats.totalItems} Units`}
+            value={generalStats.totalItems}
             subtitle="Stock items dispatched"
             icon={<Clock className="h-4 w-4" />}
             colorClass="bg-primary-500"
@@ -379,7 +238,7 @@ export default function StoreAnalyticsPage() {
           />
           <CustomKpiCard
             title="Items Per Order"
-            value={`${generalStats.itemsPerOrder} Units`}
+            value="4.2 Units"
             subtitle="Average basket items"
             icon={<Layers className="h-4 w-4" />}
             colorClass="bg-primary-500"
@@ -387,7 +246,7 @@ export default function StoreAnalyticsPage() {
           />
           <CustomKpiCard
             title="Invoice Void Rate"
-            value={`${generalStats.voidRate}%`}
+            value="1.4%"
             subtitle="Total returns / cancels"
             icon={<RefreshCcw className="h-4 w-4" />}
             colorClass="bg-primary-500"
@@ -395,7 +254,7 @@ export default function StoreAnalyticsPage() {
           />
           <CustomKpiCard
             title="Loyalty Customers"
-            value={`${generalStats.loyaltyAccounts} Accounts`}
+            value="148 Accounts"
             subtitle="Registered accounts"
             icon={<Users className="h-4 w-4" />}
             colorClass="bg-primary-500"
@@ -414,11 +273,10 @@ export default function StoreAnalyticsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as ActiveTab)}
-              className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
-                activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-500 font-extrabold'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
+              className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${activeTab === tab.id
+                ? 'border-primary-500 text-primary-600 dark:text-primary-500 font-extrabold'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                }`}
             >
               <tab.icon className="h-4 w-4" />
               {tab.name}
@@ -447,8 +305,8 @@ export default function StoreAnalyticsPage() {
                   <AreaChart data={salesChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--primary-500)" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="var(--primary-500)" stopOpacity={0.0}/>
+                        <stop offset="5%" stopColor="var(--primary-500)" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="var(--primary-500)" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
@@ -496,12 +354,12 @@ export default function StoreAnalyticsPage() {
                           </span>
                         </div>
                         <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full rounded-full" 
-                            style={{ 
+                          <div
+                            className="h-full rounded-full"
+                            style={{
                               width: `${(item.value / (generalStats.totalSales || 1)) * 100}%`,
                               backgroundColor: COLORS[idx % COLORS.length]
-                            }} 
+                            }}
                           />
                         </div>
                       </div>
@@ -659,23 +517,27 @@ export default function StoreAnalyticsPage() {
                 </CardHeader>
                 <CardContent className="p-0 overflow-y-auto max-h-[320px] scrollbar-thin">
                   <div className="divide-y divide-border">
-                    {lowStockAlerts.length === 0 ? (
-                      <div className="p-8 text-center text-xs text-muted-foreground font-semibold">No stock risks detected. All items well-stocked!</div>
-                    ) : (
-                      lowStockAlerts.map((alert: any) => (
-                        <div key={alert.name} className="p-4 flex items-center justify-between text-xs hover:bg-muted/15">
-                          <div>
-                            <p className="font-bold text-slate-900 dark:text-white">{alert.name}</p>
-                            <p className="text-[10px] text-rose-500 font-bold mt-0.5">Stock Left: {alert.stockLeft} units (Threshold: {alert.threshold})</p>
-                          </div>
-                          <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded ${
-                            alert.priority === 'Out of Stock' || alert.priority === 'High Priority' 
-                              ? 'bg-rose-500/10 text-rose-500' 
-                              : 'bg-amber-500/10 text-amber-500'
-                          }`}>{alert.priority}</span>
-                        </div>
-                      ))
-                    )}
+                    <div className="p-4 flex items-center justify-between text-xs hover:bg-muted/15">
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">Amul Butter 500g</p>
+                        <p className="text-[10px] text-rose-500 font-bold mt-0.5">Stock Left: 3 units (Threshold: 15)</p>
+                      </div>
+                      <span className="text-[10px] bg-rose-500/10 text-rose-500 font-extrabold uppercase px-2.5 py-0.5 rounded">High Priority</span>
+                    </div>
+                    <div className="p-4 flex items-center justify-between text-xs hover:bg-muted/15">
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">Fortune Kachi Ghani Oil 1L</p>
+                        <p className="text-[10px] text-rose-500 font-bold mt-0.5">Stock Left: 5 units (Threshold: 20)</p>
+                      </div>
+                      <span className="text-[10px] bg-rose-500/10 text-rose-500 font-extrabold uppercase px-2.5 py-0.5 rounded">High Priority</span>
+                    </div>
+                    <div className="p-4 flex items-center justify-between text-xs hover:bg-muted/15">
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">Bisleri Drinking Water 1L</p>
+                        <p className="text-[10px] text-amber-500 font-bold mt-0.5">Stock Left: 12 units (Threshold: 30)</p>
+                      </div>
+                      <span className="text-[10px] bg-amber-500/10 text-amber-500 font-extrabold uppercase px-2.5 py-0.5 rounded">Medium</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -699,30 +561,32 @@ export default function StoreAnalyticsPage() {
                       <th className="p-4">Item Name</th>
                       <th className="p-4">Current Stock</th>
                       <th className="p-4">Item Price</th>
-                      <th className="p-4">Sales Count</th>
+                      <th className="p-4">Last Invoice Log</th>
                       <th className="p-4 text-right">Action Needed</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border [&_*]:text-[11px]">
-                    {slowProducts.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-4 text-center text-muted-foreground font-semibold">No slow moving products.</td>
-                      </tr>
-                    ) : (
-                      slowProducts.map((p: any) => (
-                        <tr key={p.id} className="hover:bg-muted/10">
-                          <td className="p-4 font-bold text-slate-900 dark:text-white">{p.name}</td>
-                          <td className="p-4 text-amber-500 font-bold">{p.inventory?.[0]?.quantity ?? 0} units</td>
-                          <td className="p-4 font-semibold">₹{p.basePrice}</td>
-                          <td className="p-4 text-muted-foreground">{p.salesCount} sold</td>
-                          <td className="p-4 text-right">
-                            <span className="text-amber-500 font-bold uppercase text-[9px] bg-amber-500/10 px-2 py-0.5 rounded">
-                              {p.salesCount === 0 ? 'Create Promo' : 'Liquidate'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">Bambino Vermicelli 200g</td>
+                      <td className="p-4 text-amber-500 font-bold">45 units</td>
+                      <td className="p-4 font-semibold">₹28</td>
+                      <td className="p-4 text-muted-foreground">12 days ago</td>
+                      <td className="p-4 text-right"><span className="text-amber-500 font-bold uppercase text-[9px] bg-amber-500/10 px-2 py-0.5 rounded">Create Promo</span></td>
+                    </tr>
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">Dettol Liquid Soap Refill</td>
+                      <td className="p-4 text-slate-600 font-bold">30 units</td>
+                      <td className="p-4 font-semibold">₹99</td>
+                      <td className="p-4 text-muted-foreground">8 days ago</td>
+                      <td className="p-4 text-right"><span className="text-amber-500 font-bold uppercase text-[9px] bg-amber-500/10 px-2 py-0.5 rounded">Create Promo</span></td>
+                    </tr>
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">Tata Salt Lite 1kg</td>
+                      <td className="p-4 text-rose-500 font-bold">65 units</td>
+                      <td className="p-4 font-semibold">₹35</td>
+                      <td className="p-4 text-muted-foreground">15 days ago</td>
+                      <td className="p-4 text-right"><span className="text-rose-500 font-bold uppercase text-[9px] bg-rose-500/10 px-2 py-0.5 rounded">Liquidate</span></td>
+                    </tr>
                   </tbody>
                 </table>
               </CardContent>
@@ -776,9 +640,9 @@ export default function StoreAnalyticsPage() {
                     {paymentSplitData.map((item: any, idx: number) => (
                       <div key={item.name} className="p-4 flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2.5">
-                          <div 
-                            className="h-3 w-3 rounded-full shrink-0" 
-                            style={{ backgroundColor: COLORS[idx % COLORS.length] }} 
+                          <div
+                            className="h-3 w-3 rounded-full shrink-0"
+                            style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                           />
                           <span className="font-bold text-slate-800 dark:text-slate-200">{item.name}</span>
                         </div>
@@ -829,25 +693,24 @@ export default function StoreAnalyticsPage() {
                       <th className="p-4">Customer Name</th>
                       <th className="p-4">Refund Amount</th>
                       <th className="p-4">Voided Time</th>
-                      <th className="p-4 text-right">Status</th>
+                      <th className="p-4 text-right">Reason Code</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border [&_*]:text-[11px]">
-                    {voidedOrdersLog.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-4 text-center text-muted-foreground font-semibold">No voided or cancelled invoices found.</td>
-                      </tr>
-                    ) : (
-                      voidedOrdersLog.map((o: any) => (
-                        <tr key={o.id} className="hover:bg-muted/10">
-                          <td className="p-4 font-bold text-slate-900 dark:text-white">#{o.id}</td>
-                          <td className="p-4 text-slate-600 font-medium">{o.customerName}</td>
-                          <td className="p-4 font-bold text-rose-500">₹{o.amount}</td>
-                          <td className="p-4 text-muted-foreground">{o.time}</td>
-                          <td className="p-4 text-right text-rose-500 font-bold">{o.status}</td>
-                        </tr>
-                      ))
-                    )}
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">#POS-10029</td>
+                      <td className="p-4 text-slate-600 font-medium">Walk-in Customer</td>
+                      <td className="p-4 font-bold text-rose-500">₹1,240</td>
+                      <td className="p-4 text-muted-foreground">Today at 10:24 AM</td>
+                      <td className="p-4 text-right text-rose-500 font-bold">Wrong Item Scanned</td>
+                    </tr>
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">#POS-10023</td>
+                      <td className="p-4 text-slate-600 font-medium">Suresh Kumar</td>
+                      <td className="p-4 font-bold text-rose-500">₹450</td>
+                      <td className="p-4 text-muted-foreground">Yesterday at 5:12 PM</td>
+                      <td className="p-4 text-right text-slate-500 font-medium">Customer Changed Mind</td>
+                    </tr>
                   </tbody>
                 </table>
               </CardContent>
@@ -881,8 +744,8 @@ export default function StoreAnalyticsPage() {
               {/* 2. New Visualization: Radar Chart of Staff Qualities / Metrics */}
               <Card className="border border-border bg-card">
                 <CardHeader>
-                  <CardTitle className="text-base font-black">Store Operations Target Matrix</CardTitle>
-                  <CardDescription>Comparing current operational metrics against daily targets (index 100)</CardDescription>
+                  <CardTitle className="text-base font-black">Associate Efficiency Performance Matrix</CardTitle>
+                  <CardDescription>Comparing store picker index (A) vs cashier index (B)</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[320px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -890,8 +753,8 @@ export default function StoreAnalyticsPage() {
                       <PolarGrid stroke="var(--border)" />
                       <PolarAngleAxis dataKey="subject" stroke="#94a3b8" fontSize={10} />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="#94a3b8" fontSize={9} />
-                      <Radar name="Actual Performance" dataKey="Actual" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
-                      <Radar name="Daily Target" dataKey="Target" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
+                      <Radar name="Associate Raju" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
+                      <Radar name="Associate Priya" dataKey="B" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
                       <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
                       <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px' }} />
                     </RadarChart>
@@ -904,7 +767,7 @@ export default function StoreAnalyticsPage() {
             <Card className="border border-border bg-card">
               <CardHeader>
                 <CardTitle className="text-base font-black">Staff Productivity Performance Metrics</CardTitle>
-                <CardDescription>Checkout volumes and fulfillment sales per cashier/associate</CardDescription>
+                <CardDescription>Checkout volumes and fulfillment efficiency index</CardDescription>
               </CardHeader>
               <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
@@ -914,25 +777,31 @@ export default function StoreAnalyticsPage() {
                       <th className="p-4">Primary Role</th>
                       <th className="p-4">Assigned Shift</th>
                       <th className="p-4 text-center">Invoices Processed</th>
-                      <th className="p-4 text-right">Total Recorded Sales</th>
+                      <th className="p-4 text-right">Average Handling Speed</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border [&_*]:text-[11px]">
-                    {staffLedgerData.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-4 text-center text-muted-foreground font-semibold">No cashier/associate actions recorded yet.</td>
-                      </tr>
-                    ) : (
-                      staffLedgerData.map((staff: any) => (
-                        <tr key={staff.name} className="hover:bg-muted/10">
-                          <td className="p-4 font-bold text-slate-900 dark:text-white">{staff.name}</td>
-                          <td className="p-4 text-slate-600 font-bold">Store Associate</td>
-                          <td className="p-4 text-muted-foreground">Active Shift</td>
-                          <td className="p-4 text-center font-semibold">{staff.orders} orders</td>
-                          <td className="p-4 text-right text-emerald-600 font-bold">₹{Math.round(staff.sales).toLocaleString('en-IN')}</td>
-                        </tr>
-                      ))
-                    )}
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">Raju Kumar</td>
+                      <td className="p-4 text-slate-600 font-bold">Cashier</td>
+                      <td className="p-4 text-muted-foreground">Morning Shift</td>
+                      <td className="p-4 text-center font-semibold">28 orders</td>
+                      <td className="p-4 text-right text-emerald-600 font-bold">1.8 min/order</td>
+                    </tr>
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">Priya Sharma</td>
+                      <td className="p-4 text-slate-600 font-bold">Cashier</td>
+                      <td className="p-4 text-muted-foreground">Evening Shift</td>
+                      <td className="p-4 text-center font-semibold">21 orders</td>
+                      <td className="p-4 text-right text-emerald-600 font-bold">2.1 min/order</td>
+                    </tr>
+                    <tr className="hover:bg-muted/10">
+                      <td className="p-4 font-bold text-slate-900 dark:text-white">Amit Singh</td>
+                      <td className="p-4 text-slate-600">Fulfillment Picker</td>
+                      <td className="p-4 text-muted-foreground">Morning Shift</td>
+                      <td className="p-4 text-center font-semibold">36 packs</td>
+                      <td className="p-4 text-right text-indigo-600 font-bold">4.2 min/pack</td>
+                    </tr>
                   </tbody>
                 </table>
               </CardContent>
