@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Store, 
@@ -29,27 +29,52 @@ export default function StoreSettingsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('info');
 
   const [form, setForm] = useState({
-    name: settingsData?.name || '',
-    address: settingsData?.address || '',
-    phone: settingsData?.phone || '',
+    name: '',
+    address: '',
+    phone: '',
     gpsCoords: '28.6273, 77.3725',
-    openingTime: settingsData?.openingTime || '08:00',
-    closingTime: settingsData?.closingTime || '22:00',
-    gstin: settingsData?.gstin || '',
-    gstNumber: settingsData?.gstin || '',
+    openingTime: '08:00',
+    closingTime: '22:00',
+    gstin: '',
     cgstRate: 9,
     sgstRate: 9,
     taxInclusive: true,
     receiptWidth: '80mm',
     autoPrintReceipt: true,
-    radiusKm: settingsData?.radiusKm || 3,
+    radiusKm: 3,
   });
 
-  const [deliveryEnabled, setDeliveryEnabled] = useState(settingsData?.deliveryEnabled ?? true);
-  const [pickupEnabled, setPickupEnabled] = useState(settingsData?.clickCollectEnabled ?? true);
+  const [deliveryEnabled, setDeliveryEnabled] = useState(true);
+  const [pickupEnabled, setPickupEnabled] = useState(true);
+
+  useEffect(() => {
+    if (settingsData) {
+      setForm({
+        name: settingsData.name || '',
+        address: settingsData.address || '',
+        phone: settingsData.phone || '',
+        gpsCoords: (settingsData.lat !== undefined && settingsData.long !== undefined) ? `${settingsData.lat}, ${settingsData.long}` : '28.6273, 77.3725',
+        openingTime: settingsData.openingTime || '08:00',
+        closingTime: settingsData.closingTime || '22:00',
+        gstin: settingsData.gstin || '',
+        cgstRate: 9,
+        sgstRate: 9,
+        taxInclusive: true,
+        receiptWidth: '80mm',
+        autoPrintReceipt: true,
+        radiusKm: settingsData.radiusKm || 3,
+      });
+      setDeliveryEnabled(settingsData.deliveryEnabled ?? true);
+      setPickupEnabled(settingsData.clickCollectEnabled ?? true);
+    }
+  }, [settingsData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const [latStr, longStr] = form.gpsCoords.split(',').map(s => s.trim());
+    const lat = parseFloat(latStr) || 28.6273;
+    const long = parseFloat(longStr) || 77.3725;
+
     updateSettingsMutation.mutate(
       {
         storeId,
@@ -57,6 +82,8 @@ export default function StoreSettingsPage() {
           name: form.name,
           address: form.address,
           phone: form.phone,
+          lat,
+          long,
           openingTime: form.openingTime,
           closingTime: form.closingTime,
           gstin: form.gstin,
@@ -220,8 +247,8 @@ export default function StoreSettingsPage() {
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-muted-foreground uppercase">Outlet GSTIN *</label>
                       <Input 
-                        value={form.gstNumber}
-                        onChange={(e) => setForm(prev => ({ ...prev, gstNumber: e.target.value }))}
+                        value={form.gstin}
+                        onChange={(e) => setForm(prev => ({ ...prev, gstin: e.target.value }))}
                         required
                       />
                     </div>

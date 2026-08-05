@@ -280,7 +280,7 @@ export function DataTable<T>({
                   className={`border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
                   {columns.map((col, colIdx) => (
-                    <td key={colIdx} className={`px-4 py-3 align-middle ${col.className || ''}`}>
+                    <td key={colIdx} className={`px-4 py-2 align-middle text-[11px] text-slate-800 dark:text-slate-200 [&_*]:text-[11px] ${col.className || ''}`}>
                       {col.cell ? col.cell(item) : (col.accessorKey ? String(item[col.accessorKey] || '') : '')}
                     </td>
                   ))}

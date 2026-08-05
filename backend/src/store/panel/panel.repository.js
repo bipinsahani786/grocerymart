@@ -1279,7 +1279,7 @@ export class StorePanelRepository {
 
   // ── Analytics ──
   async analytics(storeId) {
-    const [paymentMethods, topProducts, hourly] = await Promise.all([
+    const [paymentMethods, topProducts, hourly, slowProducts] = await Promise.all([
       prisma.payment.groupBy({
         by: ["method"],
         where: { order: { storeId } },
@@ -1290,17 +1290,39 @@ export class StorePanelRepository {
         where: { storeId },
         orderBy: { salesCount: "desc" },
         take: 10,
-        include: { inventory: true },
+        include: { inventory: true, category: true },
       }),
       prisma.order.findMany({
         where: { storeId },
-        select: { createdAt: true, totalAmount: true, status: true },
+        select: { 
+          id: true,
+          orderNumber: true,
+          createdAt: true, 
+          totalAmount: true, 
+          status: true,
+          type: true,
+          customer: {
+            select: { name: true }
+          },
+          staff: {
+            select: { name: true }
+          },
+          _count: {
+            select: { items: true }
+          }
+        },
         orderBy: { createdAt: "desc" },
         take: 200,
       }),
+      prisma.product.findMany({
+        where: { storeId },
+        orderBy: { salesCount: "asc" },
+        take: 5,
+        include: { inventory: true },
+      }),
     ]);
 
-    return { paymentMethods, topProducts, hourly };
+    return { paymentMethods, topProducts, hourly, slowProducts };
   }
 }
 
