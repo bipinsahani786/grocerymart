@@ -401,6 +401,64 @@ export class StorePanelService {
     const data = await storePanelRepository.analytics(storeId);
     return { success: true, data };
   }
+
+  // ==========================================
+  // OFFERS CRUD
+  // ==========================================
+  async getOffers(user, storeIdParam, page, limit, search) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const result = await storePanelRepository.getOffers(storeId, page, limit, search);
+    return { success: true, ...result };
+  }
+
+  async createOffer(user, storeIdParam, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    if (!payload.code || !payload.code.trim()) throw new AppError("Offer code is required", 400);
+    if (!payload.discountType) throw new AppError("Discount type is required", 400);
+    const data = await storePanelRepository.createOffer(storeId, payload);
+    return { success: true, data, message: "Offer coupon created successfully" };
+  }
+
+  async updateOffer(user, storeIdParam, id, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const data = await storePanelRepository.updateOffer(id, storeId, payload);
+    return { success: true, data, message: "Offer coupon updated successfully" };
+  }
+
+  async deleteOffer(user, storeIdParam, id) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    await storePanelRepository.deleteOffer(id, storeId);
+    return { success: true, message: "Offer coupon deleted successfully" };
+  }
+
+  // ==========================================
+  // SUBSCRIPTIONS CRUD
+  // ==========================================
+  async getSubscriptions(user, storeIdParam, page, limit, search) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const result = await storePanelRepository.getSubscriptions(storeId, page, limit, search);
+    return { success: true, ...result };
+  }
+
+  async createSubscription(user, storeIdParam, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    if (!payload.name || !payload.name.trim()) throw new AppError("Subscription name is required", 400);
+    if (payload.price === undefined) throw new AppError("Price is required", 400);
+    const data = await storePanelRepository.createSubscription(storeId, payload);
+    return { success: true, data, message: "Subscription plan created successfully" };
+  }
+
+  async updateSubscription(user, storeIdParam, id, payload) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    const data = await storePanelRepository.updateSubscription(id, storeId, payload);
+    return { success: true, data, message: "Subscription plan updated successfully" };
+  }
+
+  async deleteSubscription(user, storeIdParam, id) {
+    const storeId = await this.resolveStoreId(user, storeIdParam);
+    await storePanelRepository.deleteSubscription(id, storeId);
+    return { success: true, message: "Subscription plan deleted successfully" };
+  }
 }
 
 export const storePanelService = new StorePanelService();

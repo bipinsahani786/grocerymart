@@ -7,7 +7,6 @@ import {
   UserCog,
   ShoppingCart,
   ClipboardCheck,
-  PackageCheck,
   Package,
   Boxes,
   FileText,
@@ -20,6 +19,7 @@ import {
   ShieldAlert,
   FolderTree,
   ShoppingBag,
+  Percent,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -128,6 +128,17 @@ export const businessMenuGroups = [
         href: "/store/analytics",
         icon: TrendingUp,
         subtitle: "Sales, products, payment methods, staff KPIs and hourly load",
+      },
+    ],
+  },
+  {
+    title: "PROMOTIONS",
+    items: [
+      {
+        name: "Offers & Club",
+        href: "/store/offers",
+        icon: Percent,
+        subtitle: "Coupons, flat/percentage discount rules, and VIP subscription plans",
       },
     ],
   },

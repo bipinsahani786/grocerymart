@@ -156,6 +156,9 @@ model Store {
   posEnabled          Boolean  @default(true) @map("pos_enabled")
   deliveryEnabled     Boolean  @default(true) @map("delivery_enabled")
   clickCollectEnabled Boolean  @default(true) @map("click_collect_enabled")
+  deliveryChargePerKm Float    @default(0.0) @map("delivery_charge_per_km")
+  freeDeliveryKmRadius Float   @default(0.0) @map("free_delivery_km_radius")
+  minDeliveryCharge   Float    @default(0.0) @map("min_delivery_charge")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
@@ -180,6 +183,8 @@ model Store {
   batches             StoreBatch[]
   deliveryPartners    DeliveryPartnerStore[]
   pickupSlots         PickupSlot[]
+  offers              StoreOffer[]
+  subscriptionPlans   StoreSubscriptionPlan[]
 
   @@map("stores")
 }
@@ -758,4 +763,42 @@ model SystemSetting {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+model StoreOffer {
+  id               String      @id @default(uuid())
+  storeId          String      @map("store_id")
+  store            Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  code             String      // e.g., "WELCOME200"
+  description      String?     // e.g., "₹200 off on orders above ₹1000"
+  discountType     String      @map("discount_type") // "FLAT", "PERCENT"
+  discountValue    Float       @map("discount_value")
+  minOrderValue    Float       @default(0.0) @map("min_order_value")
+  maxDiscount      Float?      @map("max_discount")
+  startDate        DateTime    @default(now()) @map("start_date")
+  endDate          DateTime?   @map("end_date")
+  isActive         Boolean     @default(true) @map("is_active")
+  usageLimit       Int?        @map("usage_limit")
+  usageCount       Int         @default(0) @map("usage_count")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  @@unique([storeId, code])
+  @@map("store_offers")
+}
+
+model StoreSubscriptionPlan {
+  id               String      @id @default(uuid())
+  storeId          String      @map("store_id")
+  store            Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name             String      // e.g., "VIP club", "Daily Milk Pass"
+  description      String?
+  price            Float
+  durationDays     Int         @default(30) @map("duration_days")
+  isActive         Boolean     @default(true) @map("is_active")
+  features         String[]    @default([])
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  @@map("store_subscription_plans")
 }

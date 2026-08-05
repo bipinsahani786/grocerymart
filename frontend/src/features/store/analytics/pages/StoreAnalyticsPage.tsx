@@ -13,14 +13,12 @@ import {
   Users,
   AlertTriangle,
   TrendingDown,
-  Activity,
-  Zap,
-  ShoppingBag,
-  Badge
+  Activity
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
+import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/authStore';
 import { useStoreAnalytics } from '@/features/store/api/useStorePanel';
 import {
@@ -128,7 +126,7 @@ export default function StoreAnalyticsPage() {
 
   // Basket size trend data
   const basketSizeTrendData = useMemo(() => {
-    return (hourly || []).slice(0, 8).map((h: any, idx: number) => ({
+    return (hourly || []).slice(0, 8).map((_: any, idx: number) => ({
       name: `Slot ${idx + 1}`,
       'Avg Items': Math.round(3.5 + Math.random() * 2),
       'Target Basket': 5
@@ -412,7 +410,7 @@ export default function StoreAnalyticsPage() {
                       <Tooltip cursor={false} contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
                       <Line type="monotone" dataKey="Avg Items" stroke="#10b981" strokeWidth={2.5} activeDot={{ r: 6 }} />
-                      <Line type="dashed" dataKey="Target Basket" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4 4" />
+                      <Line type="monotone" dataKey="Target Basket" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4 4" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>

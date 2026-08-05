@@ -7,7 +7,10 @@ import {
   Printer, 
   Power,
   Save,
-  } from 'lucide-react';
+  Truck,
+  Navigation,
+  Locate
+} from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +20,21 @@ import { useStoreSettings, useUpdateStoreSettings } from '@/features/store/api/u
 import { toast } from 'sonner';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 
-type ActiveTab = 'info' | 'hours' | 'tax' | 'pos' | 'switches';
+type ActiveTab = 'info' | 'hours' | 'tax' | 'pos' | 'delivery' | 'switches';
+
+// Haversine formula to compute distance in KM
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const d = R * c;
+  return parseFloat(d.toFixed(2));
+};
 
 export default function StoreSettingsPage() {
   const user = useAuthStore((state) => state.user);
@@ -41,11 +58,18 @@ export default function StoreSettingsPage() {
     taxInclusive: true,
     receiptWidth: '80mm',
     autoPrintReceipt: true,
-    radiusKm: 3,
+    radiusKm: '' as string | number,
+    deliveryChargePerKm: '' as string | number,
+    freeDeliveryKmRadius: '' as string | number,
+    minDeliveryCharge: '' as string | number,
   });
 
   const [deliveryEnabled, setDeliveryEnabled] = useState(true);
   const [pickupEnabled, setPickupEnabled] = useState(true);
+
+  // Live calculator test states
+  const [testDistance, setTestDistance] = useState<string>('5');
+  const [detectingGps, setDetectingGps] = useState<boolean>(false);
 
   useEffect(() => {
     if (settingsData) {
@@ -62,7 +86,10 @@ export default function StoreSettingsPage() {
         taxInclusive: true,
         receiptWidth: '80mm',
         autoPrintReceipt: true,
-        radiusKm: settingsData.radiusKm || 3,
+        radiusKm: settingsData.radiusKm !== undefined ? settingsData.radiusKm : '',
+        deliveryChargePerKm: settingsData.deliveryChargePerKm || '',
+        freeDeliveryKmRadius: settingsData.freeDeliveryKmRadius || '',
+        minDeliveryCharge: settingsData.minDeliveryCharge || '',
       });
       setDeliveryEnabled(settingsData.deliveryEnabled ?? true);
       setPickupEnabled(settingsData.clickCollectEnabled ?? true);
@@ -87,7 +114,10 @@ export default function StoreSettingsPage() {
           openingTime: form.openingTime,
           closingTime: form.closingTime,
           gstin: form.gstin,
-          radiusKm: parseFloat(String(form.radiusKm)),
+          radiusKm: parseFloat(String(form.radiusKm)) || 0,
+          deliveryChargePerKm: parseFloat(String(form.deliveryChargePerKm)) || 0,
+          freeDeliveryKmRadius: parseFloat(String(form.freeDeliveryKmRadius)) || 0,
+          minDeliveryCharge: parseFloat(String(form.minDeliveryCharge)) || 0,
           deliveryEnabled,
           clickCollectEnabled: pickupEnabled,
         },
@@ -137,6 +167,7 @@ export default function StoreSettingsPage() {
                 { id: 'hours', name: 'Working Hours', icon: Clock },
                 { id: 'tax', name: 'Tax Config (GST)', icon: BadgeIndianRupee },
                 { id: 'pos', name: 'POS & Printing', icon: Printer },
+                { id: 'delivery', name: 'Delivery & KM Rules', icon: Truck },
                 { id: 'switches', name: 'Channel Switches', icon: Power }
               ].map(tab => (
                 <button
@@ -321,6 +352,160 @@ export default function StoreSettingsPage() {
                       <label htmlFor="autoPrintReceipt" className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                         Trigger automatic thermal receipt print on checkout completion
                       </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'delivery' && (
+                <div className="space-y-6 animate-page-enter">
+                  <div>
+                    <h3 className="font-black text-sm text-slate-800 dark:text-white uppercase tracking-wider">Distance-Based Delivery Settings</h3>
+                    <p className="text-xs text-muted-foreground">Configure kilometer-wise delivery fees and free shipping radiuses. These rules sync directly with POS checkout and the customer mobile applications.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Base / Minimum Delivery Charge (₹)</label>
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={form.minDeliveryCharge}
+                          onChange={(e) => setForm(prev => ({ ...prev, minDeliveryCharge: e.target.value }))}
+                          placeholder="0.00"
+                          required
+                        />
+                        <p className="text-[10px] text-muted-foreground">The base amount charged if the order doesn't qualify for free delivery.</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Free Delivery Radius (KM)</label>
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={form.freeDeliveryKmRadius}
+                          onChange={(e) => setForm(prev => ({ ...prev, freeDeliveryKmRadius: e.target.value }))}
+                          placeholder="0.0"
+                          required
+                        />
+                        <p className="text-[10px] text-muted-foreground">Orders delivered within this distance radius are entirely free.</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Rate Per Kilometer (₹/KM)</label>
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={form.deliveryChargePerKm}
+                          onChange={(e) => setForm(prev => ({ ...prev, deliveryChargePerKm: e.target.value }))}
+                          placeholder="0.00"
+                          required
+                        />
+                        <p className="text-[10px] text-muted-foreground">Charge per kilometer applied to the distance exceeding the free radius.</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Maximum Service Radius Limit (KM)</label>
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={form.radiusKm}
+                          onChange={(e) => setForm(prev => ({ ...prev, radiusKm: e.target.value }))}
+                          placeholder="3.0"
+                          required
+                        />
+                        <p className="text-[10px] text-muted-foreground">The absolute maximum distance limits for delivery service routing.</p>
+                      </div>
+                    </div>
+
+                    {/* Calculator Preview Widget */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-border space-y-4">
+                      <div>
+                        <h4 className="text-xs font-black uppercase text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                          <Navigation className="h-4 w-4 text-primary-500" />
+                          Live Delivery Fee Calculator
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Test distance rules using active browser location coordinates.</p>
+                      </div>
+
+                      <div className="space-y-3.5">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Enter Distance to Customer (KM)</label>
+                          <div className="flex gap-2">
+                            <Input 
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={testDistance}
+                              onChange={(e) => setTestDistance(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                if (!navigator.geolocation) {
+                                  toast.error("Geolocation is not supported by your browser");
+                                  return;
+                                }
+                                setDetectingGps(true);
+                                navigator.geolocation.getCurrentPosition(
+                                  (pos) => {
+                                    setDetectingGps(false);
+                                    const storeCoords = form.gpsCoords.split(',').map(Number);
+                                    if (storeCoords.length === 2 && !isNaN(storeCoords[0]) && !isNaN(storeCoords[1])) {
+                                      const distance = calculateDistance(
+                                        storeCoords[0], storeCoords[1],
+                                        pos.coords.latitude, pos.coords.longitude
+                                      );
+                                      setTestDistance(distance.toString());
+                                      toast.success(`Location detected! Distance is ${distance} KM.`);
+                                    } else {
+                                      toast.error("Set valid store GPS coordinates under 'Store Profile' first.");
+                                    }
+                                  },
+                                  (err) => {
+                                    setDetectingGps(false);
+                                    toast.error(`GPS access denied: ${err.message}`);
+                                  }
+                                );
+                              }}
+                              disabled={detectingGps}
+                              className="text-[10px] uppercase font-bold shrink-0 flex items-center gap-1.5"
+                            >
+                              <Locate className="h-3.5 w-3.5" />
+                              {detectingGps ? "Detecting..." : "Detect Location"}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Calculations result panel */}
+                        <div className="p-4 rounded-xl bg-card border border-border text-center space-y-1.5">
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider block">Calculated Delivery Fee</span>
+                          <h3 className="text-2xl font-black text-primary-500">
+                            ₹{(() => {
+                              const dist = parseFloat(testDistance) || 0;
+                              const freeKm = parseFloat(String(form.freeDeliveryKmRadius)) || 0;
+                              const minCharge = parseFloat(String(form.minDeliveryCharge)) || 0;
+                              const chargePerKm = parseFloat(String(form.deliveryChargePerKm)) || 0;
+                              if (dist <= freeKm) return 0;
+                              const chargeableDist = dist - freeKm;
+                              const fee = Math.max(minCharge, chargeableDist * chargePerKm);
+                              return parseFloat(fee.toFixed(2));
+                            })()}
+                          </h3>
+                          <p className="text-[9px] text-muted-foreground italic font-sans leading-relaxed">
+                            Formula used: <br/>
+                            <code>distance &lt;= {form.freeDeliveryKmRadius || '0'} KM ? Free (₹0) : Max({form.minDeliveryCharge || '0'}, (distance - {form.freeDeliveryKmRadius || '0'}) * ₹{form.deliveryChargePerKm || '0'})</code>
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

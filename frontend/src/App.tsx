@@ -31,6 +31,7 @@ const StoreCategoriesPage = lazy(() => import('@/features/store/categories/pages
 const StoreCustomersPage = lazy(() => import('@/features/store/customers/pages/StoreCustomersPage'));
 const StorePurchasesPage = lazy(() => import('@/features/store/purchases/pages/StorePurchasesPage'));
 const StoreSettingsPage = lazy(() => import('@/features/store/settings/pages/StoreSettingsPage'));
+const StoreOffersPage = lazy(() => import('@/features/store/offers/pages/StoreOffersPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
 import { ROLES } from './constants/roles';
@@ -159,6 +160,7 @@ function App() {
             <Route path="/store/search" element={<StoreManagerRoute><StoreSearchPage /></StoreManagerRoute>} />
             <Route path="/store/analytics" element={<StoreManagerRoute><StoreAnalyticsPage /></StoreManagerRoute>} />
             <Route path="/store/settings" element={<StoreManagerRoute><StoreSettingsPage /></StoreManagerRoute>} />
+            <Route path="/store/offers" element={<StoreManagerRoute><StoreOffersPage /></StoreManagerRoute>} />
             <Route path="/store" element={<Navigate to="/store/dashboard" replace />} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/superadmin/dashboard" element={<Navigate to="/dashboard" replace />} />

@@ -520,3 +520,123 @@ export const useStoreTaxes = (storeId?: string) => {
     },
   });
 };
+
+// ── Store Offers & Coupons ──
+export const useStoreOffers = (storeId?: string, params?: { page?: number; limit?: number; search?: string }) => {
+  return useQuery({
+    queryKey: ['store-offers', storeId, params?.page, params?.limit, params?.search],
+    queryFn: async () => {
+      const { data } = await api.get('/store/offers', { 
+        params: { 
+          storeId,
+          page: params?.page,
+          limit: params?.limit,
+          search: params?.search 
+        } 
+      });
+      return {
+        data: data.data || [],
+        total: data.total || 0
+      };
+    },
+  });
+};
+
+export const useCreateStoreOffer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, payload }: { storeId?: string; payload: any }) => {
+      const { data } = await api.post('/store/offers', payload, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-offers'] });
+    },
+  });
+};
+
+export const useUpdateStoreOffer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, offerId, payload }: { storeId?: string; offerId: string; payload: any }) => {
+      const { data } = await api.patch(`/store/offers/${offerId}`, payload, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-offers'] });
+    },
+  });
+};
+
+export const useDeleteStoreOffer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, offerId }: { storeId?: string; offerId: string }) => {
+      const { data } = await api.delete(`/store/offers/${offerId}`, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-offers'] });
+    },
+  });
+};
+
+// ── Store VIP Subscriptions ──
+export const useStoreSubscriptions = (storeId?: string, params?: { page?: number; limit?: number; search?: string }) => {
+  return useQuery({
+    queryKey: ['store-subscriptions', storeId, params?.page, params?.limit, params?.search],
+    queryFn: async () => {
+      const { data } = await api.get('/store/subscriptions', { 
+        params: { 
+          storeId,
+          page: params?.page,
+          limit: params?.limit,
+          search: params?.search 
+        } 
+      });
+      return {
+        data: data.data || [],
+        total: data.total || 0
+      };
+    },
+  });
+};
+
+export const useCreateStoreSubscription = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, payload }: { storeId?: string; payload: any }) => {
+      const { data } = await api.post('/store/subscriptions', payload, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-subscriptions'] });
+    },
+  });
+};
+
+export const useUpdateStoreSubscription = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, subscriptionId, payload }: { storeId?: string; subscriptionId: string; payload: any }) => {
+      const { data } = await api.patch(`/store/subscriptions/${subscriptionId}`, payload, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-subscriptions'] });
+    },
+  });
+};
+
+export const useDeleteStoreSubscription = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ storeId, subscriptionId }: { storeId?: string; subscriptionId: string }) => {
+      const { data } = await api.delete(`/store/subscriptions/${subscriptionId}`, { params: { storeId } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-subscriptions'] });
+    },
+  });
+};
