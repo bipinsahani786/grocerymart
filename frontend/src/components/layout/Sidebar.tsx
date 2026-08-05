@@ -69,7 +69,7 @@ export const businessMenuGroups = [
       {
         name: "Pickup Board",
         href: "/store/pickup",
-        icon: PackageCheck,
+        icon: Tv,
         subtitle: "Click & Collect orders TV display mode",
       },
     ],
@@ -77,7 +77,6 @@ export const businessMenuGroups = [
   {
     title: "CATALOG",
     items: [
-
       {
         name: "Categories",
         href: "/store/categories",
@@ -136,12 +135,6 @@ export const businessMenuGroups = [
     title: "SYSTEM",
     items: [
       {
-        name: "Pickup Board",
-        href: "/store/pickup",
-        icon: Tv,
-        subtitle: "Click & Collect orders TV display mode",
-      },
-      {
         name: "Settings",
         href: "/store/settings",
         icon: Settings,
@@ -152,7 +145,6 @@ export const businessMenuGroups = [
 ];
 
 export const superadminMenuGroups = [
-
   {
     title: "GLOBAL",
     items: [
@@ -199,7 +191,7 @@ export const superadminMenuGroups = [
         href: "/stores",
         icon: Store,
         permission: "view_dashboard",
-        subtitle: "Create stores and monitor store-level operating status",
+        subtitle: "Create, view and update settings for all franchise retail locations",
       },
       {
         name: "Store Managers",
@@ -320,13 +312,9 @@ export function Sidebar({ className }: { className?: string }) {
           onClick={() => setSidebarCollapsed(true)}
         />
       )}
-
       <div
         className={cn(
-          "fixed lg:static inset-y-0 left-0 h-screen flex-col z-50 shrink-0 transition-all duration-200 ease-out flex shadow-[4px_0_24px_rgba(0,0,0,0.08)]",
-          isDark
-            ? "bg-[#1e293b] text-slate-100 border-r border-slate-700/80 shadow-[4px_0_24px_rgba(0,0,0,0.4)]"
-            : "bg-white text-slate-900 border-r border-slate-200",
+          "fixed lg:static inset-y-0 left-0 h-screen flex-col z-50 shrink-0 transition-all duration-200 ease-out flex border-r border-border bg-card text-card-foreground shadow-sm",
           isSidebarCollapsed
             ? "w-[190px] lg:w-[56px] -translate-x-full lg:translate-x-0"
             : "w-[190px] translate-x-0",
@@ -336,7 +324,7 @@ export function Sidebar({ className }: { className?: string }) {
         {/* ── Brand ── */}
         <div
           className={cn(
-            "h-16 flex items-center border-b border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden",
+            "h-16 flex items-center border-b border-border shrink-0 overflow-hidden",
             isSidebarCollapsed ? "justify-center px-0" : "px-3.5"
           )}
         >
@@ -351,7 +339,7 @@ export function Sidebar({ className }: { className?: string }) {
               </div>
             )}
             {!isSidebarCollapsed && (
-              <span className={cn("text-[17px] font-extrabold tracking-tight truncate transition-colors duration-300", isDark ? "text-primary-400" : "text-primary-600")}>
+              <span className="text-[17px] font-extrabold tracking-tight truncate text-primary-600 dark:text-primary-400">
                 {appName}
               </span>
             )}
@@ -360,20 +348,15 @@ export function Sidebar({ className }: { className?: string }) {
 
         {/* ── Search ── */}
         {!isSidebarCollapsed && (
-          <div className={cn("px-3 py-2 border-b shrink-0", isDark ? "border-slate-700/80" : "border-slate-200")}>
+          <div className="px-3 py-2 border-b border-border shrink-0">
             <div className="relative">
-              <Search className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5", isDark ? "text-slate-300" : "text-slate-400")} />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
-                className={cn(
-                  "w-full h-7 pl-8 pr-2 text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-colors border font-semibold",
-                  isDark
-                    ? "bg-slate-900/60 border-slate-600/80 text-white placeholder:text-slate-400"
-                    : "bg-slate-100 border-transparent text-slate-700 placeholder:text-slate-400"
-                )}
+                className="w-full h-7 pl-8 pr-2 text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-colors border border-border font-semibold bg-muted/40 text-foreground placeholder:text-muted-foreground"
               />
             </div>
           </div>
@@ -384,13 +367,10 @@ export function Sidebar({ className }: { className?: string }) {
           {filteredMenuGroups.map((group, idx) => (
             <div key={idx}>
               {idx > 0 && !isSidebarCollapsed && (
-                <div className={cn("mx-3 my-1 border-t", isDark ? "border-slate-700/60" : "border-slate-100")} />
+                <div className="mx-3 my-1 border-t border-border/60" />
               )}
               {!isSidebarCollapsed && (
-                <div className={cn(
-                  "px-4 pt-3 pb-1 text-[10px] font-semibold tracking-wider uppercase select-none",
-                  isDark ? "text-slate-300" : "text-slate-500"
-                )}>
+                <div className="px-4 pt-3 pb-1 text-[10px] font-semibold tracking-wider uppercase select-none text-muted-foreground">
                   {group.title}
                 </div>
               )}
@@ -407,29 +387,21 @@ export function Sidebar({ className }: { className?: string }) {
                             ? "justify-center w-9 h-9 mx-auto"
                             : "h-8 px-2.5 gap-2.5",
                           isActive
-                            ? cn(
-                                isDark
-                                  ? "bg-primary-500/20 text-white font-semibold"
-                                  : "bg-primary-50 text-primary-700 font-semibold"
-                              )
-                            : cn(
-                                isDark
-                                  ? "text-slate-200 hover:text-white hover:bg-slate-700/60"
-                                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                              )
+                            ? "bg-primary-500/10 text-primary-600 dark:text-primary-400 font-semibold"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                         )}
                       >
                         {isActive && !isSidebarCollapsed && (
-                          <div className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r", isDark ? "bg-primary-400" : "bg-primary-600")} />
+                          <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r bg-primary-500" />
                         )}
                         <item.icon
-                          strokeWidth={isActive ? 2 : 1.5}
-                          className={cn(
-                            "shrink-0 h-4 w-4",
-                            isActive
-                              ? cn(isDark ? "text-primary-400" : "text-primary-600")
-                              : cn(isDark ? "text-slate-300" : "text-slate-500")
-                          )}
+                           strokeWidth={isActive ? 2 : 1.5}
+                           className={cn(
+                             "shrink-0 h-4 w-4",
+                             isActive
+                               ? "text-primary-600 dark:text-primary-400"
+                               : "text-muted-foreground"
+                           )}
                         />
                         {!isSidebarCollapsed && (
                           <span className="truncate">{item.name}</span>
@@ -443,7 +415,7 @@ export function Sidebar({ className }: { className?: string }) {
           ))}
           <div className="h-8 shrink-0" />
         </nav>
-      </div >
+      </div>
     </>
   );
 }

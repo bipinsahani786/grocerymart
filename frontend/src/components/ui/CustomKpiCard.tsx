@@ -8,6 +8,8 @@ export interface CustomKpiCardProps {
   colorClass?: string;
   iconColorClass?: string;
   className?: string;
+  onClick?: () => void;
+  isActive?: boolean;
 }
 
 export function CustomKpiCard({
@@ -18,25 +20,30 @@ export function CustomKpiCard({
   colorClass = 'bg-primary-500',
   iconColorClass = 'text-white bg-white/20',
   className = '',
+  onClick,
+  isActive,
 }: CustomKpiCardProps) {
+  const hasTextColor = colorClass.includes('text-');
+  const textClass = hasTextColor ? '' : 'text-white';
+  const labelTextClass = hasTextColor ? 'text-slate-500 dark:text-zinc-400' : 'text-white/80';
+  const valueTextClass = hasTextColor ? 'text-slate-900 dark:text-white' : 'text-white';
+  const subtitleTextClass = hasTextColor ? 'text-slate-500 dark:text-zinc-500' : 'text-white/70';
+  const borderClass = hasTextColor ? 'border-slate-100 dark:border-zinc-800' : 'border-white/20';
+
   return (
     <div
-      className={`transition-all duration-300 relative overflow-hidden rounded-md shadow-sm hover:shadow-md border border-white/10 p-3 sm:p-4 flex flex-col justify-between min-h-[85px] w-full text-white group ${colorClass} ${className}`}
+      onClick={onClick}
+      className={`transition-all duration-300 relative overflow-hidden rounded-md shadow-sm hover:shadow-md border border-slate-200/50 dark:border-zinc-800 p-3 sm:p-4 flex flex-col justify-between min-h-[85px] w-full group ${colorClass} ${textClass} ${className} ${onClick ? 'cursor-pointer hover:-translate-y-0.5' : ''} ${isActive ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-slate-950' : ''}`}
     >
-      {/* Decorative Background Shapes */}
-      <div className="absolute right-2 top-2 w-16 h-16 bg-white/20 rotate-45 rounded-xl mix-blend-overlay pointer-events-none group-hover:bg-white/30 transition-all duration-500" />
-      <div className="absolute -left-4 bottom-0 w-20 h-20 bg-black/10 rounded-full mix-blend-overlay pointer-events-none group-hover:bg-black/20 transition-all duration-500" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[2px] border-white/10 rounded-none mix-blend-overlay opacity-30 pointer-events-none rotate-12 scale-150" />
-
       <div className="relative z-10 flex flex-col justify-between h-full flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex-1 min-w-0">
-            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/80 select-none truncate block">
+            <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider select-none truncate block ${labelTextClass}`}>
               {title}
             </span>
             <div className="flex items-baseline min-w-0 mt-0.5">
               <span
-                className="text-lg sm:text-xl font-black tracking-tight font-display truncate block w-full text-white drop-shadow-sm"
+                className={`text-lg sm:text-xl font-black tracking-tight font-display truncate block w-full drop-shadow-sm ${valueTextClass}`}
                 title={value.toString()}
               >
                 {value}
@@ -51,8 +58,8 @@ export function CustomKpiCard({
         </div>
 
         {subtitle && (
-          <div className="mt-auto min-w-0 pt-1.5 border-t border-white/20">
-            <span className="text-[8px] sm:text-[9px] font-semibold text-white/70 block truncate" title={subtitle}>
+          <div className={`mt-auto min-w-0 pt-1.5 border-t ${borderClass}`}>
+            <span className={`text-[8px] sm:text-[9px] font-semibold block truncate ${subtitleTextClass}`} title={subtitle}>
               {subtitle}
             </span>
           </div>
