@@ -195,6 +195,54 @@ export class StorePanelController {
     const result = await storePanelService.getAnalytics(req.user, req.query.storeId);
     res.json(result);
   });
+
+  // ==========================================
+  // OFFERS CRUD
+  // ==========================================
+  getOffers = catchAsync(async (req, res) => {
+    const { storeId, page, limit, search } = req.query;
+    const result = await storePanelService.getOffers(req.user, storeId, page, limit, search);
+    res.json(result);
+  });
+
+  createOffer = catchAsync(async (req, res) => {
+    const result = await storePanelService.createOffer(req.user, req.query.storeId, req.body);
+    res.status(201).json(result);
+  });
+
+  updateOffer = catchAsync(async (req, res) => {
+    const result = await storePanelService.updateOffer(req.user, req.query.storeId, req.params.id, req.body);
+    res.json(result);
+  });
+
+  deleteOffer = catchAsync(async (req, res) => {
+    const result = await storePanelService.deleteOffer(req.user, req.query.storeId, req.params.id);
+    res.json(result);
+  });
+
+  // ==========================================
+  // SUBSCRIPTIONS CRUD
+  // ==========================================
+  getSubscriptions = catchAsync(async (req, res) => {
+    const { storeId, page, limit, search } = req.query;
+    const result = await storePanelService.getSubscriptions(req.user, storeId, page, limit, search);
+    res.json(result);
+  });
+
+  createSubscription = catchAsync(async (req, res) => {
+    const result = await storePanelService.createSubscription(req.user, req.query.storeId, req.body);
+    res.status(201).json(result);
+  });
+
+  updateSubscription = catchAsync(async (req, res) => {
+    const result = await storePanelService.updateSubscription(req.user, req.query.storeId, req.params.id, req.body);
+    res.json(result);
+  });
+
+  deleteSubscription = catchAsync(async (req, res) => {
+    const result = await storePanelService.deleteSubscription(req.user, req.query.storeId, req.params.id);
+    res.json(result);
+  });
 }
 
 export const storePanelController = new StorePanelController();

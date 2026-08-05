@@ -56,4 +56,16 @@ router.patch("/staff/:id/shift", storePanelController.updateStaffShift);
 
 router.get("/analytics", storePanelController.getAnalytics);
 
+// Offers CRUD Routes
+router.get("/offers", storePanelController.getOffers);
+router.post("/offers", storePanelController.createOffer);
+router.patch("/offers/:id", storePanelController.updateOffer);
+router.delete("/offers/:id", storePanelController.deleteOffer);
+
+// Subscriptions CRUD Routes
+router.get("/subscriptions", storePanelController.getSubscriptions);
+router.post("/subscriptions", storePanelController.createSubscription);
+router.patch("/subscriptions/:id", storePanelController.updateSubscription);
+router.delete("/subscriptions/:id", storePanelController.deleteSubscription);
+
 export default router;

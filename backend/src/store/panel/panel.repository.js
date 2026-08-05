@@ -60,9 +60,29 @@ export class StorePanelRepository {
   }
 
   async updateStoreSettings(storeId, data) {
+    const updateData = { ...data };
+    if (updateData.deliveryChargePerKm !== undefined) {
+      updateData.deliveryChargePerKm = parseFloat(updateData.deliveryChargePerKm) || 0;
+    }
+    if (updateData.freeDeliveryKmRadius !== undefined) {
+      updateData.freeDeliveryKmRadius = parseFloat(updateData.freeDeliveryKmRadius) || 0;
+    }
+    if (updateData.minDeliveryCharge !== undefined) {
+      updateData.minDeliveryCharge = parseFloat(updateData.minDeliveryCharge) || 0;
+    }
+    if (updateData.radiusKm !== undefined) {
+      updateData.radiusKm = parseFloat(updateData.radiusKm) || 0;
+    }
+    if (updateData.lat !== undefined) {
+      updateData.lat = parseFloat(updateData.lat) || 0;
+    }
+    if (updateData.long !== undefined) {
+      updateData.long = parseFloat(updateData.long) || 0;
+    }
+
     return await prisma.store.update({
       where: { id: storeId },
-      data,
+      data: updateData,
       include: { manager: true },
     });
   }
@@ -1323,6 +1343,138 @@ export class StorePanelRepository {
     ]);
 
     return { paymentMethods, topProducts, hourly, slowProducts };
+  }
+
+  // ==========================================
+  // OFFERS CRUD
+  // ==========================================
+  async getOffers(storeId, page = 1, limit = 10, search = "") {
+    const take = parseInt(limit) || 10;
+    const skip = (Math.max(1, parseInt(page)) - 1) * take;
+
+    const where = { storeId };
+    if (search) {
+      where.OR = [
+        { code: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } }
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.storeOffer.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take
+      }),
+      prisma.storeOffer.count({ where })
+    ]);
+
+    return { data, total };
+  }
+
+  async createOffer(storeId, data) {
+    return await prisma.storeOffer.create({
+      data: {
+        storeId,
+        code: data.code,
+        description: data.description || null,
+        discountType: data.discountType,
+        discountValue: parseFloat(data.discountValue) || 0,
+        minOrderValue: parseFloat(data.minOrderValue) || 0,
+        maxDiscount: data.maxDiscount ? parseFloat(data.maxDiscount) : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
+        isActive: data.isActive !== undefined ? !!data.isActive : true,
+        usageLimit: data.usageLimit ? parseInt(data.usageLimit) : null,
+      }
+    });
+  }
+
+  async updateOffer(id, storeId, data) {
+    const updateData = {};
+    if (data.code !== undefined) updateData.code = data.code;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.discountType !== undefined) updateData.discountType = data.discountType;
+    if (data.discountValue !== undefined) updateData.discountValue = parseFloat(data.discountValue) || 0;
+    if (data.minOrderValue !== undefined) updateData.minOrderValue = parseFloat(data.minOrderValue) || 0;
+    if (data.maxDiscount !== undefined) updateData.maxDiscount = data.maxDiscount ? parseFloat(data.maxDiscount) : null;
+    if (data.endDate !== undefined) updateData.endDate = data.endDate ? new Date(data.endDate) : null;
+    if (data.isActive !== undefined) updateData.isActive = !!data.isActive;
+    if (data.usageLimit !== undefined) updateData.usageLimit = data.usageLimit ? parseInt(data.usageLimit) : null;
+
+    return await prisma.storeOffer.update({
+      where: { id, storeId },
+      data: updateData
+    });
+  }
+
+  async deleteOffer(id, storeId) {
+    return await prisma.storeOffer.delete({
+      where: { id, storeId }
+    });
+  }
+
+  // ==========================================
+  // SUBSCRIPTIONS CRUD
+  // ==========================================
+  async getSubscriptions(storeId, page = 1, limit = 10, search = "") {
+    const take = parseInt(limit) || 10;
+    const skip = (Math.max(1, parseInt(page)) - 1) * take;
+
+    const where = { storeId };
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } }
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.storeSubscriptionPlan.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take
+      }),
+      prisma.storeSubscriptionPlan.count({ where })
+    ]);
+
+    return { data, total };
+  }
+
+  async createSubscription(storeId, data) {
+    return await prisma.storeSubscriptionPlan.create({
+      data: {
+        storeId,
+        name: data.name,
+        description: data.description || null,
+        price: parseFloat(data.price) || 0,
+        durationDays: parseInt(data.durationDays) || 30,
+        isActive: data.isActive !== undefined ? !!data.isActive : true,
+        features: Array.isArray(data.features) ? data.features : [],
+      }
+    });
+  }
+
+  async updateSubscription(id, storeId, data) {
+    const updateData = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.price !== undefined) updateData.price = parseFloat(data.price) || 0;
+    if (data.durationDays !== undefined) updateData.durationDays = parseInt(data.durationDays) || 30;
+    if (data.isActive !== undefined) updateData.isActive = !!data.isActive;
+    if (data.features !== undefined) updateData.features = Array.isArray(data.features) ? data.features : [];
+
+    return await prisma.storeSubscriptionPlan.update({
+      where: { id, storeId },
+      data: updateData
+    });
+  }
+
+  async deleteSubscription(id, storeId) {
+    return await prisma.storeSubscriptionPlan.delete({
+      where: { id, storeId }
+    });
   }
 }
 

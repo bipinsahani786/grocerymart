@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   FileText,
-  Search,
   Printer,
-  RotateCcw,
   ReceiptText,
   X,
   BadgeIndianRupee,
@@ -96,12 +94,7 @@ export default function StoreBillingPage() {
     return bills.find((b: any) => b.id === selectedBillId) || bills[0];
   }, [bills, selectedBillId]);
 
-  // Initiate Refund / Void bill
-  const handleRefund = (id: string) => {
-    toast.success(`Transaction Voided!`, {
-      description: `Bill ${id} marked as REFUNDED.`
-    });
-  };
+
 
   const handleOpenReceipt = (id: string) => {
     setSelectedBillId(id);
