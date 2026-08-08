@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
     let charIndex = 0;
     let isDeleting = false;
     let typingSpeed = 100;
-    let timer: NodeJS.Timeout;
+    let timer: any;
 
     const type = () => {
       const currentWord = placeholders[wordIndex];
