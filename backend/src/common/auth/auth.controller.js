@@ -107,6 +107,21 @@ export class AuthController {
     const updated = await authRepository.updateUser(req.user.id, { avatar: null });
     res.json({ success: true, data: { avatar: null }, message: "Avatar removed" });
   });
+
+  sendOtpDirect = catchAsync(async (req, res) => {
+    const result = await authService.sendOtpDirect(req.body);
+    res.json(result);
+  });
+
+  verifyOtpDirect = catchAsync(async (req, res) => {
+    const result = await authService.verifyOtpDirect(req.body);
+    res.json(result);
+  });
+
+  registerCustomerDirect = catchAsync(async (req, res) => {
+    const result = await authService.registerCustomerDirect(req.body);
+    res.json(result);
+  });
 }
 
 export const authController = new AuthController();

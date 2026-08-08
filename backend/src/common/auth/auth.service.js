@@ -346,6 +346,103 @@ export class AuthService {
       data: created,
     };
   }
+
+  async sendOtpDirect({ phone }) {
+    if (!phone || String(phone).trim().length !== 10) {
+      throw new AppError("A valid 10-digit phone number is required", 400);
+    }
+    const cleanPhone = String(phone).trim();
+    
+    // Send OTP via OTP service
+    await otpService.sendOtp({ phone: cleanPhone, purpose: "Verification" });
+
+    return {
+      success: true,
+      message: "OTP sent successfully",
+    };
+  }
+
+  async verifyOtpDirect({ phone, otp }) {
+    if (!phone || !otp) {
+      throw new AppError("Phone and OTP code are required", 400);
+    }
+    const cleanPhone = String(phone).trim();
+
+    // Verify OTP code
+    otpService.verifyOtp({ identifier: cleanPhone, inputOtp: otp });
+
+    // Check if user already exists
+    const user = await authRepository.findUserByPhone(cleanPhone);
+
+    if (user) {
+      this.verifyUserAndStoreActiveStatus(user);
+      const tokens = this.generateTokens(user);
+      return {
+        success: true,
+        isNewUser: false,
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            phone: user.phone,
+            avatar: user.avatar,
+            role: user.role?.roleName || "user",
+          },
+          ...tokens,
+        },
+        message: "Logged in successfully",
+      };
+    }
+
+    return {
+      success: true,
+      isNewUser: true,
+      message: "OTP verified. Complete profile creation.",
+    };
+  }
+
+  async registerCustomerDirect({ phone, name, dob, referralCode }) {
+    if (!phone || !name || !dob) {
+      throw new AppError("Phone, Name, and DOB are required", 400);
+    }
+    const cleanPhone = String(phone).trim();
+
+    // Verify user doesn't already exist
+    const existing = await authRepository.findUserByPhone(cleanPhone);
+    if (existing) {
+      throw new AppError("Account already exists with this phone number", 400);
+    }
+
+    // Create user with CUSTOMER role
+    const createdUser = await authRepository.createUser(
+      {
+        phone: cleanPhone,
+        name: name.trim(),
+        dob: dob.trim(),
+        referralCode: referralCode ? referralCode.trim() : null,
+        status: "active",
+      },
+      "CUSTOMER"
+    );
+
+    const activeUser = await authRepository.findUserById(createdUser.id);
+    const tokens = this.generateTokens(activeUser);
+
+    return {
+      success: true,
+      data: {
+        user: {
+          id: activeUser.id,
+          name: activeUser.name,
+          phone: activeUser.phone,
+          avatar: activeUser.avatar,
+          role: "CUSTOMER",
+        },
+        ...tokens,
+      },
+      message: "Profile registered successfully",
+    };
+  }
 }
 
 export const authService = new AuthService();

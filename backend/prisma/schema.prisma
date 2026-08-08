@@ -84,6 +84,8 @@ model User {
   passwordHash   String?        @map("password_hash")
   name           String?
   avatar         String?
+  dob            String?
+  referralCode   String?        @map("referral_code")
   status         UserStatus     @default(active)
   pin            String?        // 4-6 digit PIN for POS login
   isActive       Boolean        @default(true)
