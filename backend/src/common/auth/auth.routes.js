@@ -280,6 +280,9 @@ router.post("/change-password", verifyToken, validate(changePasswordSchema), aut
  *       200:
  *         description: Superadmin seeded successfully
  */
-router.get("/seed-admin", authController.seedAdmin);
+// CUSTOMER MOBILE OTP AUTHENTICATION FLOW
+router.post("/otp/send", authController.sendOtpDirect);
+router.post("/otp/verify", authController.verifyOtpDirect);
+router.post("/otp/register", authController.registerCustomerDirect);
 
 export default router;
