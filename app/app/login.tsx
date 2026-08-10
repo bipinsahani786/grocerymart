@@ -35,7 +35,6 @@ export default function Login() {
     loading,
     toast,
     setToast,
-    triggerToast,
     handleSendOtp,
     handleVerifyOtp,
     handleRegisterProfile,

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
+import { useAuthContext } from '../context/AuthContext';
 import Constants from 'expo-constants';
 
 const debuggerHost = Constants.expoConfig?.hostUri;
@@ -15,6 +16,7 @@ export interface ToastType {
 
 export function useAuth() {
   const router = useRouter();
+  const { login } = useAuthContext();
 
   // Wizard steps
   const [step, setStep] = useState<LoginStep>('phone');
@@ -30,7 +32,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<ToastType | null>(null);
 
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const toastTimeoutRef = useRef<any>(null);
 
   // Helper to trigger toast notification
   const triggerToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -90,8 +92,9 @@ export function useAuth() {
       const data = await response.json();
 
       if (response.ok) {
-        if (data.user && data.user.name) {
+        if (data.isNewUser === false) {
           triggerToast('Successfully logged in.', 'success');
+          login(data.data.user, data.data.accessToken);
           router.replace('/home');
         } else {
           triggerToast('Code verified successfully.', 'success');
@@ -134,6 +137,7 @@ export function useAuth() {
 
       if (response.ok) {
         triggerToast('Account created successfully!', 'success');
+        login(data.data.user, data.data.accessToken);
         router.replace('/home');
       } else {
         triggerToast(data.message || 'Failed to complete registration. Please try again.', 'error');

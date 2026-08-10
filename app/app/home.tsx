@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Text, View, ScrollView, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CartProvider } from '../context/CartContext';
@@ -15,7 +16,7 @@ import tw from 'twrnc';
 function MainApp() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // default true for homepage
+  const isLoggedIn = true; // default true for homepage
 
   // Filter products based on selected category and search query
   const filteredProducts = products.filter(
@@ -26,6 +27,8 @@ function MainApp() {
 
   const gridColStyle = Platform.OS === 'web' ? tw`w-1/4 min-w-[160px]` : tw`w-1/2 min-w-[160px]`;
 
+  const router = useRouter();
+
   return (
     <View style={[tw`flex-1`, { backgroundColor: theme.colors.cardBackground }]}>
       <StatusBar style="dark" backgroundColor={theme.colors.cardBackground} />
@@ -34,7 +37,7 @@ function MainApp() {
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
           isLoggedIn={isLoggedIn}
-          onToggleLogin={() => setIsLoggedIn((prev) => !prev)}
+          onToggleLogin={() => router.push('/profile')}
         />
 
         <ScrollView

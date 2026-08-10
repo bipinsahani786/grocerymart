@@ -53,6 +53,7 @@ export const updateProfileSchema = z.object({
     email: z.string().trim().email("Invalid email format").optional(),
     phone: z.string().trim().nullable().optional(),
     avatar: z.string().nullable().optional(),
+    dob: z.string().trim().nullable().optional(),
   }),
 });
 

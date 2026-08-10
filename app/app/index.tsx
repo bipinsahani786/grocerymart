@@ -4,17 +4,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { theme } from '../constants/theme';
+import { useAuthContext } from '../context/AuthContext';
 import tw from 'twrnc';
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { user, isLoading } = useAuthContext();
 
   React.useEffect(() => {
+    // Wait until the session loading check is finished
+    if (isLoading) return;
+
     const timer = setTimeout(() => {
-      router.replace('/login');
-    }, 3000);
+      if (user && user.name) {
+        router.replace('/home');
+      } else {
+        router.replace('/login');
+      }
+    }, 2500); // 2.5 second splash display
     return () => clearTimeout(timer);
-  }, []);
+  }, [isLoading, user, router]);
 
   return (
     <LinearGradient
