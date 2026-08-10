@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Platform } from 'react-native';
+import { Text, View, ScrollView, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CartProvider } from '../context/CartContext';
@@ -10,6 +10,7 @@ import { OfferBanner } from '../components/OfferBanner';
 import { CategoryList } from '../components/CategoryList';
 import { ProductCard } from '../components/ProductCard';
 import { CartFooter } from '../components/CartFooter';
+import tw from 'twrnc';
 
 function MainApp() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -23,10 +24,12 @@ function MainApp() {
       product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const gridColStyle = Platform.OS === 'web' ? tw`w-1/4 min-w-[160px]` : tw`w-1/2 min-w-[160px]`;
+
   return (
-    <View style={styles.safeArea}>
+    <View style={[tw`flex-1`, { backgroundColor: theme.colors.cardBackground }]}>
       <StatusBar style="dark" backgroundColor={theme.colors.cardBackground} />
-      <View style={styles.container}>
+      <View style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}>
         <Header
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
@@ -36,7 +39,7 @@ function MainApp() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={tw`pb-[110px]`}
         >
           {/* Active Offers */}
           <OfferBanner />
@@ -48,33 +51,33 @@ function MainApp() {
           />
 
           {/* Products List Title */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+          <View style={[tw`px-4 pt-3 pb-1`, { backgroundColor: theme.colors.background }]}>
+            <Text style={[tw`text-lg font-black`, { color: theme.colors.text }]}>
               {selectedCategory === 'all'
                 ? 'Popular Items'
                 : `${products.find((p) => p.category === selectedCategory)?.emoji || ''} Fresh ${
                     selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)
                   }`}
             </Text>
-            <Text style={styles.sectionSubtitle}>
+            <Text style={[tw`text-xs mt-0.5`, { color: theme.colors.textMuted }]}>
               {filteredProducts.length} items available
             </Text>
           </View>
 
           {/* Products Grid */}
           {filteredProducts.length > 0 ? (
-            <View style={styles.grid}>
+            <View style={tw`flex-row flex-wrap px-2.5 pt-1`}>
               {filteredProducts.map((product) => (
-                <View key={product.id} style={styles.gridCol}>
+                <View key={product.id} style={gridColStyle}>
                   <ProductCard product={product} />
                 </View>
               ))}
             </View>
           ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyEmoji}>🔍</Text>
-              <Text style={styles.emptyText}>No items match your search</Text>
-              <Text style={styles.emptySubtitle}>Try searching for something else</Text>
+            <View style={tw`items-center justify-center py-12 px-5`}>
+              <Text style={tw`text-[48px] mb-2`}>🔍</Text>
+              <Text style={[tw`text-base font-bold mb-1`, { color: theme.colors.text }]}>No items match your search</Text>
+              <Text style={[tw`text-xs`, { color: theme.colors.textMuted }]}>Try searching for something else</Text>
             </View>
           )}
         </ScrollView>
@@ -95,63 +98,3 @@ export default function Home() {
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.cardBackground,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  scrollContent: {
-    paddingBottom: 110, // Gives space so the bottom CartFooter doesn't overlap items
-  },
-  sectionHeader: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
-    backgroundColor: theme.colors.background,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: theme.spacing.lg - 6,
-    paddingTop: theme.spacing.xs,
-  },
-  gridCol: {
-    width: Platform.OS === 'web' ? '25%' : '50%', // Responsive grid sizes: 4 columns on web, 2 columns on mobile
-    minWidth: 160,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: theme.spacing.xl,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: theme.spacing.sm,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-  },
-});
