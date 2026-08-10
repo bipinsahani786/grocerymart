@@ -86,12 +86,14 @@ export class PurchasesRepository {
 
     return prisma.$transaction(async (tx) => {
       // 1. Create Purchase Order
+      // ✅ Status is RECEIVED when inward purchase is done (stock immediately added to inventory)
+      // For future PO workflow: use DRAFT/ORDERED when creating pre-orders before receiving
       const po = await tx.purchaseOrder.create({
         data: {
           poNumber,
           storeId,
           supplierId,
-          status: "RECEIVED",
+          status: "RECEIVED",  // Inward purchase = stock already received in store
           totalAmount,
           totalTax,
           invoiceNumber: invoiceNumber || null,
@@ -99,6 +101,7 @@ export class PurchasesRepository {
           notes: notes || null,
         },
       });
+
 
       // 2. Create Items, Batches, and Update Store Inventory
       for (const item of items) {

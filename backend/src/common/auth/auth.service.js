@@ -10,20 +10,24 @@ export class AuthService {
   }
 
   generateTokens(user) {
+    // Minimal payload — role is re-validated from DB on every request via middleware
     const payload = {
       id: user.id,
       email: user.email,
       phone: user.phone,
-      role: user.role?.roleName || "user",
+      role: user.role?.roleName || user.role?.role?.toLowerCase() || "user",
     };
 
-    const accessToken = jwt.sign(payload, process.env.JWT_SECRET || "fallback_secret", {
-      expiresIn: "7d",
+    // ✅ FIX: Access token uses JWT_SECRET, Refresh token uses JWT_REFRESH_SECRET
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET || "fallback_access_secret", {
+      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
     });
 
-    const refreshToken = jwt.sign(payload, process.env.JWT_SECRET || "fallback_secret", {
-      expiresIn: "30d",
-    });
+    const refreshToken = jwt.sign(
+      { id: user.id }, // Refresh token only needs ID — no stale role data
+      process.env.JWT_REFRESH_SECRET || "fallback_refresh_secret",
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "30d" }
+    );
 
     return { accessToken, refreshToken };
   }
@@ -260,7 +264,8 @@ export class AuthService {
     }
 
     try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || "fallback_secret");
+      // ✅ FIX: Refresh token verified with its own separate secret
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || "fallback_refresh_secret");
       const user = await authRepository.findUserById(decoded.id);
 
       if (!user) {
@@ -269,6 +274,7 @@ export class AuthService {
 
       this.verifyUserAndStoreActiveStatus(user);
 
+      // Issue fresh token pair
       const tokens = this.generateTokens(user);
 
       return {

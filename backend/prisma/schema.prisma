@@ -691,7 +691,7 @@ model PurchaseOrder {
   store         Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
   supplierId    String          @map("supplier_id")
   supplier      Supplier        @relation(fields: [supplierId], references: [id])
-  status        PurchaseStatus  @default(RECEIVED)
+  status        PurchaseStatus  @default(DRAFT)     // ✅ FIX: Was RECEIVED — now correctly starts as DRAFT
   totalAmount   Float           @default(0) @map("total_amount")
   totalTax      Float           @default(0) @map("total_tax")
   invoiceNumber String?         @map("invoice_number")
@@ -705,6 +705,7 @@ model PurchaseOrder {
 
   @@map("purchase_orders")
 }
+
 
 model PurchaseOrderItem {
   id              String        @id @default(uuid())

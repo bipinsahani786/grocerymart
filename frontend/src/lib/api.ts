@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useTenantStore } from '@/store/tenantStore';
 import { useAuthStore } from '@/store/authStore';
+import { toast } from 'sonner';
 
 // Create an Axios instance pointing to our Node API
 const api = axios.create({
@@ -12,55 +13,90 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor to attach token
+// ── Request Interceptor ─────────────────────────────────────────────────────
+// ✅ FIX: Read token from Zustand store directly (source of truth), not localStorage
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
+  // Read token from Zustand store (which is persisted to localStorage via persist middleware)
+  const token = useAuthStore.getState().token;
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
-  // Inject the Active Business ID as a Tenant Header
+
+  // Inject the Active Business ID as a Tenant Header for multi-tenant routing
   const activeBusiness = useTenantStore.getState().activeBusiness;
   if (activeBusiness && activeBusiness.id) {
-    if (typeof config.headers.set === 'function') {
-      config.headers.set('X-Tenant-ID', String(activeBusiness.id));
-    } else {
-      config.headers['X-Tenant-ID'] = String(activeBusiness.id);
-    }
+    config.headers['X-Tenant-ID'] = String(activeBusiness.id);
   }
-  
+
   return config;
 });
 
-import { toast } from 'sonner';
-
-// Response interceptor to handle 401 & 403 forced logout errors
+// ── Response Interceptor ────────────────────────────────────────────────────
+// Handle 401 & 403 forced logout scenarios with proper error codes
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response) {
       const status = error.response.status;
-      const isAuthLoginRequest = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/send-otp') || error.config?.url?.includes('/auth/verify-otp');
       const data = error.response.data;
+      const code = data?.code;
+      const requestUrl = error.config?.url || '';
 
-      // Handle 401 Unauthenticated or 403 Suspended/Store Inactive Forced Logout
-      if ((status === 401 || status === 403) && !isAuthLoginRequest) {
-        const isForcedLogout = 
-          status === 401 || 
-          data?.code === 'ACCOUNT_SUSPENDED' || 
-          data?.code === 'STORE_INACTIVE' || 
-          data?.code === 'ACCOUNT_DELETED' ||
-          data?.message?.toLowerCase().includes('suspended') ||
-          data?.message?.toLowerCase().includes('inactive') ||
-          data?.message?.toLowerCase().includes('revoked');
+      // Skip auth-page requests to avoid logout loop
+      const isAuthRequest =
+        requestUrl.includes('/auth/login') ||
+        requestUrl.includes('/auth/otp') ||
+        requestUrl.includes('/auth/register') ||
+        requestUrl.includes('/auth/refresh');
+
+      if (!isAuthRequest) {
+        // ── Handle Token Expired — attempt refresh ──
+        if (status === 401 && code === 'TOKEN_EXPIRED') {
+          try {
+            const refreshToken = useAuthStore.getState().refreshToken;
+            if (refreshToken) {
+              const { data: refreshData } = await axios.post(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+                { refreshToken }
+              );
+              const { accessToken, refreshToken: newRefreshToken } = refreshData.data;
+              const currentUser = useAuthStore.getState().user;
+              if (currentUser) {
+                useAuthStore.getState().setAuth(currentUser, accessToken, newRefreshToken);
+              }
+              // Retry the original request with new token
+              error.config.headers.Authorization = `Bearer ${accessToken}`;
+              return api(error.config);
+            }
+          } catch (_refreshError) {
+            // Refresh failed — force logout
+            console.warn('[API] Token refresh failed. Logging out.');
+          }
+        }
+
+        // ── Handle Forced Logout Scenarios ──
+        const isForcedLogout =
+          code === 'NO_TOKEN' ||
+          code === 'TOKEN_EXPIRED' ||
+          code === 'INVALID_TOKEN' ||
+          code === 'AUTH_FAILED' ||
+          code === 'ACCOUNT_DELETED' ||
+          code === 'ACCOUNT_SUSPENDED' ||
+          code === 'STORE_INACTIVE';
 
         if (isForcedLogout) {
-          const reasonMessage = data?.message || 'Your session has been terminated by administrator.';
-          toast.error(reasonMessage, { id: 'forced-logout-toast', duration: 15000 });
+          const reasonMessage =
+            data?.message || 'Your session has expired. Please login again.';
+          toast.error(reasonMessage, {
+            id: 'forced-logout-toast',
+            duration: 15000,
+          });
           useAuthStore.getState().triggerForcedLogout(reasonMessage);
         }
       }
     }
+
     return Promise.reject(error);
   }
 );

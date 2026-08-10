@@ -38,7 +38,7 @@ export const LoginForm = withSkeleton(() => {
   const onSubmit = (data: any) => {
     loginMutation.mutate({ email: data.email, password: data.password }, {
       onSuccess: (res) => {
-        setAuth(res.data.user, res.data.accessToken);
+        setAuth(res.data.user, res.data.accessToken, res.data.refreshToken);
         const role = res.data.user.role || res.data.user.userType;
         const isSuperadmin = role === 'super_admin' || role === 'admin';
         const isStoreManager = role === 'store_manager';
@@ -267,7 +267,7 @@ export const RegisterOtpForm = withSkeleton(({ email }: { email: string }) => {
     verifyOtpMutation.mutate({ email, otp: data.otp }, {
       onSuccess: (res) => {
         toast.success('Registration successful!');
-        setAuth(res.data.user, res.data.accessToken);
+        setAuth(res.data.user, res.data.accessToken, res.data.refreshToken);
         navigate('/store/dashboard', { replace: true });
       },
       onError: (err: any) => toast.error(err.response?.data?.message || 'Invalid OTP')

@@ -280,7 +280,11 @@ router.post("/change-password", verifyToken, validate(changePasswordSchema), aut
  *       200:
  *         description: Superadmin seeded successfully
  */
-// CUSTOMER MOBILE OTP AUTHENTICATION FLOW
+// ── SEED ADMIN (Development only — remove in production) ──
+// ✅ FIX: Route was documented in Swagger but never registered
+router.get("/seed-admin", authController.seedAdmin);
+
+// ── CUSTOMER MOBILE OTP AUTHENTICATION FLOW ──
 router.post("/otp/send", authController.sendOtpDirect);
 router.post("/otp/verify", authController.verifyOtpDirect);
 router.post("/otp/register", authController.registerCustomerDirect);

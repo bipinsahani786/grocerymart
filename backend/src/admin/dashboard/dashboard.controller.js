@@ -28,9 +28,9 @@ export const dashboardController = {
           where: {
             ...dateFilter,
             OR: [
-              { paymentStatus: 'SUCCESS' },
               { status: 'COMPLETED' },
               { status: 'DELIVERED' },
+              { status: 'COLLECTED' },
             ],
           },
         }),
@@ -56,9 +56,9 @@ export const dashboardController = {
           where: {
             createdAt: { gte: monthStart, lte: monthEnd },
             OR: [
-              { paymentStatus: 'SUCCESS' },
               { status: 'COMPLETED' },
               { status: 'DELIVERED' },
+              { status: 'COLLECTED' },
             ],
           },
         });
@@ -71,18 +71,30 @@ export const dashboardController = {
         });
       }
 
-      // 3. Return Pure 100% Real Database Response
+      // 3. Also fetch payment-level SUCCESS aggregation for cross-reference
+      const successPaymentAgg = await prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: {
+          status: 'SUCCESS',
+          ...(from_date || to_date ? { createdAt: dateFilter.createdAt } : {}),
+        },
+      });
+      const paymentRevenue = successPaymentAgg._sum.amount || 0;
+
+      // 4. Return Pure 100% Real Database Response
       res.json({
         status: "success",
         data: {
           summary: {
             total_revenue: totalRevenue,
+            payment_revenue: paymentRevenue, // Cross-reference from Payment model
             commissions_paid: commissionsPaid,
             commissions_pending: commissionsPending,
             net_profit: netProfit,
             active_businesses: totalStores,
             sales_partners: 0,
             total_users: totalUsers,
+            total_orders: totalOrders,
           },
           trend,
           profit_distribution: {

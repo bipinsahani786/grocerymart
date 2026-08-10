@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: grocerymart_db
-    restart: "no"
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -11,22 +11,54 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d grocerymart_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: grocerymart_backend
-    restart: "no"
+    restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/grocerymart_db?schema=public
+      # ✅ FIXED: All required env vars from .env replicated here
+      - NODE_ENV=development
       - PORT=5000
-      - JWT_SECRET=your_jwt_secret_here
-      # Add any other required environment variables here
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/grocerymart_db?schema=public
+      # JWT — Separate secrets for access and refresh tokens
+      - JWT_SECRET=supersecretjwtaccesskey12345_abc_xyz
+      - JWT_REFRESH_SECRET=supersecretjwtrefreshkey67890_def_uvw
+      - JWT_EXPIRES_IN=7d
+      - JWT_REFRESH_EXPIRES_IN=30d
+      # CORS — Allow frontend origin
+      - CORS_ORIGIN=http://localhost:5173
+      # Cloudflare R2
+      - R2_ACCOUNT_ID=5c41e3e2001176d4c3353b4678283c6e
+      - R2_BUCKET_NAME=grocerymart
+      - R2_ACCESS_KEY_ID=e4da98320cff4efd519fa700bd9d4d5e
+      - R2_SECRET_ACCESS_KEY=5864bf41ba5d417693a0957e872e1bb2415edd1f5401176801bdd6fb82cd7226
+      - R2_PUBLIC_DOMAIN=https://pub-2880a473fe814a89b1c2482351193f5d.r2.dev
+      # SMTP (OTP Email)
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=zytrixon@gmail.com
+      - SMTP_PASS=qtsk trfy uzff yczl
+      - SMTP_FROM=zytrixon@gmail.com
+      # SMS Gateway
+      - TWO_FACTOR_API_KEY=7f914f10-7c27-11f0-a562-0200cd936042
+      - TWO_FACTOR_TEMPLATE=OTPSMS
+      # Puppeteer
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
     depends_on:
-      - db
+      db:
+        condition: service_healthy  # ✅ Wait for DB to be ready before starting backend
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -36,11 +68,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: grocerymart_frontend
-    restart: "no"
+    restart: unless-stopped
     ports:
       - "5173:5173"
     environment:
+      # ✅ FIXED: Frontend talks to backend via Docker network (not localhost)
       - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -48,7 +83,7 @@ services:
   adminer:
     image: adminer
     container_name: grocerymart_adminer
-    restart: "no"
+    restart: unless-stopped
     ports:
       - "8081:8080"
     depends_on:
