@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Text, ScrollView, TouchableOpacity, View } from 'react-native';
 import { theme } from '../constants/theme';
 import { categories } from '../data/groceryData';
+import tw from 'twrnc';
 
 interface CategoryListProps {
   selectedCategory: string;
@@ -13,14 +14,14 @@ export const CategoryList: React.FC<CategoryListProps> = ({
   onSelectCategory,
 }) => {
   return (
-    <View style={styles.container}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Shop by Category</Text>
+    <View style={[tw`py-3`, { backgroundColor: theme.colors.cardBackground }]}>
+      <View style={tw`px-4 mb-2`}>
+        <Text style={[tw`text-lg font-black`, { color: theme.colors.text }]}>Shop by Category</Text>
       </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={tw`px-3 pb-1`}
       >
         {categories.map((category) => {
           const isSelected = category.id === selectedCategory;
@@ -28,24 +29,36 @@ export const CategoryList: React.FC<CategoryListProps> = ({
             <TouchableOpacity
               key={category.id}
               style={[
-                styles.categoryCard,
-                isSelected && styles.selectedCard,
+                tw`items-center justify-center mx-1 py-2 px-3 rounded-xl border min-w-[80px]`,
+                { 
+                  backgroundColor: theme.colors.background, 
+                  borderColor: theme.colors.border 
+                },
+                isSelected && {
+                  backgroundColor: theme.colors.primaryLight,
+                  borderColor: theme.colors.primary,
+                }
               ]}
               onPress={() => onSelectCategory(category.id)}
               activeOpacity={0.8}
             >
               <View
                 style={[
-                  styles.emojiContainer,
-                  isSelected && styles.selectedEmojiContainer,
+                  tw`w-12 h-12 rounded-full items-center justify-center mb-1 shadow-sm`,
+                  { 
+                    backgroundColor: theme.colors.white, 
+                    shadowColor: theme.colors.shadow, 
+                    elevation: 1 
+                  }
                 ]}
               >
-                <Text style={styles.emojiText}>{category.emoji}</Text>
+                <Text style={tw`text-[22px]`}>{category.emoji}</Text>
               </View>
               <Text
                 style={[
-                  styles.categoryName,
-                  isSelected && styles.selectedCategoryName,
+                  tw`text-[12px] font-semibold`,
+                  { color: theme.colors.textLight },
+                  isSelected && [tw`font-bold`, { color: theme.colors.primaryDark }]
                 ]}
               >
                 {category.name}
@@ -57,68 +70,3 @@ export const CategoryList: React.FC<CategoryListProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.cardBackground,
-  },
-  sectionHeader: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  scrollContent: {
-    paddingHorizontal: theme.spacing.lg - 4,
-    paddingBottom: theme.spacing.xs,
-  },
-  categoryCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 4,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    minWidth: 80,
-  },
-  selectedCard: {
-    backgroundColor: theme.colors.primaryLight,
-    borderColor: theme.colors.primary,
-  },
-  emojiContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.borderRadius.round,
-    backgroundColor: theme.colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.xs,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  selectedEmojiContainer: {
-    backgroundColor: theme.colors.white,
-  },
-  emojiText: {
-    fontSize: 22,
-  },
-  categoryName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.textLight,
-  },
-  selectedCategoryName: {
-    color: theme.colors.primaryDark,
-    fontWeight: '700',
-  },
-});

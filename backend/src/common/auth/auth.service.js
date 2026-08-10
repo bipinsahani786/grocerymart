@@ -295,6 +295,7 @@ export class AuthService {
       email: user.email,
       phone: user.phone,
       avatar: user.avatar,
+      dob: user.dob,
       status: user.status,
       role: user.role?.roleName || "user",
       store: user.managedStore || user.store || null,
@@ -374,7 +375,12 @@ export class AuthService {
     // Check if user already exists
     const user = await authRepository.findUserByPhone(cleanPhone);
 
-    if (user) {
+    // Profile is complete if user exists, user has a name, and name is not empty or "POS Customer"
+    const isProfileComplete = user && user.name && 
+      user.name.toLowerCase() !== "pos customer" && 
+      user.name.toLowerCase() !== "pos user";
+
+    if (isProfileComplete) {
       this.verifyUserAndStoreActiveStatus(user);
       const tokens = this.generateTokens(user);
       return {
@@ -407,25 +413,39 @@ export class AuthService {
     }
     const cleanPhone = String(phone).trim();
 
-    // Verify user doesn't already exist
+    // Verify user doesn't already exist or merge if POS customer
     const existing = await authRepository.findUserByPhone(cleanPhone);
+    let activeUser;
+    
     if (existing) {
-      throw new AppError("Account already exists with this phone number", 400);
-    }
-
-    // Create user with CUSTOMER role
-    const createdUser = await authRepository.createUser(
-      {
-        phone: cleanPhone,
+      // Update the existing profile-incomplete record
+      activeUser = await authRepository.updateUser(existing.id, {
         name: name.trim(),
         dob: dob.trim(),
         referralCode: referralCode ? referralCode.trim() : null,
         status: "active",
-      },
-      "CUSTOMER"
-    );
+        role: {
+          upsert: {
+            create: { roleName: "user" },
+            update: { roleName: "user" }
+          }
+        }
+      });
+    } else {
+      // Create user with user role
+      const createdUser = await authRepository.createUser(
+        {
+          phone: cleanPhone,
+          name: name.trim(),
+          dob: dob.trim(),
+          referralCode: referralCode ? referralCode.trim() : null,
+          status: "active",
+        },
+        "user"
+      );
+      activeUser = await authRepository.findUserById(createdUser.id);
+    }
 
-    const activeUser = await authRepository.findUserById(createdUser.id);
     const tokens = this.generateTokens(activeUser);
 
     return {

@@ -85,6 +85,9 @@ export class AuthController {
       updateData.phone = null;
     }
     if (data.avatar !== undefined) updateData.avatar = data.avatar;
+    if (data.dob !== undefined) {
+      updateData.dob = data.dob ? String(data.dob).trim() : null;
+    }
 
     const updated = await authRepository.updateUser(req.user.id, updateData);
     res.json({
@@ -95,6 +98,7 @@ export class AuthController {
         email: updated.email,
         phone: updated.phone,
         avatar: updated.avatar,
+        dob: updated.dob,
         status: updated.status,
         role: updated.role?.roleName || "user",
         store: updated.store || null,

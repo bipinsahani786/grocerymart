@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
+import { Text, View, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
 import { Product } from '../data/groceryData';
 import { useCart } from '../context/CartContext';
+import tw from 'twrnc';
 
 interface ProductCardProps {
   product: Product;
@@ -15,46 +16,60 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const cartItem = cart.find((item) => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
+  const shadowStyle = Platform.OS === 'android' ? { elevation: 2 } : {
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  };
+
   return (
-    <View style={styles.card}>
+    <View style={[
+      tw`rounded-xl p-3 border flex-1 m-1.5`,
+      { 
+        backgroundColor: theme.colors.cardBackground, 
+        borderColor: theme.colors.border 
+      },
+      shadowStyle
+    ]}>
       {/* Favorite / Rating top row */}
-      <View style={styles.topRow}>
-        <View style={styles.ratingBadge}>
+      <View style={tw`flex-row justify-between items-center mb-1`}>
+        <View style={[tw`flex-row items-center px-1.5 py-0.5 rounded-sm`, { backgroundColor: theme.colors.accentLight }]}>
           <Ionicons name="star" size={10} color={theme.colors.accent} />
-          <Text style={styles.ratingText}>{product.rating}</Text>
+          <Text style={[tw`text-[10px] font-bold ml-0.5`, { color: theme.colors.accent }]}>{product.rating}</Text>
         </View>
-        <TouchableOpacity style={styles.favButton}>
+        <TouchableOpacity style={[tw`w-6 h-6 rounded-full items-center justify-center`, { backgroundColor: theme.colors.background }]}>
           <Ionicons name="heart-outline" size={16} color={theme.colors.textMuted} />
         </TouchableOpacity>
       </View>
 
       {/* Main product representation */}
-      <View style={styles.imageContainer}>
-        <Text style={styles.emoji}>{product.emoji}</Text>
+      <View style={tw`h-20 items-center justify-center mb-2`}>
+        <Text style={tw`text-[54px]`}>{product.emoji}</Text>
       </View>
 
       {/* Product Details */}
-      <View style={styles.detailsContainer}>
-        <Text style={styles.weight}>{product.weight}</Text>
-        <Text style={styles.name} numberOfLines={1}>
+      <View style={tw`mt-auto`}>
+        <Text style={[tw`text-[10px] font-semibold mb-0.5`, { color: theme.colors.textMuted }]}>{product.weight}</Text>
+        <Text style={[tw`text-[14px] font-bold mb-2`, { color: theme.colors.text }]} numberOfLines={1}>
           {product.name}
         </Text>
 
-        <View style={styles.bottomRow}>
-          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+        <View style={tw`flex-row justify-between items-center`}>
+          <Text style={[tw`text-[15px] font-extrabold`, { color: theme.colors.text }]}>${product.price.toFixed(2)}</Text>
 
           {quantity > 0 ? (
-            <View style={styles.quantityControls}>
+            <View style={[tw`flex-row items-center rounded-sm border`, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary }]}>
               <TouchableOpacity
                 onPress={() => removeFromCart(product.id)}
-                style={styles.quantityBtn}
+                style={tw`px-2 py-1.5`}
               >
                 <Ionicons name="remove" size={14} color={theme.colors.primaryDark} />
               </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
+              <Text style={[tw`text-[13px] font-bold px-1`, { color: theme.colors.primaryDark }]}>{quantity}</Text>
               <TouchableOpacity
                 onPress={() => addToCart(product)}
-                style={styles.quantityBtn}
+                style={tw`px-2 py-1.5`}
               >
                 <Ionicons name="add" size={14} color={theme.colors.primaryDark} />
               </TouchableOpacity>
@@ -62,11 +77,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           ) : (
             <TouchableOpacity
               onPress={() => addToCart(product)}
-              style={styles.addButton}
+              style={[tw`flex-row items-center px-2.5 py-1.5 rounded-sm`, { backgroundColor: theme.colors.primary }]}
               activeOpacity={0.8}
             >
               <Ionicons name="add" size={16} color={theme.colors.white} />
-              <Text style={styles.addButtonText}>Add</Text>
+              <Text style={[tw`font-bold text-[12px] ml-0.5`, { color: theme.colors.white }]}>Add</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -74,126 +89,3 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    flex: 1,
-    margin: 6,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.shadow,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        shadowColor: theme.colors.shadow,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-    }),
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.xs,
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.accentLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.xs,
-  },
-  ratingText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: theme.colors.accent,
-    marginLeft: 2,
-  },
-  favButton: {
-    width: 24,
-    height: 24,
-    borderRadius: theme.borderRadius.round,
-    backgroundColor: theme.colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageContainer: {
-    height: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  emoji: {
-    fontSize: 54,
-  },
-  detailsContainer: {
-    marginTop: 'auto',
-  },
-  weight: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: theme.colors.textMuted,
-    marginBottom: 2,
-  },
-  name: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  price: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-    borderRadius: theme.borderRadius.sm,
-  },
-  addButtonText: {
-    color: theme.colors.white,
-    fontWeight: '700',
-    fontSize: 12,
-    marginLeft: 2,
-  },
-  quantityControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primaryLight,
-    borderRadius: theme.borderRadius.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-  },
-  quantityBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  quantityText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.primaryDark,
-    paddingHorizontal: 4,
-  },
-});

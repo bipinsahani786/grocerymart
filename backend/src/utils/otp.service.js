@@ -91,7 +91,7 @@ class OtpService {
       this.store.delete(identifier);
       throw new AppError("OTP expired", 400);
     }
-    if (record.otp !== inputOtp) throw new AppError("Invalid OTP", 400);
+    if (String(record.otp) !== String(inputOtp)) throw new AppError("Invalid OTP", 400);
 
     this.store.delete(identifier);
     return true;
