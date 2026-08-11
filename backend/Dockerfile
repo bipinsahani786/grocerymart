@@ -21,16 +21,10 @@ RUN npm install
 
 COPY . .
 
-# Convert startup script line endings to Unix format (prevents CRLF errors)
-RUN dos2unix start.sh
-
 # Generate Prisma client during image build
 RUN npx prisma generate
 
-# Make startup script executable
-RUN chmod +x start.sh
-
 EXPOSE 5000
 
-# ✅ FIX: Startup — push schema + seed DB + start server (DB health check handled by docker-compose healthcheck)
-CMD ["sh", "start.sh"]
+# Start server directly using npm
+CMD ["npm", "run", "dev"]

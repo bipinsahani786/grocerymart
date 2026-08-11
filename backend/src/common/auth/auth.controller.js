@@ -64,12 +64,16 @@ export class AuthController {
     const updateData = {};
     if (data.name !== undefined) updateData.name = data.name.trim();
     if (data.email !== undefined) {
-      const cleanEmail = data.email.toLowerCase().trim();
-      const existing = await authRepository.findUserByEmail(cleanEmail);
-      if (existing && existing.id !== req.user.id) {
-        throw new AppError("This email address is already in use by another user account", 400);
+      if (data.email === null || String(data.email).trim() === "") {
+        updateData.email = null;
+      } else {
+        const cleanEmail = String(data.email).toLowerCase().trim();
+        const existing = await authRepository.findUserByEmail(cleanEmail);
+        if (existing && String(existing.id) !== String(req.user.id)) {
+          throw new AppError("This email address is already in use by another user account", 400);
+        }
+        updateData.email = cleanEmail;
       }
-      updateData.email = cleanEmail;
     }
     if (data.phone !== undefined && data.phone !== null && data.phone !== "") {
       const cleanPhone = String(data.phone).replace(/\D/g, "");
@@ -77,7 +81,7 @@ export class AuthController {
         throw new AppError("Enter Valid phone number!", 400);
       }
       const existing = await authRepository.findUserByPhone(cleanPhone);
-      if (existing && existing.id !== req.user.id) {
+      if (existing && String(existing.id) !== String(req.user.id)) {
         throw new AppError("This phone number is already registered to another user account", 400);
       }
       updateData.phone = cleanPhone;

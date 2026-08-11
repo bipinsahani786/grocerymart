@@ -44,6 +44,7 @@ export default function Profile() {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [dob, setDob] = useState(user?.dob || '');
+  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch latest profile on mount
   React.useEffect(() => {
@@ -124,6 +125,7 @@ export default function Profile() {
 
       if (response.ok) {
         triggerToast('Profile updated successfully!', 'success');
+        setIsEditing(false);
         updateUser({
           ...user!,
           name: result.data.name,
@@ -132,10 +134,12 @@ export default function Profile() {
           avatar: result.data.avatar,
         });
       } else {
-        triggerToast(result.error || 'Failed to update profile.', 'error');
+        const errorMsg = result.error || result.message || 'Failed to update profile.';
+        triggerToast(errorMsg, 'error');
       }
     } catch {
-      triggerToast('Network connection error.', 'error');
+      const connError = 'Network connection error. Please check your internet connection.';
+      triggerToast(connError, 'error');
     } finally {
       setLoading(false);
     }
@@ -156,7 +160,7 @@ export default function Profile() {
 
   return (
     <SafeAreaProvider>
-      <View style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: theme.colors.white }]}>
         <StatusBar style="light" />
 
         {/* Top Header Section */}
@@ -246,7 +250,27 @@ export default function Profile() {
           <View style={tw`mb-8`}>
             <View style={tw`flex-row justify-between items-center pb-2 mb-2 border-b border-gray-100`}>
               <Text style={[tw`text-xs font-black tracking-wider uppercase`, { color: theme.colors.textMuted }]}>Personal Details</Text>
-              <Text style={[tw`text-[10px] font-extrabold uppercase tracking-wide`, { color: theme.colors.primary }]}>Editable</Text>
+              <TouchableOpacity
+                onPress={() => setIsEditing(!isEditing)}
+                activeOpacity={0.8}
+                style={[
+                  tw`flex-row items-center px-3.5 py-1.5 rounded-xl border`,
+                  {
+                    backgroundColor: 'transparent',
+                    borderColor: isEditing ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                  }
+                ]}
+              >
+                <Ionicons
+                  name={isEditing ? 'close-circle-outline' : 'create-outline'}
+                  size={14}
+                  color={isEditing ? theme.colors.danger : theme.colors.primary}
+                  style={tw`mr-1`}
+                />
+                <Text style={[tw`text-[11px] font-black uppercase tracking-wider`, { color: isEditing ? theme.colors.danger : theme.colors.primary }]}>
+                  {isEditing ? 'Cancel' : 'Edit'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Full Name field */}
@@ -257,9 +281,10 @@ export default function Profile() {
               <View style={tw`flex-1`}>
                 <Text style={[tw`text-[10px] font-black text-gray-400 uppercase tracking-wider`]}>Full Name</Text>
                 <TextInput
-                  style={[tw`text-base font-bold text-gray-800 mt-0.5 p-0`, { minHeight: 22 }]}
+                  style={[tw`text-base font-bold text-gray-800 mt-0.5 p-0`, { minHeight: 22 }, !isEditing && { color: theme.colors.textLight }]}
                   value={name}
                   onChangeText={setName}
+                  editable={isEditing}
                   placeholder="Your full name"
                   placeholderTextColor={theme.colors.textMuted}
                 />
@@ -274,9 +299,10 @@ export default function Profile() {
               <View style={tw`flex-1`}>
                 <Text style={[tw`text-[10px] font-black text-gray-400 uppercase tracking-wider`]}>Email Address</Text>
                 <TextInput
-                  style={[tw`text-base font-bold text-gray-800 mt-0.5 p-0`, { minHeight: 22 }]}
+                  style={[tw`text-base font-bold text-gray-800 mt-0.5 p-0`, { minHeight: 22 }, !isEditing && { color: theme.colors.textLight }]}
                   value={email}
                   onChangeText={setEmail}
+                  editable={isEditing}
                   placeholder="example@email.com"
                   placeholderTextColor={theme.colors.textMuted}
                   keyboardType="email-address"
@@ -287,8 +313,9 @@ export default function Profile() {
 
             {/* DOB Picker field */}
             <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
+              onPress={() => isEditing && setShowDatePicker(true)}
               activeOpacity={0.7}
+              disabled={!isEditing}
               style={tw`flex-row items-center py-3 border-b border-gray-100`}
             >
               <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#FEF3C7' }]}>
@@ -296,11 +323,11 @@ export default function Profile() {
               </View>
               <View style={tw`flex-1`}>
                 <Text style={[tw`text-[10px] font-black text-gray-400 uppercase tracking-wider`]}>Date of Birth</Text>
-                <Text style={[tw`text-base font-bold text-gray-800 mt-0.5`]}>
+                <Text style={[tw`text-base font-bold text-gray-800 mt-0.5`, !isEditing && { color: theme.colors.textLight }]}>
                   {dob || 'Select date of birth'}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+              {isEditing && <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />}
             </TouchableOpacity>
 
             {/* Phone field (Read Only) */}
@@ -320,21 +347,30 @@ export default function Profile() {
           </View>
 
           {/* Submit Button */}
-          <TouchableOpacity
-            style={[tw`flex-row h-13 rounded-2xl justify-center items-center shadow-md mb-8`, { backgroundColor: theme.colors.primary }]}
-            activeOpacity={0.8}
-            onPress={handleUpdateProfile}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color={theme.colors.white} />
-            ) : (
-              <>
-                <Text style={[tw`font-extrabold text-base mr-2`, { color: theme.colors.white }]}>Save Changes</Text>
-                <Ionicons name="save-outline" size={16} color={theme.colors.white} />
-              </>
-            )}
-          </TouchableOpacity>
+          {isEditing && (
+            <TouchableOpacity
+              style={tw`mb-8 shadow-md rounded-2xl overflow-hidden`}
+              activeOpacity={0.85}
+              onPress={handleUpdateProfile}
+              disabled={loading}
+            >
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.primaryDark]}
+                style={tw`flex-row h-13 justify-center items-center px-6`}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color={theme.colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.white} style={tw`mr-2`} />
+                    <Text style={[tw`font-extrabold text-base tracking-wide`, { color: theme.colors.white }]}>
+                      Confirm & Save Details
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
 
           {/* Preferences & Account Section (Borderless settings-style stack) */}
           <View style={tw`mb-8`}>
