@@ -15,6 +15,8 @@ import offersRoutes from "./offers/offers.routes.js";
 import subscriptionsRoutes from "./subscriptions/subscriptions.routes.js";
 import purchasesRoutes from "./purchases/purchases.routes.js";
 
+import { dashboardController } from "./dashboard/dashboard.controller.js";
+
 const router = express.Router();
 
 // Apply auth verification middleware to all store panel endpoints
@@ -22,6 +24,7 @@ router.use(verifyToken);
 
 // Mount feature-based sub-routers
 router.use("/dashboard", dashboardRoutes);
+router.get("/analytics", dashboardController.getAnalytics);
 router.use("/settings", settingsRoutes);
 router.use("/taxes", taxesRoutes);
 router.use("/categories", categoriesRoutes);

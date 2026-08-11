@@ -10,7 +10,7 @@ export class DashboardController {
   });
 
   getAnalytics = catchAsync(async (req, res) => {
-    const result = await dashboardService.getAnalytics(req.user, req.query.storeId);
+    const result = await dashboardService.getAnalytics(req.user, req.query.storeId, req.query.range);
     res.json(result);
   });
 

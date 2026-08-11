@@ -7,7 +7,8 @@ RUN apk add --no-cache \
       freetype \
       harfbuzz \
       ca-certificates \
-      ttf-freefont
+      ttf-freefont \
+      dos2unix
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
@@ -19,6 +20,9 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Convert startup script line endings to Unix format (prevents CRLF errors)
+RUN dos2unix start.sh
 
 # Generate Prisma client during image build
 RUN npx prisma generate

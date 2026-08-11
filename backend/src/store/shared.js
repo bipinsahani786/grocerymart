@@ -21,7 +21,11 @@ export async function getUserStore(userId) {
 }
 
 export async function getFirstStore() {
-  return await prisma.store.findFirst();
+  return await prisma.store.findFirst({
+    where: {
+      name: { not: "" }
+    }
+  });
 }
 
 export async function resolveStoreId(user, queryStoreId) {

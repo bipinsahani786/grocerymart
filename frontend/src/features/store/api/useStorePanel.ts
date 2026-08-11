@@ -8,7 +8,9 @@ export const useStoreDashboard = (storeId?: string) => {
   return useQuery({
     queryKey: ['store-dashboard', storeId],
     queryFn: async () => {
-      const { data } = await api.get('/store/dashboard', { params: { storeId } });
+      const { data } = await api.get('/store/dashboard', { 
+        params: { storeId, _t: Date.now() } 
+      });
       return data.data;
     },
     refetchInterval: 30000,
@@ -22,7 +24,7 @@ export const useStoreProducts = (storeId?: string) => {
       const { data } = await api.get('/store/inventory', { params: { storeId } });
       const inventory = data.data || [];
       return inventory
-        .map((item: any) => item.product)
+        .map((item: any) => item.product || item)
         .filter(Boolean);
     },
   });
@@ -500,11 +502,11 @@ export const useUpdateStoreStaffShift = () => {
 };
 
 // ── Analytics ──
-export const useStoreAnalytics = (storeId?: string) => {
+export const useStoreAnalytics = (storeId?: string, range?: string) => {
   return useQuery({
-    queryKey: ['store-analytics', storeId],
+    queryKey: ['store-analytics', storeId, range],
     queryFn: async () => {
-      const { data } = await api.get('/store/analytics', { params: { storeId } });
+      const { data } = await api.get('/store/analytics', { params: { storeId, range } });
       return data.data;
     },
   });

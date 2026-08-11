@@ -8,9 +8,9 @@ export class DashboardService {
     return { success: true, data };
   }
 
-  async getAnalytics(user, storeIdParam) {
+  async getAnalytics(user, storeIdParam, range) {
     const storeId = await resolveStoreId(user, storeIdParam);
-    const data = await dashboardRepository.analytics(storeId);
+    const data = await dashboardRepository.analytics(storeId, range);
     return { success: true, data };
   }
 }
