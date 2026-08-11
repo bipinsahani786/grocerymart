@@ -56,9 +56,12 @@ services:
       # Puppeteer
       - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
       - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+      - REDIS_URL=redis://redis:6379
     depends_on:
       db:
         condition: service_healthy  # ✅ Wait for DB to be ready before starting backend
+      redis:
+        condition: service_started
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -88,6 +91,13 @@ services:
       - "8081:8080"
     depends_on:
       - db
+
+  redis:
+    image: redis:alpine
+    container_name: grocerymart_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
 
 volumes:
   pgdata:

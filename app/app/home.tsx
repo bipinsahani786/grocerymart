@@ -32,12 +32,24 @@ function MainApp() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const isLoggedIn = true; // default true for homepage
 
-  // 1. React Query integration for automatic memory caching & state management
+  // Debounce search query changes to prevent API spam while typing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  // 1. React Query integration with debounced search to save API calls
   const { data: allFilteredProducts = [], isLoading } = useQuery({
-    queryKey: ['products', selectedCategory, searchQuery],
-    queryFn: () => fetchProductsApi(selectedCategory, searchQuery),
+    queryKey: ['products', selectedCategory, debouncedSearchQuery],
+    queryFn: () => fetchProductsApi(selectedCategory, debouncedSearchQuery),
     staleTime: 1000 * 60 * 5, // Keep cache fresh for 5 minutes
   });
 

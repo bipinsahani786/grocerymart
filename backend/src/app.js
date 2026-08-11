@@ -4,6 +4,7 @@ import path from "path";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import compression from "compression";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "../config/swagger.js";
 import authRoutes from "./common/auth/auth.routes.js";
@@ -12,6 +13,9 @@ import adminRoutes from "./admin/index.js";
 import storeRoutes from "./store/index.js";
 
 const app = express();
+
+// Enable Gzip/Deflate response compression
+app.use(compression());
 
 // Auto-inject secure HTTP Response Headers against standard injection vectors
 app.use(helmet({
