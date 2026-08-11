@@ -42,6 +42,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from 'recharts';
+import { Button } from '@/components/ui/button';
 
 type ActiveTab = 'sales' | 'products' | 'payments' | 'staff';
 
@@ -52,7 +53,8 @@ export default function StoreAnalyticsPage() {
   const user = useAuthStore((state) => state.user);
   const storeId = user?.store?.id;
 
-  const { data: analyticsData } = useStoreAnalytics(storeId);
+  const [range, setRange] = useState<'today' | 'weekly' | 'monthly' | 'yearly'>('today');
+  const { data: analyticsData } = useStoreAnalytics(storeId, range);
   const [activeTab, setActiveTab] = useState<ActiveTab>('sales');
 
   const topProducts = analyticsData?.topProducts || [];
@@ -192,6 +194,8 @@ export default function StoreAnalyticsPage() {
 
       <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 py-6 space-y-6">
 
+
+
         {/* Expanded 8 Mini Stats Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <CustomKpiCard
@@ -260,26 +264,43 @@ export default function StoreAnalyticsPage() {
           />
         </div>
 
-        {/* Tab Controls */}
-        <div className="flex border-b border-border gap-1 overflow-x-auto pb-px">
-          {[
-            { id: 'sales', name: 'Sales Report', icon: TrendingUp },
-            { id: 'products', name: 'Product Rank', icon: BarChart3 },
-            { id: 'payments', name: 'Payment Splits', icon: PieIcon },
-            { id: 'staff', name: 'Staff KPIs', icon: Award }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as ActiveTab)}
-              className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${activeTab === tab.id
-                ? 'border-primary-500 text-primary-600 dark:text-primary-500 font-extrabold'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.name}
-            </button>
-          ))}
+        {/* Tab Controls with Filter */}
+        <div className="flex flex-wrap items-center justify-between border-b border-border gap-4 pb-px">
+          <div className="flex gap-1 overflow-x-auto">
+            {[
+              { id: 'sales', name: 'Sales Report', icon: TrendingUp },
+              { id: 'products', name: 'Product Rank', icon: BarChart3 },
+              { id: 'payments', name: 'Payment Splits', icon: PieIcon },
+              { id: 'staff', name: 'Staff KPIs', icon: Award }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as ActiveTab)}
+                className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${activeTab === tab.id
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-500 font-extrabold'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Date Range Selector Control */}
+          <div className="flex items-center gap-1.5 pb-2 sm:pb-0">
+            {(['today', 'weekly', 'monthly', 'yearly'] as const).map((r) => (
+              <Button
+                key={r}
+                variant={range === r ? 'default' : 'outline'}
+                size="sm"
+                className="capitalize font-semibold text-[10px] tracking-wider py-1 px-2.5 h-7 rounded-lg"
+                onClick={() => setRange(r)}
+              >
+                {r}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {/* Report Tabs Details */}

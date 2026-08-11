@@ -41,9 +41,9 @@ import {
 
 export default function StoreManagerDashboardPage() {
   const user = useAuthStore((state) => state.user);
-  const store = user?.store;
-  const { data: dashboardData } = useStoreDashboard(store?.id);
-  const { data: inventoryData } = useStoreInventory(store?.id);
+  const { data: dashboardData } = useStoreDashboard(user?.store?.id);
+  const { data: inventoryData } = useStoreInventory(user?.store?.id);
+  const store = (user?.store && user?.store?.name) ? user?.store : dashboardData?.store;
   const { theme } = useThemeStore();
   const isDark = theme === "dark";
 
@@ -52,7 +52,7 @@ export default function StoreManagerDashboardPage() {
   const inventory = inventoryData || [];
 
   const formattedStoreName = useMemo(() => {
-    const rawName = store?.name || "Store Dashboard";
+    const rawName = store?.name || "";
     return rawName
       .replace(/\bsk store\b/gi, "SK Store")
       .replace(/\bsk\b/gi, "SK");

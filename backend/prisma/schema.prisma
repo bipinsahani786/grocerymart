@@ -91,6 +91,10 @@ model User {
   isActive       Boolean        @default(true)
   loyaltyPoints  Int            @default(0) @map("loyalty_points")
   walletBalance  Float          @default(0) @map("wallet_balance")
+  khataBalance   Float          @default(0) @map("khata_balance")
+  totalOrders    Int            @default(0) @map("total_orders")
+  totalSpent     Float          @default(0) @map("total_spent")
+  notes          String?
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
 
@@ -179,7 +183,6 @@ model Store {
 
   racks               Rack[]
   staff               StoreStaff[]
-  customers           StoreCustomer[]
   suppliers           Supplier[]
   purchaseOrders      PurchaseOrder[]
   batches             StoreBatch[]
@@ -384,24 +387,6 @@ model StoreStaff {
   shifts      Shift[]
 
   @@map("store_staff")
-}
-
-model StoreCustomer {
-  id            String   @id @default(uuid())
-  storeId       String   @map("store_id")
-  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  name          String
-  phone         String
-  email         String?
-  khataBalance  Float    @default(0) @map("khata_balance")
-  loyaltyPoints Int      @default(0) @map("loyalty_points")
-  totalOrders   Int      @default(0) @map("total_orders")
-  totalSpent    Float    @default(0) @map("total_spent")
-  notes         String?
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @default(now()) @map("updated_at")
-
-  @@map("store_customers")
 }
 
 model Shift {

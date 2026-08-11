@@ -300,7 +300,7 @@ async function main() {
   }
 
   // ──────────────────────────────────────────────
-  // 9. STORE CUSTOMERS
+  // 9. STORE CUSTOMERS (Now in User table)
   // ──────────────────────────────────────────────
   console.log("\n👥 Seeding Store Customers...");
   const customers = [
@@ -311,10 +311,24 @@ async function main() {
     { name: "Vikram Shah", phone: "9855678901", email: "vikram@example.com", khataBalance: 0, loyaltyPoints: 200 },
   ];
   for (const c of customers) {
-    const existing = await prisma.storeCustomer.findFirst({ where: { storeId: store.id, phone: c.phone } });
+    const existing = await prisma.user.findFirst({ where: { phone: c.phone } });
     if (!existing) {
-      await prisma.storeCustomer.create({
-        data: { storeId: store.id, ...c },
+      await prisma.user.create({
+        data: {
+          name: c.name,
+          phone: c.phone,
+          email: c.email || null,
+          khataBalance: c.khataBalance,
+          loyaltyPoints: c.loyaltyPoints,
+          status: "active",
+          isActive: true,
+          role: {
+            create: {
+              roleName: "customer",
+              role: "CUSTOMER",
+            },
+          },
+        },
       });
       console.log(`   ✅ ${c.name} (${c.phone})`);
     }

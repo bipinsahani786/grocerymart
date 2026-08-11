@@ -180,6 +180,8 @@ export default function StorePurchasesPage() {
           currentItem.mrp = prod.mrp || prod.basePrice || 0;
           if (prod.taxRate !== undefined) {
             currentItem.taxRate = prod.taxRate;
+          } else if (prod.taxClass?.rates?.[0]?.rate !== undefined) {
+            currentItem.taxRate = prod.taxClass.rates[0].rate;
           }
         }
       }
@@ -804,8 +806,9 @@ export default function StorePurchasesPage() {
                         <Input
                           type="number"
                           min={1}
-                          value={item.quantity}
+                          value={item.quantity || ''}
                           onChange={(e) => handleUpdatePOItem(idx, 'quantity', parseInt(e.target.value) || 0)}
+                          placeholder="0"
                           className="font-mono text-xs font-bold"
                           required
                         />
@@ -816,8 +819,9 @@ export default function StorePurchasesPage() {
                         <Input
                           type="number"
                           step="0.01"
-                          value={item.costPrice}
+                          value={item.costPrice || ''}
                           onChange={(e) => handleUpdatePOItem(idx, 'costPrice', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
                           className="font-mono text-xs font-bold"
                           required
                         />
@@ -828,8 +832,9 @@ export default function StorePurchasesPage() {
                         <Input
                           type="number"
                           step="0.01"
-                          value={item.sellingPrice}
+                          value={item.sellingPrice || ''}
                           onChange={(e) => handleUpdatePOItem(idx, 'sellingPrice', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
                           className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400"
                           required
                         />
@@ -840,8 +845,9 @@ export default function StorePurchasesPage() {
                         <Input
                           type="number"
                           step="0.01"
-                          value={item.mrp}
+                          value={item.mrp || ''}
                           onChange={(e) => handleUpdatePOItem(idx, 'mrp', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
                           className="font-mono text-xs"
                         />
                       </div>
@@ -853,8 +859,9 @@ export default function StorePurchasesPage() {
                         <Input
                           type="number"
                           step="0.1"
-                          value={item.taxRate}
+                          value={item.taxRate || ''}
                           onChange={(e) => handleUpdatePOItem(idx, 'taxRate', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
                           className="font-mono text-xs font-bold text-amber-500"
                           required
                         />
