@@ -305,6 +305,9 @@ export class AuthService {
       status: user.status,
       role: user.role?.roleName || "user",
       store: user.managedStore || user.store || null,
+      loyaltyPoints: user.loyaltyPoints || 0,
+      walletBalance: user.walletBalance || 0,
+      totalOrders: user.totalOrders || 0,
     };
   }
 
@@ -398,6 +401,8 @@ export class AuthService {
             name: user.name,
             phone: user.phone,
             avatar: user.avatar,
+            email: user.email,
+            dob: user.dob,
             role: user.role?.roleName || "user",
           },
           ...tokens,
@@ -462,6 +467,8 @@ export class AuthService {
           name: activeUser.name,
           phone: activeUser.phone,
           avatar: activeUser.avatar,
+          email: activeUser.email,
+          dob: activeUser.dob,
           role: "CUSTOMER",
         },
         ...tokens,

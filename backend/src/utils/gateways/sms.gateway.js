@@ -10,8 +10,8 @@ class TwoFactorGateway {
   }
 
   async sendSms(phone, otp) {
-    if (!this.apiKey || this.apiKey.includes("your-api-key")) {
-      console.log(`[SMS SIMULATION] 2Factor API Key missing. OTP for ${phone} is: ${otp}`);
+    if (process.env.BYPASS_REAL_SMS === "true" || !this.apiKey || this.apiKey.includes("your-api-key")) {
+      console.log(`[SMS SIMULATION] Bypassing real SMS to prevent calls/charges. OTP for ${phone} is: ${otp}`);
       return { success: true, simulated: true };
     }
 
