@@ -22,6 +22,7 @@ docker-compose up -d --build
 This will start:
 - **Frontend** on `http://localhost:5173`
 - **Backend API** on `http://localhost:5000`
+- **Redis Cache Server** on `http://localhost:6379`
 - **PostgreSQL Database** on port `5433` (locally mapped)
 - **Adminer** (DB UI) on `http://localhost:8081`
 
@@ -107,3 +108,19 @@ npm run dev
 | `npm run build` | Builds the app for production |
 | `npm run lint` | Runs ESLint to check for code issues |
 | `npm run preview` | Previews the production build locally |
+
+---
+
+## ⚡ Performance & Caching Optimizations
+
+To handle high traffic concurrency across both the web admin panel and mobile clients, the following optimizations have been built-in:
+
+### 1. Centralized Cache (Redis)
+- **Categories Caching:** Caches category tree layouts for **2 minutes** in Redis. The cache is automatically cleared when categories are added, updated, deleted, or imported.
+- **Catalog Caching:** Product inventory listings are cached for **1 minute** in Redis. Cache invalidation automatically runs on product creates, updates, deletes, imports, or manual stock adjustments.
+
+### 2. Network Compression (Gzip)
+- Express responses are compressed using Gzip compression middleware to reduce outgoing payload sizes by up to **80%**, lowering network transit latency on mobile devices.
+
+### 3. Database Query Indexes
+- Added query-specific indexes (`@@index`) to the Prisma schema for all relational foreign keys and filter fields (`storeId`, `categoryId`, `customerId`, `createdAt`, `status`, etc.) in major models to prevent slow, full-table scans.
