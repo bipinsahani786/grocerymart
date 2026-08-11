@@ -117,6 +117,8 @@ model User {
   deliveryAssignments DeliveryAssignment[] @relation("DeliveryPartnerAssignments")
 
   @@map("users")
+  @@index([storeId])
+  @@index([status])
 }
 
 model UserRole {
@@ -302,6 +304,9 @@ model Product {
   batches               StoreBatch[]
   purchaseItems         PurchaseOrderItem[]
   @@map("products")
+  @@index([storeId])
+  @@index([categoryId])
+  @@index([taxClassId])
 }
 
 model ProductVariant {
@@ -342,6 +347,8 @@ model StoreInventory {
 
   @@unique([storeId, productId, variantId])
   @@map("store_inventory")
+  @@index([storeId])
+  @@index([productId])
 }
 
 model StockLog {
@@ -469,6 +476,10 @@ model Order {
   statusHistory   OrderStatusHistory[]
 
   @@map("orders")
+  @@index([storeId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model OrderItem {
@@ -492,6 +503,8 @@ model OrderItem {
   isPacked      Boolean  @default(false) // picker checklist
   
   @@map("order_items")
+  @@index([orderId])
+  @@index([productId])
 }
 
 model OrderStatusHistory {
@@ -740,6 +753,9 @@ model StoreBatch {
   updatedAt       DateTime       @updatedAt @default(now()) @map("updated_at")
 
   @@map("store_batches")
+  @@index([storeId])
+  @@index([productId])
+  @@index([batchNumber])
 }
 
 model SystemSetting {
