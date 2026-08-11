@@ -9,8 +9,7 @@ import { swaggerSpec } from "../config/swagger.js";
 import authRoutes from "./common/auth/auth.routes.js";
 import uploadRoutes from "./common/upload/upload.routes.js";
 import adminRoutes from "./admin/index.js";
-import storePanelRoutes from "./store/panel/panel.routes.js";
-import purchasesRoutes from "./store/purchases/purchases.routes.js";
+import storeRoutes from "./store/index.js";
 
 const app = express();
 
@@ -90,8 +89,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authLimiter, authRoutes);           // ✅ Auth gets stricter limiter
 app.use("/api/upload", apiLimiter, uploadRoutes);
 app.use("/api/admin", apiLimiter, adminRoutes);
-app.use("/api/store", apiLimiter, storePanelRoutes);
-app.use("/api/store/purchases", apiLimiter, purchasesRoutes);
+app.use("/api/store", apiLimiter, storeRoutes);
 
 // Platform System Readiness Check Endpoint
 app.get("/", (req, res) => {
