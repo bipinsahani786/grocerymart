@@ -9,6 +9,9 @@ export interface UserType {
   email: string | null;
   avatar: string | null;
   role: string;
+  loyaltyPoints?: number;
+  walletBalance?: number;
+  totalOrders?: number;
 }
 
 interface AuthContextType {

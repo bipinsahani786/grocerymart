@@ -44,6 +44,33 @@ export default function Profile() {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [dob, setDob] = useState(user?.dob || '');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Fetch latest profile on mount
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      if (!accessToken) return;
+      try {
+        const response = await fetch(`${API_URL}/api/auth/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        const result = await response.json();
+        if (response.ok && result.success && result.data) {
+          updateUser(result.data);
+          setName(result.data.name || '');
+          setEmail(result.data.email || '');
+          setDob(result.data.dob || '');
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile details:', err);
+      }
+    };
+
+    fetchProfile();
+  }, [accessToken]);
 
   // UI states
   const [loading, setLoading] = useState(false);
@@ -98,6 +125,7 @@ export default function Profile() {
 
       if (response.ok) {
         triggerToast('Profile updated successfully!', 'success');
+        setIsEditing(false);
         updateUser({
           ...user!,
           name: result.data.name,
@@ -106,10 +134,12 @@ export default function Profile() {
           avatar: result.data.avatar,
         });
       } else {
-        triggerToast(result.error || 'Failed to update profile.', 'error');
+        const errorMsg = result.error || result.message || 'Failed to update profile.';
+        triggerToast(errorMsg, 'error');
       }
     } catch {
-      triggerToast('Network connection error.', 'error');
+      const connError = 'Network connection error. Please check your internet connection.';
+      triggerToast(connError, 'error');
     } finally {
       setLoading(false);
     }
@@ -130,13 +160,13 @@ export default function Profile() {
 
   return (
     <SafeAreaProvider>
-      <View style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: theme.colors.white }]}>
         <StatusBar style="light" />
 
         {/* Top Header Section */}
         <LinearGradient
           colors={[theme.colors.primary, theme.colors.primaryDark]}
-          style={tw`pt-12 pb-24 px-6 rounded-b-[40px] shadow-lg`}
+          style={tw`pt-12 pb-28 px-6 rounded-b-[40px] shadow-lg`}
         >
           <View style={tw`flex-row justify-between items-center mb-6`}>
             <TouchableOpacity
@@ -157,21 +187,21 @@ export default function Profile() {
           {/* Profile Card Summary */}
           <View style={tw`flex-row items-center mt-2`}>
             <View style={tw`relative`}>
-              <View style={[tw`w-20 h-20 rounded-full border-4 border-white justify-center items-center shadow-md`, { backgroundColor: theme.colors.primaryLight }]}>
+              <View style={[tw`w-20 h-20 rounded-full border-4 border-white justify-center items-center shadow-lg`, { backgroundColor: theme.colors.primaryLight }]}>
                 {user.avatar ? (
                   <Image source={{ uri: user.avatar }} style={tw`w-full h-full rounded-full`} />
                 ) : (
                   <Text style={tw`text-3xl`}>👤</Text>
                 )}
               </View>
-              <TouchableOpacity style={[tw`absolute bottom-0 right-0 w-7 h-7 rounded-full justify-center items-center border border-white shadow-sm`, { backgroundColor: theme.colors.primary }]}>
+              <TouchableOpacity style={[tw`absolute bottom-0 right-0 w-7 h-7 rounded-full justify-center items-center border border-white shadow-md`, { backgroundColor: theme.colors.primary }]}>
                 <Ionicons name="camera" size={12} color={theme.colors.white} />
               </TouchableOpacity>
             </View>
 
             <View style={tw`ml-5 flex-1`}>
               <Text style={[tw`text-xl font-black`, { color: theme.colors.white }]}>{name || 'Valued Customer'}</Text>
-              <Text style={[tw`text-xs font-semibold opacity-85 mt-0.5`, { color: theme.colors.white }]}>+91 {user.phone}</Text>
+              <Text style={[tw`text-xs font-semibold opacity-90 mt-0.5`, { color: theme.colors.white }]}>+91 {user.phone}</Text>
               <View style={[tw`flex-row items-center self-start px-2 py-0.5 rounded-full mt-2`, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
                 <Ionicons name="shield-checkmark" size={10} color={theme.colors.white} />
                 <Text style={[tw`text-[9px] font-bold uppercase tracking-wider ml-1`, { color: theme.colors.white }]}>{user.role || 'customer'}</Text>
@@ -180,86 +210,232 @@ export default function Profile() {
           </View>
         </LinearGradient>
 
-        {/* Input Form Fields */}
+        {/* Dashboard Statistics Section (Floating Card style) */}
+        <View style={tw`px-6 -mt-16 z-10`}>
+          <View style={[tw`flex-row justify-between p-4 rounded-3xl border shadow-md`, { backgroundColor: theme.colors.white, borderColor: '#E5E7EB' }]}>
+            <View style={tw`items-center flex-1 border-r border-gray-100`}>
+              <View style={[tw`w-10 h-10 rounded-full justify-center items-center mb-1.5`, { backgroundColor: '#ECFDF5' }]}>
+                <Ionicons name="wallet" size={20} color={theme.colors.primary} />
+              </View>
+              <Text style={[tw`text-xs font-semibold text-gray-400`]}>Wallet</Text>
+              <Text style={[tw`text-sm font-bold mt-0.5`, { color: theme.colors.text }]}>₹{(user.walletBalance ?? 0).toFixed(2)}</Text>
+            </View>
+
+            <View style={tw`items-center flex-1 border-r border-gray-100`}>
+              <View style={[tw`w-10 h-10 rounded-full justify-center items-center mb-1.5`, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="star" size={20} color="#F59E0B" />
+              </View>
+              <Text style={[tw`text-xs font-semibold text-gray-400`]}>Loyalty</Text>
+              <Text style={[tw`text-sm font-bold mt-0.5`, { color: theme.colors.text }]}>{user.loyaltyPoints ?? 0} pts</Text>
+            </View>
+
+            <View style={tw`items-center flex-1`}>
+              <View style={[tw`w-10 h-10 rounded-full justify-center items-center mb-1.5`, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="basket" size={20} color="#3B82F6" />
+              </View>
+              <Text style={[tw`text-xs font-semibold text-gray-400`]}>Orders</Text>
+              <Text style={[tw`text-sm font-bold mt-0.5`, { color: theme.colors.text }]}>{user.totalOrders ?? 0}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Form and Quick Actions */}
         <ScrollView
-          style={tw`flex-1 -mt-10 px-6`}
-          contentContainerStyle={tw`pb-32`}
+          style={tw`flex-1 px-6`}
+          contentContainerStyle={tw`pt-6 pb-32`}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <View style={[tw`p-6 rounded-3xl border shadow-sm`, { backgroundColor: theme.colors.white, borderColor: theme.colors.border }]}>
-            <Text style={[tw`text-xs font-black tracking-wider uppercase mb-5`, { color: theme.colors.textMuted }]}>Profile Details</Text>
+          {/* Personal Details Section (Borderless settings-style stack) */}
+          <View style={tw`mb-8`}>
+            <View style={tw`flex-row justify-between items-center pb-2 mb-2 border-b border-gray-100`}>
+              <Text style={[tw`text-xs font-black tracking-wider uppercase`, { color: theme.colors.textMuted }]}>Personal Details</Text>
+              <TouchableOpacity
+                onPress={() => setIsEditing(!isEditing)}
+                activeOpacity={0.8}
+                style={[
+                  tw`flex-row items-center px-3.5 py-1.5 rounded-xl border`,
+                  {
+                    backgroundColor: 'transparent',
+                    borderColor: isEditing ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                  }
+                ]}
+              >
+                <Ionicons
+                  name={isEditing ? 'close-circle-outline' : 'create-outline'}
+                  size={14}
+                  color={isEditing ? theme.colors.danger : theme.colors.primary}
+                  style={tw`mr-1`}
+                />
+                <Text style={[tw`text-[11px] font-black uppercase tracking-wider`, { color: isEditing ? theme.colors.danger : theme.colors.primary }]}>
+                  {isEditing ? 'Cancel' : 'Edit'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Full Name field */}
-            <Text style={[tw`text-xs font-bold mb-2`, { color: theme.colors.textLight }]}>Full Name</Text>
-            <View style={[tw`flex-row items-center rounded-2xl h-14 px-4 border mb-5`, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-              <Ionicons name="person-outline" size={18} color={theme.colors.textMuted} style={tw`mr-2.5`} />
-              <TextInput
-                style={[tw`flex-1 h-full text-base font-semibold`, { color: theme.colors.text }]}
-                value={name}
-                onChangeText={setName}
-                placeholder="Your full name"
-                placeholderTextColor={theme.colors.textMuted}
-              />
+            <View style={tw`flex-row items-center py-3 border-b border-gray-100`}>
+              <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#ECFDF5' }]}>
+                <Ionicons name="person-outline" size={16} color={theme.colors.primary} />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-[10px] font-black text-gray-400 uppercase tracking-wider`]}>Full Name</Text>
+                <TextInput
+                  style={[tw`text-base font-bold text-gray-800 mt-0.5 p-0`, { minHeight: 22 }, !isEditing && { color: theme.colors.textLight }]}
+                  value={name}
+                  onChangeText={setName}
+                  editable={isEditing}
+                  placeholder="Your full name"
+                  placeholderTextColor={theme.colors.textMuted}
+                />
+              </View>
             </View>
 
             {/* Email Address field */}
-            <Text style={[tw`text-xs font-bold mb-2`, { color: theme.colors.textLight }]}>Email Address</Text>
-            <View style={[tw`flex-row items-center rounded-2xl h-14 px-4 border mb-5`, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-              <Ionicons name="mail-outline" size={18} color={theme.colors.textMuted} style={tw`mr-2.5`} />
-              <TextInput
-                style={[tw`flex-1 h-full text-base font-semibold`, { color: theme.colors.text }]}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="example@email.com"
-                placeholderTextColor={theme.colors.textMuted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            <View style={tw`flex-row items-center py-3 border-b border-gray-100`}>
+              <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="mail-outline" size={16} color="#3B82F6" />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-[10px] font-black text-gray-400 uppercase tracking-wider`]}>Email Address</Text>
+                <TextInput
+                  style={[tw`text-base font-bold text-gray-800 mt-0.5 p-0`, { minHeight: 22 }, !isEditing && { color: theme.colors.textLight }]}
+                  value={email}
+                  onChangeText={setEmail}
+                  editable={isEditing}
+                  placeholder="example@email.com"
+                  placeholderTextColor={theme.colors.textMuted}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
             </View>
 
             {/* DOB Picker field */}
-            <Text style={[tw`text-xs font-bold mb-2`, { color: theme.colors.textLight }]}>Date of Birth</Text>
             <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
+              onPress={() => isEditing && setShowDatePicker(true)}
               activeOpacity={0.7}
-              style={[tw`flex-row items-center rounded-2xl h-14 px-4 border mb-5`, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+              disabled={!isEditing}
+              style={tw`flex-row items-center py-3 border-b border-gray-100`}
             >
-              <Ionicons name="calendar-outline" size={18} color={theme.colors.textMuted} style={tw`mr-2.5`} />
-              <TextInput
-                style={[tw`flex-1 h-full text-base font-semibold`, { color: theme.colors.text }]}
-                value={dob}
-                editable={false}
-                pointerEvents="none"
-                placeholder="Select date of birth"
-                placeholderTextColor={theme.colors.textMuted}
-              />
-              <Ionicons name="calendar" size={18} color={theme.colors.primary} />
+              <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="calendar-outline" size={16} color="#F59E0B" />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-[10px] font-black text-gray-400 uppercase tracking-wider`]}>Date of Birth</Text>
+                <Text style={[tw`text-base font-bold text-gray-800 mt-0.5`, !isEditing && { color: theme.colors.textLight }]}>
+                  {dob || 'Select date of birth'}
+                </Text>
+              </View>
+              {isEditing && <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />}
             </TouchableOpacity>
 
             {/* Phone field (Read Only) */}
-            <Text style={[tw`text-xs font-bold mb-2`, { color: theme.colors.textLight }]}>Phone Number (Verifed)</Text>
-            <View style={[tw`flex-row items-center rounded-2xl h-14 px-4 border mb-6 opacity-70`, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-              <Ionicons name="call-outline" size={18} color={theme.colors.textMuted} style={tw`mr-2.5`} />
-              <Text style={[tw`text-base font-semibold flex-1`, { color: theme.colors.textLight }]}>+91 {user.phone}</Text>
-              <Ionicons name="checkmark-circle" size={18} color={theme.colors.success} />
+            <View style={tw`flex-row items-center py-3 border-b border-gray-100 opacity-80`}>
+              <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#F3F4F6' }]}>
+                <Ionicons name="call-outline" size={16} color={theme.colors.textMuted} />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-[10px] font-black text-gray-400 uppercase tracking-wider`]}>Phone Number</Text>
+                <Text style={[tw`text-base font-bold text-gray-700 mt-0.5`]}>+91 {user.phone}</Text>
+              </View>
+              <View style={[tw`flex-row items-center px-2 py-0.5 rounded-full`, { backgroundColor: '#D1FAE5' }]}>
+                <Ionicons name="checkmark-circle" size={10} color={theme.colors.success} style={tw`mr-1`} />
+                <Text style={[tw`text-[8px] font-extrabold text-emerald-800 uppercase`]}>Verified</Text>
+              </View>
             </View>
+          </View>
 
-            {/* Submit Button */}
+          {/* Submit Button */}
+          {isEditing && (
             <TouchableOpacity
-              style={[tw`flex-row h-14 rounded-2xl justify-center items-center shadow-md`, { backgroundColor: theme.colors.primary }]}
-              activeOpacity={0.8}
+              style={tw`mb-8 shadow-md rounded-2xl overflow-hidden`}
+              activeOpacity={0.85}
               onPress={handleUpdateProfile}
               disabled={loading}
             >
-              {loading ? (
-                <ActivityIndicator size="small" color={theme.colors.white} />
-              ) : (
-                <>
-                  <Text style={[tw`font-extrabold text-base mr-2`, { color: theme.colors.white }]}>Save Changes</Text>
-                  <Ionicons name="save-outline" size={16} color={theme.colors.white} />
-                </>
-              )}
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.primaryDark]}
+                style={tw`flex-row h-13 justify-center items-center px-6`}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color={theme.colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.white} style={tw`mr-2`} />
+                    <Text style={[tw`font-extrabold text-base tracking-wide`, { color: theme.colors.white }]}>
+                      Confirm & Save Details
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+
+          {/* Preferences & Account Section (Borderless settings-style stack) */}
+          <View style={tw`mb-8`}>
+            <View style={tw`pb-2 mb-2 border-b border-gray-100`}>
+              <Text style={[tw`text-xs font-black tracking-wider uppercase`, { color: theme.colors.textMuted }]}>Preferences & Account</Text>
+            </View>
+
+            {/* List Row Item 1 */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => triggerToast('Address Book screen is coming soon!', 'info')}
+              style={tw`flex-row items-center justify-between py-3.5 border-b border-gray-100`}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#FEF3C7' }]}>
+                  <Ionicons name="location-outline" size={16} color="#F59E0B" />
+                </View>
+                <Text style={[tw`text-sm font-bold text-gray-700`]}>My Addresses</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            {/* List Row Item 2 */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => triggerToast('Order History screen is coming soon!', 'info')}
+              style={tw`flex-row items-center justify-between py-3.5 border-b border-gray-100`}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#EFF6FF' }]}>
+                  <Ionicons name="receipt-outline" size={16} color="#3B82F6" />
+                </View>
+                <Text style={[tw`text-sm font-bold text-gray-700`]}>Order History</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            {/* List Row Item 3 */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => triggerToast('Help center is offline. Please call support.', 'info')}
+              style={tw`flex-row items-center justify-between py-3.5 border-b border-gray-100`}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#E1F5FE' }]}>
+                  <Ionicons name="chatbox-ellipses-outline" size={16} color="#0288D1" />
+                </View>
+                <Text style={[tw`text-sm font-bold text-gray-700`]}>Help & Support</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            {/* List Row Item 4 - Logout option inside actions */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleLogoutClick}
+              style={tw`flex-row items-center justify-between py-3.5`}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View style={[tw`w-9 h-9 rounded-xl justify-center items-center mr-3.5`, { backgroundColor: '#FEE2E2' }]}>
+                  <Ionicons name="log-out-outline" size={16} color={theme.colors.danger} />
+                </View>
+                <Text style={[tw`text-sm font-bold text-red-600`]}>Log Out Account</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#FCA5A5" />
             </TouchableOpacity>
           </View>
         </ScrollView>
