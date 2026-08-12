@@ -33,13 +33,6 @@ export default function Profile() {
   const router = useRouter();
   const { user, accessToken, updateUser, logout } = useAuthContext();
 
-  // If user is not logged in, redirect to login
-  React.useEffect(() => {
-    if (!user) {
-      router.replace('/login');
-    }
-  }, [user, router]);
-
   // Form states
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -147,15 +140,10 @@ export default function Profile() {
 
   const handleLogoutClick = () => {
     logout();
-    router.replace('/login');
   };
 
   if (!user) {
-    return (
-      <View style={tw`flex-1 justify-center items-center`}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
+    return null;
   }
 
   return (

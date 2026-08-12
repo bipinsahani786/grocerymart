@@ -1,7 +1,8 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { LogBox } from 'react-native';
-import { AuthProvider } from '../context/AuthContext';
+import { AuthProvider, useAuthContext } from '../context/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React, { useEffect } from 'react';
 
 LogBox.ignoreLogs(['Unable to activate keep awake']);
 
@@ -14,17 +15,45 @@ const queryClient = new QueryClient({
   },
 });
 
+function InitialLayout() {
+  const { user, isLoading } = useAuthContext();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const currentSegment = segments[0];
+
+    // If on splash screen, do nothing and let index.tsx handle its timer
+    if (currentSegment === 'index' || segments.length === 0) {
+      return;
+    }
+
+    if (!user && currentSegment !== 'login') {
+      router.replace('/login');
+    } else if (user && currentSegment === 'login') {
+      router.replace('/home');
+    }
+  }, [user, isLoading, segments]);
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="login" />
+      <Stack.Screen name="home" />
+      <Stack.Screen name="profile" />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="home" options={{ headerShown: false }} />
-          <Stack.Screen name="profile" options={{ headerShown: false }} />
-        </Stack>
+        <InitialLayout />
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+

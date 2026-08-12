@@ -12,6 +12,7 @@ import { ProductCard } from '../components/ProductCard';
 import { CartFooter } from '../components/CartFooter';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useAuthContext } from '../context/AuthContext';
 import tw from 'twrnc';
 
 // Simulated Backend API Client that fetches products page-by-page.
@@ -30,10 +31,12 @@ const fetchProductsApi = async (category: string, search: string): Promise<typeo
 
 function MainApp() {
   const router = useRouter();
+  const { user } = useAuthContext();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const isLoggedIn = true; // default true for homepage
+  const isLoggedIn = !!user;
+
 
   // Debounce search query changes to prevent API spam while typing
   useEffect(() => {
