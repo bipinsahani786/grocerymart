@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, FlatList, Platform, ActivityIndicator } from 'react-native';
+import { Text, View, FlatList, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CartProvider } from '../context/CartContext';
@@ -33,10 +33,21 @@ function MainApp() {
   const router = useRouter();
   const { user } = useAuthContext();
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isCategorySticky, setIsCategorySticky] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const isLoggedIn = !!user;
+  const popularProducts = localProductData.filter((p) => p.rating >= 4.8);
 
+  const handleScroll = (event: any) => {
+    const y = event.nativeEvent.contentOffset.y;
+    // Threshold is 480px (banner height) minus approx 140px (header height) = 340px
+    if (y > 340) {
+      if (!isCategorySticky) setIsCategorySticky(true);
+    } else {
+      if (isCategorySticky) setIsCategorySticky(false);
+    }
+  };
 
   // Debounce search query changes to prevent API spam while typing
   useEffect(() => {
@@ -85,18 +96,31 @@ function MainApp() {
     }, 150);
   };
 
-  const gridColStyle = Platform.OS === 'web' ? tw`w-1/4 min-w-[160px]` : tw`w-1/2 min-w-[160px]`;
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: theme.colors.cardBackground }]}>
-      <StatusBar style="dark" backgroundColor={theme.colors.cardBackground} />
-      <View style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}>
-        <Header
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          isLoggedIn={isLoggedIn}
-          onToggleLogin={() => router.push('/profile')}
-        />
+    <View style={[tw`flex-1`, { backgroundColor: theme.colors.primary }]}>
+      <StatusBar style="light" translucent />
+      <View style={[tw`flex-1 relative`, { backgroundColor: theme.colors.background }]}>
+        <View style={[tw`absolute top-0 left-0 right-0 z-50`]}>
+          <Header
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            isLoggedIn={isLoggedIn}
+            onToggleLogin={() => router.push('/profile')}
+          />
+          {isCategorySticky && (
+            <View style={[
+              tw`shadow-md border-b border-slate-100`,
+              { backgroundColor: theme.colors.cardBackground }
+            ]}>
+              <CategoryList
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+                isSticky={true}
+              />
+            </View>
+          )}
+        </View>
 
         {/* 3. Performance-Optimized FlatList replacing heavy nested ScrollView */}
         <FlatList
@@ -106,30 +130,65 @@ function MainApp() {
           columnWrapperStyle={tw`flex-row justify-start px-1.5`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={tw`pb-[120px]`}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           ListHeaderComponent={
             <View>
-              {/* Active Offers */}
-              <OfferBanner />
+              {/* Active Offers & Integrated Categories Selector */}
+              <View style={[tw`relative z-20`, { elevation: 10 }]}>
+                <OfferBanner />
+                <View style={[tw`absolute w-full z-30`, { bottom: 20 }]}>
+                  <CategoryList
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={setSelectedCategory}
+                  />
+                </View>
+              </View>
 
-              {/* Categories Selector */}
-              <CategoryList
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-              />
+               {/* Popular Items horizontal shelf (Only show when on "All" category) */}
+              {selectedCategory === 'all' && (
+                <View style={tw`py-2`}>
+                  <View style={tw`flex-row justify-between items-center px-4 mb-2`}>
+                    <View>
+                      <Text style={[tw`text-lg font-black`, { color: theme.colors.text }]}>Trending Products 🔥</Text>
+                      <Text style={[tw`text-xs mt-0.5`, { color: theme.colors.textMuted }]}>Customer favorites this week</Text>
+                    </View>
+                    <TouchableOpacity activeOpacity={0.7}>
+                      <Text style={[tw`text-xs font-bold`, { color: theme.colors.primary }]}>See All</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={tw`px-2.5 pb-2`}
+                  >
+                    {popularProducts.map((item) => (
+                      <ProductCard key={'pop-' + item.id} product={item} width={160} />
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
 
-              {/* Products List Title */}
-              <View style={[tw`px-4 pt-4 pb-2`, { backgroundColor: theme.colors.background }]}>
+              <View style={[
+                tw`px-4 pb-2`, 
+                { 
+                  backgroundColor: theme.colors.background,
+                  paddingTop: selectedCategory === 'all' ? 16 : 24,
+                }
+              ]}>
                 <Text style={[tw`text-lg font-black`, { color: theme.colors.text }]}>
                   {selectedCategory === 'all'
-                    ? 'Popular Items'
+                    ? 'All Products 🥦'
                     : `${localProductData.find((p) => p.category === selectedCategory)?.emoji || ''} Fresh ${
                         selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)
                       }`}
                 </Text>
                 <Text style={[tw`text-xs mt-0.5`, { color: theme.colors.textMuted }]}>
-                  {allFilteredProducts.length} items available
+                  {selectedCategory === 'all' 
+                    ? 'Fresh picks delivered to your door'
+                    : `${allFilteredProducts.length} items available`}
                 </Text>
               </View>
 
@@ -142,9 +201,7 @@ function MainApp() {
             </View>
           }
           renderItem={({ item }) => (
-            <View style={gridColStyle}>
-              <ProductCard product={item} />
-            </View>
+            <ProductCard product={item} />
           )}
           ListEmptyComponent={
             !isLoading ? (

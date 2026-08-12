@@ -6,28 +6,27 @@ import { offers } from '../data/groceryData';
 import tw from 'twrnc';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width - 32; // Full width hero banner with small side padding
+const CARD_WIDTH = width;
 
 export const OfferBanner: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollOffset / (CARD_WIDTH + 16));
+    const index = Math.round(scrollOffset / CARD_WIDTH);
     if (index >= 0 && index < offers.length) {
       setActiveIndex(index);
     }
   };
 
   return (
-    <View style={[tw`py-4`, { backgroundColor: theme.colors.cardBackground }]}>
+    <View style={tw`relative w-full`}>
       <ScrollView
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        snapToInterval={CARD_WIDTH + 16}
+        snapToInterval={CARD_WIDTH}
         decelerationRate="fast"
-        contentContainerStyle={tw`px-4`}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -38,13 +37,16 @@ export const OfferBanner: React.FC = () => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[
-                tw`h-52 rounded-3xl mr-4 p-6 justify-between overflow-hidden relative shadow-lg`,
-                { width: CARD_WIDTH }
+                tw`h-[480px] rounded-none p-6 justify-between overflow-hidden relative shadow-xl z-20`,
+                { 
+                  width: CARD_WIDTH, 
+                  paddingTop: 180,
+                }
               ]}
             >
               {/* Modern Graphic Abstract Circles in Background */}
-              <View style={[tw`absolute rounded-full`, { right: -40, top: -40, width: 200, height: 200, backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
-              <View style={[tw`absolute rounded-full`, { right: 80, bottom: -60, width: 120, height: 120, backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+              <View style={[tw`absolute rounded-full`, { right: -30, top: -20, width: 220, height: 220, backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
+              <View style={[tw`absolute rounded-full`, { right: 90, bottom: -40, width: 130, height: 130, backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
 
               <View style={tw`flex-1 justify-between z-10`}>
                 {/* Top Badge */}
@@ -59,30 +61,36 @@ export const OfferBanner: React.FC = () => {
                 </View>
 
                 {/* Call To Action Button */}
-                <TouchableOpacity style={[tw`px-5 py-2 rounded-xl self-start shadow-md`, { backgroundColor: theme.colors.white }]}>
+                <TouchableOpacity style={[tw`px-5 py-2 rounded-xl self-start shadow-md mb-6`, { backgroundColor: theme.colors.white }]}>
                   <Text style={[tw`text-xs font-black uppercase tracking-wider`, { color: offer.gradientColors[0] }]}>Shop Now</Text>
                 </TouchableOpacity>
               </View>
 
               {/* Graphic Right-side Emoji Float */}
-              <View style={[tw`absolute justify-center items-center z-10`, { right: 16, bottom: 16 }]}>
-                <Text style={tw`text-[100px] opacity-95`}>{offer.emoji}</Text>
+              <View style={[tw`absolute justify-center items-center z-10`, { right: 16, bottom: 36 }]}>
+                <Text style={tw`text-[110px] opacity-95`}>{offer.emoji}</Text>
               </View>
+
+              {/* Fading Overlay mixing with below UI */}
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.4)', theme.colors.cardBackground]}
+                style={[tw`absolute bottom-0 left-0 right-0 h-28 z-20`]}
+              />
             </LinearGradient>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Slide Indicators / Dots */}
-      <View style={tw`flex-row justify-center items-center mt-3`}>
+      {/* Floating Slide Indicators / Dots Inside the Banner */}
+      <View style={[tw`absolute flex-row justify-center items-center w-full z-20`, { bottom: 140 }]}>
         {offers.map((_, index) => (
           <View
             key={index}
             style={[
-              tw`h-2 rounded-full mx-1`,
+              tw`h-1.5 rounded-full mx-1`,
               {
-                width: activeIndex === index ? 16 : 8,
-                backgroundColor: activeIndex === index ? theme.colors.primary : theme.colors.border,
+                width: activeIndex === index ? 14 : 6,
+                backgroundColor: activeIndex === index ? theme.colors.white : 'rgba(255, 255, 255, 0.4)',
               }
             ]}
           />
