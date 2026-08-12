@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useRouter } from 'expo-router';
 import { useAuthContext } from '../context/AuthContext';
 import Constants from 'expo-constants';
 
@@ -15,7 +14,6 @@ export interface ToastType {
 }
 
 export function useAuth() {
-  const router = useRouter();
   const { login } = useAuthContext();
 
   // Wizard steps
@@ -66,7 +64,7 @@ export function useAuth() {
         triggerToast(data.message || 'Verification code sent successfully.', 'success');
         setStep('otp');
       } else {
-        triggerToast(data.error || 'Failed to send verification code. Please try again.', 'error');
+        triggerToast(data.error || data.message || 'Failed to send verification code. Please try again.', 'error');
       }
     } catch {
       triggerToast('Network connection error. Please check your connection.', 'error');
@@ -95,13 +93,12 @@ export function useAuth() {
         if (data.isNewUser === false) {
           triggerToast('Successfully logged in.', 'success');
           login(data.data.user, data.data.accessToken);
-          router.replace('/home');
         } else {
           triggerToast('Code verified successfully.', 'success');
           setStep('profile');
         }
       } else {
-        triggerToast(data.error || 'Invalid verification code. Please try again.', 'error');
+        triggerToast(data.error || data.message || 'Invalid verification code. Please try again.', 'error');
       }
     } catch {
       triggerToast('Network connection error. Please check your connection.', 'error');
@@ -138,9 +135,8 @@ export function useAuth() {
       if (response.ok) {
         triggerToast('Account created successfully!', 'success');
         login(data.data.user, data.data.accessToken);
-        router.replace('/home');
       } else {
-        triggerToast(data.message || 'Failed to complete registration. Please try again.', 'error');
+        triggerToast(data.error || data.message || 'Failed to complete registration. Please try again.', 'error');
       }
     } catch {
       triggerToast('Network connection error. Please check your connection.', 'error');

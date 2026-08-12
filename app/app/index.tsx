@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import { theme } from '../constants/theme';
+import { useRouter } from 'expo-router';
 import { useAuthContext } from '../context/AuthContext';
 import tw from 'twrnc';
 
@@ -12,11 +12,10 @@ export default function SplashScreen() {
   const { user, isLoading } = useAuthContext();
 
   React.useEffect(() => {
-    // Wait until the session loading check is finished
     if (isLoading) return;
 
     const timer = setTimeout(() => {
-      if (user && user.name) {
+      if (user) {
         router.replace('/home');
       } else {
         router.replace('/login');

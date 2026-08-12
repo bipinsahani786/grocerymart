@@ -41,6 +41,31 @@ export default function Login() {
   } = useAuth();
 
   const [showDatePicker, setShowDatePicker] = React.useState(false);
+  const [resendCountdown, setResendCountdown] = React.useState(0);
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCountdown > 0) {
+      timer = setTimeout(() => {
+        setResendCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [resendCountdown]);
+
+  React.useEffect(() => {
+    if (step === 'otp') {
+      setResendCountdown(30);
+    }
+  }, [step]);
+
+  const handleResendClick = async () => {
+    if (resendCountdown > 0 || loading) return;
+    await handleSendOtp();
+    setResendCountdown(30);
+  };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     // Dismiss the picker on Android immediately
@@ -220,16 +245,31 @@ export default function Login() {
                           {!loading && <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.white} />}
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                          onPress={() => {
-                            setStep('phone');
-                            setOtpCode('');
-                            if (toast) setToast(null);
-                          }}
-                          style={tw`align-self-center py-2`}
-                        >
-                          <Text style={[tw`text-xs font-bold text-center`, { color: theme.colors.primary }]}>Change Phone Number</Text>
-                        </TouchableOpacity>
+                        <View style={tw`flex-row justify-between items-center px-1 mt-2`}>
+                          <TouchableOpacity
+                            onPress={() => {
+                              setStep('phone');
+                              setOtpCode('');
+                              if (toast) setToast(null);
+                            }}
+                            style={tw`py-2`}
+                          >
+                            <Text style={[tw`text-xs font-bold`, { color: theme.colors.primary }]}>Change Phone Number</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={handleResendClick}
+                            disabled={resendCountdown > 0 || loading}
+                            style={tw`py-2`}
+                          >
+                            <Text style={[
+                              tw`text-xs font-bold`,
+                              { color: resendCountdown > 0 ? theme.colors.textMuted : theme.colors.primary }
+                            ]}>
+                              {resendCountdown > 0 ? `Resend OTP (${resendCountdown}s)` : 'Resend OTP'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     )}
 

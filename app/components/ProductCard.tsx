@@ -8,80 +8,98 @@ import tw from 'twrnc';
 
 interface ProductCardProps {
   product: Product;
+  width?: number;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, width }) => {
   const { cart, addToCart, removeFromCart } = useCart();
 
   const cartItem = cart.find((item) => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  const shadowStyle = Platform.OS === 'android' ? { elevation: 2 } : {
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
+  const shadowStyle = Platform.OS === 'android' ? { elevation: 3 } : {
+    shadowColor: '#94A3B8',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 6,
   };
+
+  // Determine badge type based on rating/price
+  const showBadge = product.rating >= 4.8;
 
   return (
     <View style={[
-      tw`rounded-xl p-3 border flex-1 m-1.5`,
+      tw`rounded-3xl p-3.5 border m-1.5`,
       { 
         backgroundColor: theme.colors.cardBackground, 
-        borderColor: theme.colors.border 
+        borderColor: '#F1F5F9', // light slate-100 border
       },
+      width ? { width } : tw`flex-1`,
       shadowStyle
     ]}>
-      {/* Favorite / Rating top row */}
-      <View style={tw`flex-row justify-between items-center mb-1`}>
-        <View style={[tw`flex-row items-center px-1.5 py-0.5 rounded-sm`, { backgroundColor: theme.colors.accentLight }]}>
-          <Ionicons name="star" size={10} color={theme.colors.accent} />
-          <Text style={[tw`text-[10px] font-bold ml-0.5`, { color: theme.colors.accent }]}>{product.rating}</Text>
-        </View>
-        <TouchableOpacity style={[tw`w-6 h-6 rounded-full items-center justify-center`, { backgroundColor: theme.colors.background }]}>
-          <Ionicons name="heart-outline" size={16} color={theme.colors.textMuted} />
+      {/* Top Tag & Like/Heart */}
+      <View style={tw`flex-row justify-between items-center mb-2.5`}>
+        {showBadge ? (
+          <View style={[tw`flex-row items-center px-2 py-0.5 rounded-full bg-amber-50`]}>
+            <Ionicons name="star" size={10} color="#D97706" />
+            <Text style={tw`text-[9px] font-black text-amber-700 ml-0.5`}>POPULAR</Text>
+          </View>
+        ) : (
+          <View style={[tw`flex-row items-center px-2 py-0.5 rounded-full bg-emerald-50`]}>
+            <Text style={tw`text-[9px] font-black text-emerald-700`}>ORGANIC</Text>
+          </View>
+        )}
+        <TouchableOpacity style={[tw`w-7 h-7 rounded-full items-center justify-center bg-gray-50`]}>
+          <Ionicons name="heart-outline" size={15} color="#6B7280" />
         </TouchableOpacity>
       </View>
 
-      {/* Main product representation */}
-      <View style={tw`h-20 items-center justify-center mb-2`}>
-        <Text style={tw`text-[54px]`}>{product.emoji}</Text>
+      {/* Main product representation inside a graphic backdrop */}
+      <View style={[tw`h-26 rounded-2xl items-center justify-center mb-3 bg-slate-50 border border-slate-100/50`]}>
+        <Text style={tw`text-[64px]`}>{product.emoji}</Text>
       </View>
 
       {/* Product Details */}
       <View style={tw`mt-auto`}>
-        <Text style={[tw`text-[10px] font-semibold mb-0.5`, { color: theme.colors.textMuted }]}>{product.weight}</Text>
-        <Text style={[tw`text-[14px] font-bold mb-2`, { color: theme.colors.text }]} numberOfLines={1}>
+        <View style={tw`flex-row items-center justify-between mb-0.5`}>
+          <Text style={[tw`text-[10px] font-bold`, { color: theme.colors.textMuted }]}>{product.weight}</Text>
+          <View style={tw`flex-row items-center`}>
+            <Ionicons name="star" size={10} color="#F59E0B" />
+            <Text style={tw`text-[10px] font-bold text-gray-500 ml-0.5`}>{product.rating}</Text>
+          </View>
+        </View>
+
+        <Text style={[tw`text-[14px] font-black mb-2.5`, { color: theme.colors.text }]} numberOfLines={1}>
           {product.name}
         </Text>
 
         <View style={tw`flex-row justify-between items-center`}>
-          <Text style={[tw`text-[15px] font-extrabold`, { color: theme.colors.text }]}>${product.price.toFixed(2)}</Text>
+          <Text style={[tw`text-[16px] font-black`, { color: theme.colors.text }]}>${product.price.toFixed(2)}</Text>
 
           {quantity > 0 ? (
-            <View style={[tw`flex-row items-center rounded-sm border`, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary }]}>
+            <View style={[tw`flex-row items-center rounded-full border border-emerald-200 bg-emerald-50`]}>
               <TouchableOpacity
                 onPress={() => removeFromCart(product.id)}
-                style={tw`px-2 py-1.5`}
+                style={tw`px-2.5 py-1.5`}
               >
-                <Ionicons name="remove" size={14} color={theme.colors.primaryDark} />
+                <Ionicons name="remove" size={13} color="#047857" />
               </TouchableOpacity>
-              <Text style={[tw`text-[13px] font-bold px-1`, { color: theme.colors.primaryDark }]}>{quantity}</Text>
+              <Text style={tw`text-[12px] font-black text-emerald-800 px-0.5`}>{quantity}</Text>
               <TouchableOpacity
                 onPress={() => addToCart(product)}
-                style={tw`px-2 py-1.5`}
+                style={tw`px-2.5 py-1.5`}
               >
-                <Ionicons name="add" size={14} color={theme.colors.primaryDark} />
+                <Ionicons name="add" size={13} color="#047857" />
               </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity
               onPress={() => addToCart(product)}
-              style={[tw`flex-row items-center px-2.5 py-1.5 rounded-sm`, { backgroundColor: theme.colors.primary }]}
+              style={[tw`flex-row items-center px-3.5 py-1.5 rounded-full bg-emerald-600 shadow-sm`]}
               activeOpacity={0.8}
             >
-              <Ionicons name="add" size={16} color={theme.colors.white} />
-              <Text style={[tw`font-bold text-[12px] ml-0.5`, { color: theme.colors.white }]}>Add</Text>
+              <Ionicons name="add" size={14} color={theme.colors.white} />
+              <Text style={[tw`font-extrabold text-[11px] ml-0.5`, { color: theme.colors.white }]}>ADD</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -89,3 +107,4 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     </View>
   );
 };
+

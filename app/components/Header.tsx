@@ -3,6 +3,7 @@ import { Text, View, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -67,78 +68,96 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <View style={[tw`px-4 pb-2`, { paddingTop: Math.max(insets.top, 12) + 4, backgroundColor: theme.colors.white }]}>
+    <LinearGradient
+      colors={['rgba(4, 120, 87, 0.95)', 'rgba(4, 120, 87, 0.5)', 'rgba(4, 120, 87, 0)']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={[
+        tw`px-4 pb-8`,
+        { paddingTop: Math.max(insets.top, 12) + 6 }
+      ]}
+    >
       {/* Top Location and Cart Bar */}
-      <View style={tw`flex-row justify-between items-center mb-3`}>
+      <View style={tw`flex-row justify-between items-center mb-4`}>
         <View style={tw`flex-row items-center flex-1 mr-3`}>
-          <Ionicons name="location" size={20} color={theme.colors.primary} />
-          <View style={tw`ml-1 flex-1`}>
-            <Text style={[tw`text-[10px] font-black tracking-wider`, { color: theme.colors.textMuted }]}>DELIVER TO</Text>
+          <View style={[tw`w-9 h-9 rounded-full justify-center items-center`, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+            <Ionicons name="location" size={18} color={theme.colors.white} />
+          </View>
+          <View style={tw`ml-2.5 flex-1`}>
+            <Text style={[tw`text-[9px] font-black tracking-wider opacity-75`, { color: theme.colors.white }]}>DELIVER TO</Text>
             <View style={tw`flex-row items-center`}>
-              <Text style={[tw`text-sm font-bold mr-1 max-w-[85%]`, { color: theme.colors.text }]} numberOfLines={1}>
+              <Text style={[tw`text-sm font-extrabold mr-1 max-w-[85%]`, { color: theme.colors.white }]} numberOfLines={1}>
                 Home - 123 Main Street, New York
               </Text>
-              <Ionicons name="chevron-down" size={14} color={theme.colors.text} />
+              <Ionicons name="chevron-down" size={14} color={theme.colors.white} />
             </View>
           </View>
         </View>
 
+        {/* Action Circles */}
         <View style={tw`flex-row items-center`}>
           <TouchableOpacity 
-            style={[tw`relative w-10 h-10 rounded-full justify-center items-center ml-2`, { backgroundColor: theme.colors.grayLight }]} 
+            style={[tw`relative w-9 h-9 rounded-full justify-center items-center ml-2 border border-white/10`, { backgroundColor: 'rgba(255, 255, 255, 0.18)' }]} 
             onPress={onToggleLogin}
+            activeOpacity={0.8}
           >
             <Ionicons
               name={isLoggedIn ? "person" : "person-outline"}
-              size={22}
-              color={isLoggedIn ? theme.colors.primaryDark : theme.colors.text}
+              size={18}
+              color={theme.colors.white}
             />
             <View
               style={[
-                tw`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2`,
+                tw`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-emerald-600`,
                 { 
-                  backgroundColor: isLoggedIn ? theme.colors.primary : theme.colors.textMuted,
-                  borderColor: theme.colors.white
+                  backgroundColor: isLoggedIn ? '#34D399' : '#9CA3AF',
                 },
               ]}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[tw`relative w-10 h-10 rounded-full justify-center items-center ml-2`, { backgroundColor: theme.colors.grayLight }]}>
-            <Ionicons name="notifications-outline" size={22} color={theme.colors.text} />
-            <View style={[tw`absolute -top-1 -right-1 w-4 h-4 rounded-full border`, { backgroundColor: theme.colors.accent, borderColor: theme.colors.white }]} />
+          <TouchableOpacity 
+            style={[tw`relative w-9 h-9 rounded-full justify-center items-center ml-2 border border-white/10`, { backgroundColor: 'rgba(255, 255, 255, 0.18)' }]}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="notifications-outline" size={18} color={theme.colors.white} />
+            <View style={[tw`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border border-emerald-600`, { backgroundColor: theme.colors.accent || '#F59E0B' }]} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[tw`relative w-10 h-10 rounded-full justify-center items-center ml-2`, { backgroundColor: theme.colors.grayLight }]}>
-            <Ionicons name="cart-outline" size={22} color={theme.colors.text} />
+          <TouchableOpacity 
+            style={[tw`relative w-9 h-9 rounded-full justify-center items-center ml-2 border border-white/10`, { backgroundColor: 'rgba(255, 255, 255, 0.18)' }]}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="cart-outline" size={18} color={theme.colors.white} />
             {totalItems > 0 && (
-              <View style={[tw`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full justify-center items-center px-1 border`, { backgroundColor: theme.colors.primary, borderColor: theme.colors.white }]}>
-                <Text style={[tw`text-[9px] font-bold`, { color: theme.colors.white }]}>{totalItems}</Text>
+              <View style={[tw`absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full justify-center items-center px-1`, { backgroundColor: theme.colors.accent || '#F59E0B' }]}>
+                <Text style={[tw`text-[8px] font-black`, { color: theme.colors.white }]}>{totalItems}</Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Search Input Bar */}
-      <View style={[tw`flex-row items-center rounded-xl px-4 h-12 border`, { backgroundColor: theme.colors.grayLight, borderColor: theme.colors.border }]}>
-        <Ionicons name="search" size={20} color={theme.colors.textMuted} style={tw`mr-1`} />
+      {/* Floating Search Input Bar */}
+      <View style={[tw`flex-row items-center rounded-2xl px-4 h-13 bg-white shadow-xl`]}>
+        <Ionicons name="search" size={20} color="#4B5563" style={tw`mr-2`} />
         <TextInput
           placeholder={placeholderText}
-          placeholderTextColor={theme.colors.textMuted}
-          style={[tw`flex-1 h-full text-sm font-semibold`, { color: theme.colors.text }]}
+          placeholderTextColor="#9CA3AF"
+          style={[tw`flex-1 h-full text-sm font-semibold text-gray-800`]}
           value={searchQuery}
           onChangeText={onSearchQueryChange}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => onSearchQueryChange('')} style={tw`mr-2`}>
-            <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
           </TouchableOpacity>
         )}
         <TouchableOpacity style={tw`p-1`}>
           <Ionicons name="options-outline" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 };
+
