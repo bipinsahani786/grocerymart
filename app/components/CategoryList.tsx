@@ -37,18 +37,10 @@ export const CategoryList: React.FC<CategoryListProps> = ({
           const isSelected = category.id === selectedCategory;
           const colors = CATEGORY_COLORS[category.id] || CATEGORY_COLORS.all;
           
-          // Glassmorphic style when floating in hero, pastel style when sticky at top
-          const bgStyle = isSticky
-            ? (isSelected ? colors.activeBg : colors.bg)
-            : (isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.22)');
-            
-          const borderStyle = isSticky
-            ? 'transparent'
-            : (isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)');
-            
-          const textColor = isSticky
-            ? (isSelected ? colors.activeText : colors.text)
-            : (isSelected ? theme.colors.primaryDark || '#047857' : '#FFFFFF');
+          // Always use pastel premium theme for proper visibility on the page background
+          const bgStyle = isSelected ? colors.activeBg : colors.bg;
+          const borderStyle = isSelected ? 'transparent' : 'rgba(229, 231, 235, 0.6)';
+          const textColor = isSelected ? colors.activeText : colors.text;
 
           return (
             <TouchableOpacity

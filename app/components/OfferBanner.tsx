@@ -37,10 +37,10 @@ export const OfferBanner: React.FC = () => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[
-                tw`h-[480px] rounded-none p-6 justify-between overflow-hidden relative shadow-xl z-20`,
+                tw`h-[460px] rounded-none p-6 justify-between overflow-hidden relative shadow-xl z-20`,
                 { 
                   width: CARD_WIDTH, 
-                  paddingTop: 180,
+                  paddingTop: 185,
                 }
               ]}
             >
@@ -82,7 +82,7 @@ export const OfferBanner: React.FC = () => {
       </ScrollView>
 
       {/* Floating Slide Indicators / Dots Inside the Banner */}
-      <View style={[tw`absolute flex-row justify-center items-center w-full z-20`, { bottom: 140 }]}>
+      <View style={[tw`absolute flex-row justify-center items-center w-full z-20`, { bottom: 125 }]}>
         {offers.map((_, index) => (
           <View
             key={index}
