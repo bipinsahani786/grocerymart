@@ -32,7 +32,8 @@ import {
   Truck,
   ShoppingBag,
   X,
-  Loader2
+  Loader2,
+  Printer
 } from 'lucide-react';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -59,6 +60,7 @@ import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import { StoreCatalogImportModal } from '../components/StoreCatalogImportModal';
 import { StoreAddProductForm } from '../components/StoreAddProductForm';
+import { StoreBarcodePrintModal } from '../components/StoreBarcodePrintModal';
 
 type ActiveTab = 'list' | 'add' | 'edit' | 'stock' | 'bulk';
 
@@ -90,6 +92,9 @@ export default function StoreInventoryPage() {
   
   // Product being deleted
   const [deletingProduct, setDeletingProduct] = useState<any>(null);
+
+  // Product being printed
+  const [printingProduct, setPrintingProduct] = useState<any>(null);
 
   // Edit Form State - All Backend Data Fields
   const [editForm, setEditForm] = useState({
@@ -627,8 +632,21 @@ export default function StoreInventoryPage() {
                           className="h-8 w-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setPrintingProduct(item);
+                          }}
+                          title="Print Barcode"
+                        >
+                          <Printer className="h-4 w-4 text-emerald-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleStartEdit(item);
                           }}
+                          title="Edit Product"
                         >
                           <Edit3 className="h-4 w-4 text-primary-500" />
                         </Button>
@@ -640,6 +658,7 @@ export default function StoreInventoryPage() {
                             e.stopPropagation();
                             setDeletingProduct(item);
                           }}
+                          title="Delete Product"
                         >
                           <Trash2 className="h-4 w-4 text-rose-500" />
                         </Button>
@@ -1224,6 +1243,13 @@ export default function StoreInventoryPage() {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         storeId={storeId}
+      />
+
+      <StoreBarcodePrintModal
+        isOpen={!!printingProduct}
+        onClose={() => setPrintingProduct(null)}
+        product={printingProduct}
+        storeName={user?.store?.name}
       />
 
       <DeleteConfirmModal

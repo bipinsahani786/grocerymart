@@ -18,6 +18,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "html-to-image": "^1.11.13",
+    "jsbarcode": "^3.12.3",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/jsbarcode": "^3.11.4",
     "@types/node": "^24.13.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
