@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storageService, STORAGE_KEYS } from '../services/storage.service';
 
 export interface UserType {
   id: string;
@@ -14,7 +14,7 @@ export interface UserType {
   totalOrders?: number;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: UserType | null;
   accessToken: string | null;
   isLoading: boolean;
@@ -25,6 +25,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Single Responsibility: Manages application-wide user authentication state.
+ * Dependency Inversion: Uses storageService abstraction instead of direct AsyncStorage dependency.
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserType | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -34,10 +38,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const loadSession = async () => {
       try {
-        const storedUser = await AsyncStorage.getItem('@auth_user');
-        const storedToken = await AsyncStorage.getItem('@auth_token');
+        const storedUser = await storageService.getItem<UserType>(STORAGE_KEYS.AUTH_USER);
+        const storedToken = await storageService.getItem<string>(STORAGE_KEYS.AUTH_TOKEN);
         if (storedUser && storedToken) {
-          setUser(JSON.parse(storedUser));
+          setUser(storedUser);
           setAccessToken(storedToken);
         }
       } catch (e) {
@@ -51,8 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (userData: UserType, token: string) => {
     try {
-      await AsyncStorage.setItem('@auth_user', JSON.stringify(userData));
-      await AsyncStorage.setItem('@auth_token', token);
+      await storageService.setItem(STORAGE_KEYS.AUTH_USER, userData);
+      await storageService.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
       setUser(userData);
       setAccessToken(token);
     } catch (e) {
@@ -62,8 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('@auth_user');
-      await AsyncStorage.removeItem('@auth_token');
+      await storageService.removeItem(STORAGE_KEYS.AUTH_USER);
+      await storageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       setUser(null);
       setAccessToken(null);
     } catch (e) {
@@ -73,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = async (userData: UserType) => {
     try {
-      await AsyncStorage.setItem('@auth_user', JSON.stringify(userData));
+      await storageService.setItem(STORAGE_KEYS.AUTH_USER, userData);
       setUser(userData);
     } catch (e) {
       console.error('Failed to update auth session:', e);

@@ -1,24 +1,21 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import Constants from 'expo-constants';
-
-const debuggerHost = Constants.expoConfig?.hostUri;
-const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-const API_URL = `http://${localhost}:5000`;
+import { authService } from '../services/auth.service';
+import { useToast, ToastType } from './useToast';
 
 export type LoginStep = 'phone' | 'otp' | 'profile';
 
-export interface ToastType {
-  message: string;
-  type: 'success' | 'error' | 'info';
-}
-
+/**
+ * Single Responsibility: Manages multi-step authentication wizard flow and form states.
+ * Dependency Inversion: Delegates API calls to authService and toasts to useToast.
+ */
 export function useAuth() {
   const { login } = useAuthContext();
+  const { toast, setToast, triggerToast, dismissToast } = useToast();
 
   // Wizard steps
   const [step, setStep] = useState<LoginStep>('phone');
-  
+
   // Form fields
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -26,23 +23,8 @@ export function useAuth() {
   const [dob, setDob] = useState('');
   const [referralCode, setReferralCode] = useState('');
 
-  // States
+  // Loading state
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<ToastType | null>(null);
-
-  const toastTimeoutRef = useRef<any>(null);
-
-  // Helper to trigger toast notification
-  const triggerToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    if (!message) return;
-    
-    setToast({ message, type });
-    
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    toastTimeoutRef.current = setTimeout(() => {
-      setToast(null);
-    }, 4000); // Auto-dismiss after 4 seconds
-  };
 
   // Send OTP (Step 1 -> Step 2)
   const handleSendOtp = async () => {
@@ -53,18 +35,13 @@ export function useAuth() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/otp/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber }),
-      });
-      const data = await response.json();
+      const response = await authService.sendOtp(phoneNumber);
 
-      if (response.ok) {
-        triggerToast(data.message || 'Verification code sent successfully.', 'success');
+      if (response.success) {
+        triggerToast(response.message || 'Verification code sent successfully.', 'success');
         setStep('otp');
       } else {
-        triggerToast(data.error || data.message || 'Failed to send verification code. Please try again.', 'error');
+        triggerToast(response.error || response.message || 'Failed to send verification code. Please try again.', 'error');
       }
     } catch {
       triggerToast('Network connection error. Please check your connection.', 'error');
@@ -82,23 +59,18 @@ export function useAuth() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/otp/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber, otp: otpCode }),
-      });
-      const data = await response.json();
+      const response = await authService.verifyOtp(phoneNumber, otpCode);
 
-      if (response.ok) {
-        if (data.isNewUser === false) {
+      if (response.success) {
+        if (response.isNewUser === false && response.data?.user && response.data?.accessToken) {
           triggerToast('Successfully logged in.', 'success');
-          login(data.data.user, data.data.accessToken);
+          login(response.data.user, response.data.accessToken);
         } else {
           triggerToast('Code verified successfully.', 'success');
           setStep('profile');
         }
       } else {
-        triggerToast(data.error || data.message || 'Invalid verification code. Please try again.', 'error');
+        triggerToast(response.error || response.message || 'Invalid verification code. Please try again.', 'error');
       }
     } catch {
       triggerToast('Network connection error. Please check your connection.', 'error');
@@ -113,30 +85,21 @@ export function useAuth() {
       triggerToast('Please enter your full name.', 'error');
       return;
     }
-    if (dob.length !== 10) {
-      triggerToast('Please select your date of birth.', 'error');
-      return;
-    }
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/otp/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: phoneNumber,
-          name: name.trim(),
-          dob,
-          referralCode: referralCode.trim() || null,
-        }),
+      const response = await authService.registerProfile({
+        phone: phoneNumber,
+        name: name.trim(),
+        dob: dob.trim() || undefined,
+        referralCode: referralCode.trim() || undefined,
       });
-      const data = await response.json();
 
-      if (response.ok) {
-        triggerToast('Account created successfully!', 'success');
-        login(data.data.user, data.data.accessToken);
+      if (response.success && response.data?.user && response.data?.accessToken) {
+        triggerToast('Profile completed successfully. Welcome!', 'success');
+        login(response.data.user, response.data.accessToken);
       } else {
-        triggerToast(data.error || data.message || 'Failed to complete registration. Please try again.', 'error');
+        triggerToast(response.error || response.message || 'Failed to create profile. Please try again.', 'error');
       }
     } catch {
       triggerToast('Network connection error. Please check your connection.', 'error');
@@ -162,8 +125,11 @@ export function useAuth() {
     toast,
     setToast,
     triggerToast,
+    dismissToast,
     handleSendOtp,
     handleVerifyOtp,
     handleRegisterProfile,
   };
 }
+
+export type { ToastType };

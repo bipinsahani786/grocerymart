@@ -1,9 +1,10 @@
 import React from 'react';
-import { Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SearchBar } from './SearchBar';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -14,8 +15,13 @@ interface HeaderProps {
   onToggleLogin: () => void;
   isSticky?: boolean;
   onCartPress?: () => void;
+  searchInputRef?: React.RefObject<TextInput | null>;
 }
 
+/**
+ * Single Responsibility: Top Header orchestrator rendering location status,
+ * fulfillment toggle, profile/cart badges, and the modular SearchBar.
+ */
 export const Header: React.FC<HeaderProps> = ({
   searchQuery,
   onSearchQueryChange,
@@ -23,80 +29,45 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleLogin,
   isSticky = false,
   onCartPress,
+  searchInputRef,
 }) => {
-  const { totalItems } = useCart();
+  const { totalItems, fulfillmentMode, setFulfillmentMode, selectedStore } = useCart();
   const insets = useSafeAreaInsets();
-  const [placeholderText, setPlaceholderText] = React.useState('');
-
-  React.useEffect(() => {
-    const placeholders = [
-      "Search fresh organic apples...",
-      "Search farm fresh milk...",
-      "Search bakery sourdough...",
-      "Search baby spinach leaves...",
-      "Search sweet strawberries..."
-    ];
-    let wordIndex = 0;
-    let charIndex = 0;
-    let isDeleting = false;
-    let typingSpeed = 100;
-    let timer: any;
-
-    const type = () => {
-      const currentWord = placeholders[wordIndex];
-      
-      if (isDeleting) {
-        setPlaceholderText(currentWord.substring(0, charIndex - 1));
-        charIndex--;
-        typingSpeed = 40;
-      } else {
-        setPlaceholderText(currentWord.substring(0, charIndex + 1));
-        charIndex++;
-        typingSpeed = 80;
-      }
-
-      if (!isDeleting && charIndex === currentWord.length) {
-        typingSpeed = 1500;
-        isDeleting = true;
-      } else if (isDeleting && charIndex === 0) {
-        isDeleting = false;
-        wordIndex = (wordIndex + 1) % placeholders.length;
-        typingSpeed = 400;
-      }
-
-      timer = setTimeout(type, typingSpeed);
-    };
-
-    timer = setTimeout(type, 500);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <LinearGradient
       colors={
         isSticky
           ? [theme.colors.primary, theme.colors.primary, theme.colors.primary]
-          : ['rgba(4, 120, 87, 0.95)', 'rgba(4, 120, 87, 0.5)', 'rgba(4, 120, 87, 0)']
+          : ['rgba(4, 120, 87, 0.98)', 'rgba(4, 120, 87, 0.75)', 'rgba(4, 120, 87, 0)']
       }
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       style={[
         tw`px-4`,
-        isSticky ? tw`pb-3` : tw`pb-8`,
-        { paddingTop: Math.max(insets.top, 12) + 6 }
+        isSticky ? tw`pb-3` : tw`pb-7`,
+        { paddingTop: Math.max(insets.top, 12) + 6 },
       ]}
     >
       {/* Top Location and Cart Bar */}
-      <View style={tw`flex-row justify-between items-center mb-4`}>
+      <View style={tw`flex-row justify-between items-center mb-3`}>
         <View style={tw`flex-row items-center flex-1 mr-3`}>
           <View style={[tw`w-9 h-9 rounded-full justify-center items-center`, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
-            <Ionicons name="location" size={18} color={theme.colors.white} />
+            <Ionicons
+              name={fulfillmentMode === 'delivery' ? 'location' : 'storefront'}
+              size={18}
+              color={theme.colors.white}
+            />
           </View>
           <View style={tw`ml-2.5 flex-1`}>
-            <Text style={[tw`text-[9px] font-black tracking-wider opacity-75`, { color: theme.colors.white }]}>DELIVER TO</Text>
+            <Text style={[tw`text-[9px] font-black tracking-wider opacity-85 uppercase`, { color: theme.colors.white }]}>
+              {fulfillmentMode === 'delivery' ? 'DELIVER TO HOME' : 'STORE PICKUP'}
+            </Text>
             <View style={tw`flex-row items-center`}>
               <Text style={[tw`text-sm font-extrabold mr-1 max-w-[85%]`, { color: theme.colors.white }]} numberOfLines={1}>
-                Home - 123 Main Street, New York
+                {fulfillmentMode === 'delivery'
+                  ? 'Home - 123 Main Street, New York'
+                  : `${selectedStore.name} (${selectedStore.distance})`}
               </Text>
               <Ionicons name="chevron-down" size={14} color={theme.colors.white} />
             </View>
@@ -128,46 +99,91 @@ export const Header: React.FC<HeaderProps> = ({
           <TouchableOpacity 
             style={[tw`relative w-9 h-9 rounded-full justify-center items-center ml-2 border border-white/10`, { backgroundColor: 'rgba(255, 255, 255, 0.18)' }]}
             activeOpacity={0.8}
-          >
-            <Ionicons name="notifications-outline" size={18} color={theme.colors.white} />
-            <View style={[tw`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border border-emerald-600`, { backgroundColor: theme.colors.accent || '#F59E0B' }]} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[tw`relative w-9 h-9 rounded-full justify-center items-center ml-2 border border-white/10`, { backgroundColor: 'rgba(255, 255, 255, 0.18)' }]}
-            activeOpacity={0.8}
             onPress={onCartPress}
           >
-            <Ionicons name="cart-outline" size={18} color={theme.colors.white} />
+            <Ionicons name="basket" size={18} color={theme.colors.white} />
             {totalItems > 0 && (
-              <View style={[tw`absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full justify-center items-center px-1`, { backgroundColor: theme.colors.accent || '#F59E0B' }]}>
-                <Text style={[tw`text-[8px] font-black`, { color: theme.colors.white }]}>{totalItems}</Text>
+              <View
+                style={[
+                  tw`absolute -top-1 -right-1 min-w-[17px] h-[17px] rounded-full justify-center items-center px-0.5 border border-emerald-700`,
+                  { backgroundColor: theme.colors.accent || '#F59E0B' },
+                ]}
+              >
+                <Text style={[tw`text-[9px] font-black text-white`]}>
+                  {totalItems}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Floating Search Input Bar */}
-      <View style={[tw`flex-row items-center rounded-2xl px-4 h-13 bg-white shadow-xl`]}>
-        <Ionicons name="search" size={20} color="#4B5563" style={tw`mr-2`} />
-        <TextInput
-          placeholder={placeholderText}
-          placeholderTextColor="#9CA3AF"
-          style={[tw`flex-1 h-full text-sm font-semibold text-gray-800`]}
-          value={searchQuery}
-          onChangeText={onSearchQueryChange}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => onSearchQueryChange('')} style={tw`mr-2`}>
-            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+      {/* ── Domino's Style Delivery vs Store Pickup Segmented Toggle ── */}
+      {!isSticky && (
+        <View style={tw`flex-row bg-black/25 p-1 rounded-2xl mb-3 border border-white/10`}>
+          <TouchableOpacity
+            onPress={() => setFulfillmentMode('delivery')}
+            activeOpacity={0.8}
+            style={[
+              tw`flex-1 py-1.8 rounded-xl flex-row items-center justify-center gap-1.5`,
+              fulfillmentMode === 'delivery'
+                ? tw`bg-white shadow-sm`
+                : tw`bg-transparent`,
+            ]}
+          >
+            <Ionicons
+              name="bicycle"
+              size={14}
+              color={fulfillmentMode === 'delivery' ? '#047857' : '#FFFFFF'}
+            />
+            <Text
+              style={[
+                tw`text-[10px] font-black uppercase tracking-wider`,
+                fulfillmentMode === 'delivery'
+                  ? tw`text-emerald-800`
+                  : tw`text-white/90`,
+              ]}
+            >
+              Delivery • 15m
+            </Text>
           </TouchableOpacity>
-        )}
-        <TouchableOpacity style={tw`p-1`}>
-          <Ionicons name="options-outline" size={20} color={theme.colors.primary} />
-        </TouchableOpacity>
-      </View>
+
+          <TouchableOpacity
+            onPress={() => setFulfillmentMode('pickup')}
+            activeOpacity={0.8}
+            style={[
+              tw`flex-1 py-1.8 rounded-xl flex-row items-center justify-center gap-1.5`,
+              fulfillmentMode === 'pickup'
+                ? tw`bg-white shadow-sm`
+                : tw`bg-transparent`,
+            ]}
+          >
+            <Ionicons
+              name="storefront"
+              size={14}
+              color={fulfillmentMode === 'pickup' ? '#047857' : '#FFFFFF'}
+            />
+            <Text
+              style={[
+                tw`text-[10px] font-black uppercase tracking-wider`,
+                fulfillmentMode === 'pickup'
+                  ? tw`text-emerald-800`
+                  : tw`text-white/90`,
+              ]}
+            >
+              Takeaway / Store
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── Modular Standalone SearchBar Component ── */}
+      <SearchBar
+        value={searchQuery}
+        onChangeText={onSearchQueryChange}
+        onClear={() => onSearchQueryChange('')}
+        inputRef={searchInputRef}
+      />
     </LinearGradient>
   );
 };
-

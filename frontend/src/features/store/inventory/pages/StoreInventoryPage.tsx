@@ -3,14 +3,10 @@ import {
   Boxes,
   Plus,
   Edit3,
-  ArrowUpRight,
-  ArrowDownRight,
   Upload,
   FileSpreadsheet,
   RefreshCw,
   FolderOpen,
-  AlertTriangle,
-  CheckCircle,
   PackageSearch,
   Layers,
   Trash2,
@@ -35,7 +31,6 @@ import {
   Loader2,
   Printer
 } from 'lucide-react';
-import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +56,8 @@ import { SafeCategoryImage } from '@/components/ui/SafeCategoryImage';
 import { StoreCatalogImportModal } from '../components/StoreCatalogImportModal';
 import { StoreAddProductForm } from '../components/StoreAddProductForm';
 import { StoreBarcodePrintModal } from '../components/StoreBarcodePrintModal';
+import { StoreInventoryKpis } from '../components/StoreInventoryKpis';
+import { StoreStockAdjustTab } from '../components/StoreStockAdjustTab';
 
 type ActiveTab = 'list' | 'add' | 'edit' | 'stock' | 'bulk';
 
@@ -247,13 +244,6 @@ export default function StoreInventoryPage() {
     );
   };
 
-  // Stock Form State
-  const [stockForm, setStockForm] = useState({
-    productId: '',
-    delta: '',
-    reason: 'Restocking',
-  });
-
   // Bulk Upload State
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -281,23 +271,6 @@ export default function StoreInventoryPage() {
     { value: 'bundle', label: 'Combo / Bundle' },
     { value: 'perishable', label: 'Perishable Grocery' },
     { value: 'service', label: 'Service / Non-inventory' },
-  ];
-
-  const productOptions = useMemo(() => {
-    return products.map((p: any) => {
-      const invQty = p.inventory?.[0]?.quantity ?? 0;
-      return {
-        value: p.id,
-        label: `${p.name} (Current: ${invQty})`
-      };
-    });
-  }, [products]);
-
-  const reasonOptions = [
-    { value: 'Restocking', label: 'Restocking Shipment' },
-    { value: 'Wastage / damaged', label: 'Wastage / damaged items' },
-    { value: 'Audit discrepancy', label: 'Physical audit correction' },
-    { value: 'Customer Return', label: 'Customer Return' }
   ];
 
   const stockFilterOptions = [
@@ -358,37 +331,6 @@ export default function StoreInventoryPage() {
   };
 
 
-  const handleStockSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const deltaVal = Number(stockForm.delta);
-    if (!stockForm.productId || isNaN(deltaVal) || deltaVal === 0) {
-      toast.error('Please select a product and provide non-zero adjustment quantity!');
-      return;
-    }
-
-    const selectedProduct = products.find((p: any) => p.id === stockForm.productId);
-    const currentQty = selectedProduct?.inventory?.[0]?.quantity ?? 0;
-
-    if (deltaVal < 0 && (currentQty + deltaVal) < 0) {
-      toast.error(`Cannot deduct ${Math.abs(deltaVal)} items. Current stock is ${currentQty}. Stock quantity cannot drop below 0.`);
-      return;
-    }
-
-    adjustStockMutation.mutate(
-      { productId: stockForm.productId, delta: deltaVal, storeId },
-      {
-        onSuccess: () => {
-          toast.success(`Inventory stock adjusted successfully!`);
-          setActiveTab('list');
-          setStockForm({ productId: '', delta: '', reason: 'Restocking' });
-        },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || 'Failed to adjust stock');
-        },
-      }
-    );
-  };
-
   // 4. Simulated CSV upload
   const handleBulkUploadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -409,14 +351,6 @@ export default function StoreInventoryPage() {
     }, 1200);
   };
 
-  const totalProducts = products.length;
-  const totalCategories = categories.length;
-  const outOfStock = products.filter((p: any) => (p.inventory?.[0]?.quantity || 0) <= 0).length;
-  const lowStock = products.filter((p: any) => {
-    const q = p.inventory?.[0]?.quantity || 0;
-    return q > 0 && q <= (p.lowStockAt || 10);
-  }).length;
-
   return (
     <div className="min-h-screen bg-background text-foreground pb-8">
       <PageHeader
@@ -428,40 +362,7 @@ export default function StoreInventoryPage() {
       <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 pt-4 pb-6 space-y-6">
 
         {/* ── KPI Summary Cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-page-enter">
-          <CustomKpiCard
-            title="Total Catalog Items"
-            value={totalProducts}
-            subtitle="Products configured for this store"
-            icon={<PackageSearch />}
-            colorClass="bg-primary-500"
-            iconColorClass="bg-white/20 text-white"
-          />
-          <CustomKpiCard
-            title="Active Categories"
-            value={totalCategories}
-            subtitle="Taxonomy groups in use"
-            icon={<Layers />}
-            colorClass="bg-primary-500"
-            iconColorClass="bg-white/20 text-white"
-          />
-          <CustomKpiCard
-            title="Low Stock Alerts"
-            value={lowStock}
-            subtitle="Items needing replenishment"
-            icon={<AlertTriangle />}
-            colorClass="bg-primary-500"
-            iconColorClass="bg-white/20 text-white"
-          />
-          <CustomKpiCard
-            title="Out of Stock"
-            value={outOfStock}
-            subtitle="Currently unavailable items"
-            icon={<CheckCircle />}
-            colorClass="bg-primary-500"
-            iconColorClass="bg-white/20 text-white"
-          />
-        </div>
+        <StoreInventoryKpis products={products} categories={categories} />
 
         {/* Navigation Tabs */}
         <div className="flex items-center justify-between border-b border-border">
@@ -1128,67 +1029,13 @@ export default function StoreInventoryPage() {
         )}
 
         {activeTab === 'stock' && (
-          <Card className="max-w-md mx-auto animate-page-enter">
-            <CardHeader>
-              <CardTitle className="text-base font-black flex items-center gap-2">
-                <RefreshCw className="h-5 w-5 text-primary-500" />
-                Quick Stock Adjustment
-              </CardTitle>
-              <CardDescription>Log restock shipments or waste items directly to unified inventory.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleStockSubmit} className="space-y-4">
-                <div className="space-y-1 z-20">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Select Product</label>
-                  <CustomDropdown
-                    options={productOptions}
-                    value={stockForm.productId}
-                    onChange={(v) => setStockForm(prev => ({ ...prev, productId: v }))}
-                    placeholder="Select Product"
-                    searchable={true}
-                    triggerClassName="h-[38px] !text-xs font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Adjustment Quantity</label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      allowNegative={true}
-                      placeholder="e.g. 15 for Restock, -5 for damage"
-                      value={stockForm.delta}
-                      onChange={(e) => setStockForm(prev => ({ ...prev, delta: e.target.value }))}
-                      required
-                    />
-                    <div className="flex flex-col gap-1 text-[10px] font-bold text-slate-500 uppercase">
-                      <span className="flex items-center gap-1 text-emerald-500">
-                        <ArrowUpRight className="h-3 w-3" /> Positive = Restock
-                      </span>
-                      <span className="flex items-center gap-1 text-rose-500">
-                        <ArrowDownRight className="h-3 w-3" /> Negative = Damage/Waste
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1 z-20">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Adjustment Reason</label>
-                  <CustomDropdown
-                    options={reasonOptions}
-                    value={stockForm.reason}
-                    onChange={(v) => setStockForm(prev => ({ ...prev, reason: v }))}
-                    triggerClassName="h-[38px] !text-xs font-semibold"
-                  />
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab('list')}>Cancel</Button>
-                  <Button type="submit" variant="brand" size="sm">Confirm Adjust</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <StoreStockAdjustTab
+            products={products}
+            storeId={storeId}
+            onSuccess={() => setActiveTab('list')}
+            onCancel={() => setActiveTab('list')}
+            adjustStockMutation={adjustStockMutation}
+          />
         )}
 
         {activeTab === 'bulk' && (

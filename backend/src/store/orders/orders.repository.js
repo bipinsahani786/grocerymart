@@ -9,15 +9,24 @@ const orderInclude = {
   staff: { select: { id: true, name: true, email: true, phone: true } },
 };
 
+/**
+ * Single Responsibility: Database access and query operations for orders, pickup, and bills.
+ */
 export class OrdersRepository {
+  get client() {
+    return prisma;
+  }
+
+  async runTransaction(action) {
+    return await prisma.$transaction(action);
+  }
+
   async orders(storeId, filters = {}) {
     const page = parseInt(filters.page || 1, 10);
     const limit = parseInt(filters.limit || 10, 10);
     const skip = (page - 1) * limit;
 
-    const where = {
-      storeId,
-    };
+    const where = { storeId };
 
     if (filters.type && filters.type !== "All") {
       where.type = filters.type;
@@ -93,171 +102,79 @@ export class OrdersRepository {
     });
   }
 
-  async createPosOrder(storeId, payload, staffUserId) {
-    const { customerName, customerPhone, customerId, staffId, discount = 0, paymentMethod = "CASH", notes, items } = payload;
+  async findUserById(id, db = prisma) {
+    return await db.user.findUnique({ where: { id } }).catch(() => null);
+  }
 
-    return await prisma.$transaction(async (tx) => {
-      // 1. Resolve Customer (User only)
-      let finalCustomerId = null;
-      let targetPhone = customerPhone?.trim() || null;
-      let targetName = customerName?.trim() || "POS Customer";
-      let userObj = null;
+  async findUserByPhone(phone, db = prisma) {
+    return await db.user.findUnique({ where: { phone } }).catch(() => null);
+  }
 
-      if (customerId) {
-        userObj = await tx.user.findUnique({ where: { id: customerId } }).catch(() => null);
-        if (userObj) {
-          finalCustomerId = userObj.id;
-          targetPhone = userObj.phone || targetPhone;
-          targetName = userObj.name || targetName;
-        }
-      }
-
-      if (!finalCustomerId && targetPhone) {
-        userObj = await tx.user.findUnique({ where: { phone: targetPhone } });
-        if (!userObj) {
-          userObj = await tx.user.create({
-            data: {
-              phone: targetPhone,
-              name: targetName,
-              status: "active",
-              role: {
-                create: {
-                  roleName: "customer",
-                  role: "CUSTOMER",
-                },
-              },
-            },
-          });
-        }
-        finalCustomerId = userObj.id;
-      }
-
-      // 2. Resolve Staff / Cashier (StoreStaff -> User mapping)
-      let finalStaffId = staffUserId || null;
-      const targetStaffId = staffId || staffUserId;
-
-      if (targetStaffId) {
-        const storeStaffObj = await tx.storeStaff.findFirst({
-          where: { id: targetStaffId },
-        });
-        if (storeStaffObj && storeStaffObj.userId) {
-          finalStaffId = storeStaffObj.userId;
-        } else {
-          const directUser = await tx.user.findUnique({ where: { id: targetStaffId } }).catch(() => null);
-          if (directUser) {
-            finalStaffId = directUser.id;
-          }
-        }
-      }
-
-      // 3. Calculate Totals and Validate Inventory Stock levels
-      let subtotal = 0;
-      const orderItemsData = [];
-
-      for (const item of items) {
-        const product = await tx.product.findFirst({
-          where: { id: item.productId, storeId },
-          include: { inventory: true },
-        });
-
-        if (!product) {
-          throw new Error(`Product not found in store catalog: ${item.productId}`);
-        }
-
-        const price = item.price !== undefined ? parseFloat(item.price) : product.basePrice;
-        const qty = parseFloat(item.quantity);
-        const itemTotal = price * qty;
-        subtotal += itemTotal;
-
-        // Deduct inventory stock levels
-        const inv = product.inventory[0];
-        if (inv) {
-          if (inv.quantity < qty) {
-            throw new Error(`Insufficient stock for product ${product.name}. Requested: ${qty}, Available: ${inv.quantity}`);
-          }
-          await tx.storeInventory.update({
-            where: { id: inv.id },
-            data: { quantity: { decrement: qty } },
-          });
-        }
-
-        orderItemsData.push({
-          productId: product.id,
-          name: product.name,
-          qty,
-          unit: product.unit,
-          priceAtOrder: price,
-          taxRate: item.taxRate !== undefined ? parseFloat(item.taxRate) : 0,
-        });
-      }
-
-      const totalAmount = Math.max(0, subtotal - parseFloat(discount));
-
-      // 4. Create Order Record
-      const orderNumber = `POS-${Date.now().toString().slice(-6)}`;
-      const order = await tx.order.create({
-        data: {
-          orderNumber,
-          type: "POS",
-          status: "COMPLETED",
-          storeId,
-          customerId: finalCustomerId,
-          staffId: finalStaffId,
-          subtotal,
-          discount: parseFloat(discount),
-          totalAmount,
-          notes,
-          items: {
-            create: orderItemsData,
-          },
-          payment: {
-            create: {
-              method: paymentMethod,
-              status: "SUCCESS",
-              amount: totalAmount,
-            },
+  async createCustomerUser(data, db = prisma) {
+    return await db.user.create({
+      data: {
+        phone: data.phone,
+        name: data.name,
+        status: "active",
+        role: {
+          create: {
+            roleName: "customer",
+            role: "CUSTOMER",
           },
         },
-      });
+      },
+    });
+  }
 
-      // 5. Generate Invoice Bill Record
-      const billNumber = `INV-${Date.now().toString().slice(-6)}`;
-      await tx.bill.create({
-        data: {
-          billNumber,
-          orderId: order.id,
-          storeId,
-          type: "RECEIPT",
-        },
-      });
+  async findStoreStaffById(id, db = prisma) {
+    return await db.storeStaff.findFirst({ where: { id } });
+  }
 
-      // 6. Handle Khata / Credit Ledger if paymentMethod === "CREDIT"
-      if (paymentMethod === "CREDIT" && finalCustomerId) {
-        await tx.user.update({
-          where: { id: finalCustomerId },
-          data: {
-            khataBalance: { increment: totalAmount },
-          },
-        });
-      }
+  async findProductWithInventory(productId, storeId, db = prisma) {
+    return await db.product.findFirst({
+      where: { id: productId, storeId },
+      include: { inventory: true },
+    });
+  }
 
-      // 7. Update Customer Total Orders / Lifetime Spend and Loyalty Points
-      if (finalCustomerId) {
-        await tx.user.update({
-          where: { id: finalCustomerId },
-          data: {
-            totalOrders: { increment: 1 },
-            totalSpent: { increment: totalAmount },
-            loyaltyPoints: { increment: Math.floor(totalAmount / 100) * 10 },
-          },
-        }).catch(() => {});
-      }
+  async decrementInventoryStock(inventoryId, qty, db = prisma) {
+    return await db.storeInventory.update({
+      where: { id: inventoryId },
+      data: { quantity: { decrement: qty } },
+    });
+  }
 
-      // 8. Return created order with full relationships
-      return await tx.order.findUnique({
-        where: { id: order.id },
-        include: orderInclude,
-      });
+  async createOrderWithRelations(orderPayload, db = prisma) {
+    return await db.order.create({
+      data: orderPayload,
+    });
+  }
+
+  async createBill(billPayload, db = prisma) {
+    return await db.bill.create({
+      data: billPayload,
+    });
+  }
+
+  async updateCustomerBalances(customerId, { khataDelta, totalSpentDelta, loyaltyDelta }, db = prisma) {
+    const data = {};
+    if (khataDelta) data.khataBalance = { increment: khataDelta };
+    if (totalSpentDelta !== undefined) {
+      data.totalOrders = { increment: 1 };
+      data.totalSpent = { increment: totalSpentDelta };
+      data.loyaltyPoints = { increment: loyaltyDelta || 0 };
+    }
+
+    return await db.user.update({
+      where: { id: customerId },
+      data,
+    }).catch(() => {});
+  }
+
+  async getOrderWithFullIncludes(id, db = prisma) {
+    return await db.order.findUnique({
+      where: { id },
+      include: orderInclude,
     });
   }
 

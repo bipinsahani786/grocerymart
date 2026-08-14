@@ -44,7 +44,7 @@ export default function Login() {
   const [resendCountdown, setResendCountdown] = React.useState(0);
 
   React.useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (resendCountdown > 0) {
       timer = setTimeout(() => {
         setResendCountdown(prev => prev - 1);

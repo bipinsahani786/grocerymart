@@ -1,6 +1,7 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { LogBox } from 'react-native';
 import { AuthProvider, useAuthContext } from '../context/AuthContext';
+import { CartProvider } from '../context/CartContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
 
@@ -26,7 +27,7 @@ function InitialLayout() {
     const currentSegment = segments[0];
 
     // If on splash screen, do nothing and let index.tsx handle its timer
-    if (currentSegment === 'index' || segments.length === 0) {
+    if ((currentSegment as string) === 'index' || !currentSegment) {
       return;
     }
 
@@ -51,7 +52,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <InitialLayout />
+        <CartProvider>
+          <InitialLayout />
+        </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
