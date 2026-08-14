@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Grocery Mart",
-    "slug": "Grocery Mart",
+    "slug": "grocery-mart",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/zytrixon.png",
@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.grocerymart.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/zytrixon.png"
