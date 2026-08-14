@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, FlatList, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { Text, View, FlatList, ScrollView, TouchableOpacity, Platform, ActivityIndicator, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CartProvider } from '../context/CartContext';
 import { theme } from '../constants/theme';
 import { products as localProductData } from '../data/groceryData';
@@ -10,6 +10,7 @@ import { OfferBanner } from '../components/OfferBanner';
 import { CategoryList } from '../components/CategoryList';
 import { ProductCard } from '../components/ProductCard';
 import { CartFooter } from '../components/CartFooter';
+import { CartModal } from '../components/CartModal';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useAuthContext } from '../context/AuthContext';
@@ -32,8 +33,19 @@ const fetchProductsApi = async (category: string, search: string): Promise<typeo
 function MainApp() {
   const router = useRouter();
   const { user } = useAuthContext();
+  const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCategorySticky, setIsCategorySticky] = useState(false);
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: isCategorySticky ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [isCategorySticky]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const isLoggedIn = !!user;
@@ -41,8 +53,8 @@ function MainApp() {
 
   const handleScroll = (event: any) => {
     const y = event.nativeEvent.contentOffset.y;
-    // Threshold is 480px (banner height) minus approx 140px (header height) = 340px
-    if (y > 340) {
+    // Adjusted threshold for banner height (460px) + margin (16px) - header height (approx 140px) = 336px
+    if (y > 330) {
       if (!isCategorySticky) setIsCategorySticky(true);
     } else {
       if (isCategorySticky) setIsCategorySticky(false);
@@ -107,27 +119,39 @@ function MainApp() {
             onSearchQueryChange={setSearchQuery}
             isLoggedIn={isLoggedIn}
             onToggleLogin={() => router.push('/profile')}
+            isSticky={isCategorySticky}
+            onCartPress={() => setIsCartOpen(true)}
           />
-          {isCategorySticky && (
-            <View style={[
+          <Animated.View 
+            pointerEvents={isCategorySticky ? 'auto' : 'none'}
+            style={[
               tw`shadow-md border-b border-slate-100`,
-              { backgroundColor: theme.colors.cardBackground }
-            ]}>
-              <CategoryList
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-                isSticky={true}
-              />
-            </View>
-          )}
+              { 
+                backgroundColor: theme.colors.cardBackground,
+                opacity: fadeAnim,
+                transform: [{
+                  translateY: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-15, 0],
+                  })
+                }]
+              }
+            ]}
+          >
+            <CategoryList
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              isSticky={true}
+            />
+          </Animated.View>
         </View>
 
         {/* 3. Performance-Optimized FlatList replacing heavy nested ScrollView */}
         <FlatList
           data={displayedProducts}
           keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={tw`flex-row justify-start px-1.5`}
+          numColumns={4}
+          columnWrapperStyle={tw`flex-row justify-start px-0.5`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={tw`pb-[120px]`}
           onScroll={handleScroll}
@@ -139,12 +163,12 @@ function MainApp() {
               {/* Active Offers & Integrated Categories Selector */}
               <View style={[tw`relative z-20`, { elevation: 10 }]}>
                 <OfferBanner />
-                <View style={[tw`absolute w-full z-30`, { bottom: 20 }]}>
-                  <CategoryList
-                    selectedCategory={selectedCategory}
-                    onSelectCategory={setSelectedCategory}
-                  />
-                </View>
+              </View>
+              <View style={[tw`relative z-30 mt-4 mb-2`]}>
+                <CategoryList
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                />
               </View>
 
                {/* Popular Items horizontal shelf (Only show when on "All" category) */}
@@ -201,7 +225,7 @@ function MainApp() {
             </View>
           }
           renderItem={({ item }) => (
-            <ProductCard product={item} />
+            <ProductCard product={item} isMini={true} />
           )}
           ListEmptyComponent={
             !isLoading ? (
@@ -226,7 +250,10 @@ function MainApp() {
         />
 
         {/* Dynamic Sticky Bottom Cart */}
-        <CartFooter />
+        <CartFooter onPress={() => setIsCartOpen(true)} />
+
+        {/* Dedicated Shopping Cart Modal */}
+        <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       </View>
     </View>
   );

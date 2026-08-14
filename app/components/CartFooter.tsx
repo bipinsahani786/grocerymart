@@ -5,7 +5,11 @@ import { useCart } from '../context/CartContext';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
-export const CartFooter: React.FC = () => {
+interface CartFooterProps {
+  onPress?: () => void;
+}
+
+export const CartFooter: React.FC<CartFooterProps> = ({ onPress }) => {
   const { totalItems, totalAmount, clearCart } = useCart();
 
   if (totalItems === 0) return null;
@@ -30,14 +34,14 @@ export const CartFooter: React.FC = () => {
     >
       <View style={tw`flex-row justify-between items-center`}>
         {/* Left Side: Summary info */}
-        <View style={tw`justify-center`}>
+        <TouchableOpacity style={tw`justify-center`} onPress={onPress} activeOpacity={0.7}>
           <Text style={[tw`text-xs font-semibold`, { color: theme.colors.textLight }]}>
             {totalItems} {totalItems === 1 ? 'item' : 'items'} in Cart
           </Text>
           <Text style={[tw`text-xl font-black`, { color: theme.colors.primaryDark }]}>
             ${totalAmount.toFixed(2)}
           </Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Right Side: Action Button */}
         <View style={tw`flex-row items-center`}>
@@ -57,7 +61,7 @@ export const CartFooter: React.FC = () => {
               tw`flex-row px-5 h-11 rounded-lg justify-center items-center`,
               { backgroundColor: theme.colors.primary }
             ]}
-            onPress={() => alert(`Ordering ${totalItems} items. Total: $${totalAmount.toFixed(2)}`)}
+            onPress={onPress}
             activeOpacity={0.9}
           >
             <Text style={[tw`font-extrabold text-sm mr-1`, { color: theme.colors.white }]}>Place Order</Text>

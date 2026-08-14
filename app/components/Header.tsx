@@ -12,6 +12,8 @@ interface HeaderProps {
   onSearchQueryChange: (query: string) => void;
   isLoggedIn: boolean;
   onToggleLogin: () => void;
+  isSticky?: boolean;
+  onCartPress?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,6 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchQueryChange,
   isLoggedIn,
   onToggleLogin,
+  isSticky = false,
+  onCartPress,
 }) => {
   const { totalItems } = useCart();
   const insets = useSafeAreaInsets();
@@ -69,11 +73,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <LinearGradient
-      colors={['rgba(4, 120, 87, 0.95)', 'rgba(4, 120, 87, 0.5)', 'rgba(4, 120, 87, 0)']}
+      colors={
+        isSticky
+          ? [theme.colors.primary, theme.colors.primary, theme.colors.primary]
+          : ['rgba(4, 120, 87, 0.95)', 'rgba(4, 120, 87, 0.5)', 'rgba(4, 120, 87, 0)']
+      }
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       style={[
-        tw`px-4 pb-8`,
+        tw`px-4`,
+        isSticky ? tw`pb-3` : tw`pb-8`,
         { paddingTop: Math.max(insets.top, 12) + 6 }
       ]}
     >
@@ -127,6 +136,7 @@ export const Header: React.FC<HeaderProps> = ({
           <TouchableOpacity 
             style={[tw`relative w-9 h-9 rounded-full justify-center items-center ml-2 border border-white/10`, { backgroundColor: 'rgba(255, 255, 255, 0.18)' }]}
             activeOpacity={0.8}
+            onPress={onCartPress}
           >
             <Ionicons name="cart-outline" size={18} color={theme.colors.white} />
             {totalItems > 0 && (

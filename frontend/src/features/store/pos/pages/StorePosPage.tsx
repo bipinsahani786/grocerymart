@@ -115,6 +115,34 @@ export default function StorePosPage() {
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [newCustForm, setNewCustForm] = useState({ name: '', phone: '', email: '' });
 
+  // Fullscreen Kiosk Mode State & Handlers
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    const element = document.getElementById('pos-page-root');
+    if (!element) return;
+    try {
+      if (!document.fullscreenElement) {
+        await element.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Failed to toggle fullscreen:', err);
+      toast.error('Fullscreen kiosk mode is blocked or unsupported.');
+    }
+  };
+
   // Map products directly from products table API response
   const products = useMemo(() => {
     return inventory.map((prod: any) => {
@@ -544,10 +572,15 @@ export default function StorePosPage() {
   }, [todayPosOrders]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pt-3 pb-6">
+    <div id="pos-page-root" className="min-h-screen bg-background text-foreground flex flex-col pt-3 pb-6 focus:outline-hidden [&:fullscreen]:p-6 [&:fullscreen]:overflow-y-auto">
 
       {/* ── STORE MANAGER BRANDING BAR ── */}
-      <PosHeaderBar managerName={managerName} storeName={user?.store?.name} />
+      <PosHeaderBar
+        managerName={managerName}
+        storeName={user?.store?.name}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+      />
 
       {/* ── MAIN POS WORKSPACE SPLIT VIEW ── */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 max-w-[1600px] w-full mx-auto px-4 sm:px-6">
