@@ -17,33 +17,25 @@ import {
 import { getFileUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
-// Modular POS Subcomponents
+// Modular POS Subcomponents & Hooks
 import { PosHeaderBar } from '../components/PosHeaderBar';
 import { PosCatalogPanel } from '../components/PosCatalogPanel';
 import { PosCartPanel, type CartItem } from '../components/PosCartPanel';
 import { PosNewCustomerModal } from '../components/PosNewCustomerModal';
 import { PosSuccessModal } from '../components/PosSuccessModal';
+import { usePosSession } from '../hooks/usePosSession';
+import { usePosFullscreen } from '../hooks/usePosFullscreen';
+import { usePosCatalogFilter } from '../hooks/usePosCatalogFilter';
 
+/**
+ * Single Responsibility: High-level Coordinator of POS Terminal UI.
+ */
 export default function StorePosPage() {
   const user = useAuthStore((state) => state.user);
   const storeId = user?.store?.id || (user as any)?.storeId || (user as any)?.managedStore?.id;
   const managerName = user?.name || (user as any)?.fullName || 'Store Manager';
 
-  // Persisted Staff Selection in LocalStorage
-  const [selectedStaffId, setSelectedStaffId] = useState<string>(() => {
-    return localStorage.getItem('grocerymart_pos_selected_staff_id') || '';
-  });
-
-  const handleSelectStaff = (staffId: string) => {
-    setSelectedStaffId(staffId);
-    if (staffId) {
-      localStorage.setItem('grocerymart_pos_selected_staff_id', staffId);
-    } else {
-      localStorage.removeItem('grocerymart_pos_selected_staff_id');
-    }
-  };
-
-  // Data Queries directly from products, store_customers, and staff backend tables
+  // Data Queries
   const { data: inventoryData, isLoading: isInventoryLoading } = useStoreInventory(storeId);
   const { data: categoriesData } = useAllStoreCategories(storeId);
   const { data: customersData } = useStoreCustomers(storeId);
@@ -72,37 +64,23 @@ export default function StorePosPage() {
       ? todayOrdersData
       : (Array.isArray(todayOrdersData?.data) ? todayOrdersData.data : []));
 
-  // Cashier Dropdown Options (STRICTLY CASHIER ROLE ONLY)
-  const staffOptions = useMemo(() => {
-    if (!staffList || staffList.length === 0) {
-      return [{ value: '', label: 'No registered cashiers found' }];
-    }
-
-    const cashiers = staffList.filter((s: any) => {
-      const r = String(s.role || s.designation || s.user?.role?.name || s.user?.role || '').toUpperCase();
-      return r === 'CASHIER' || r.includes('CASHIER');
-    });
-
-    const displayList = cashiers.length > 0 ? cashiers : staffList;
-
-    return [
-      { value: '', label: 'Select Cashier Name' },
-      ...displayList.map((s: any) => ({
-        value: s.id || s.userId,
-        label: `🧑‍💼 ${s.name || s.user?.name || 'Cashier'}`,
-      })),
-    ];
-  }, [staffList]);
-
-
+  // Extracted Single-Responsibility Hooks
+  const { selectedStaffId, handleSelectStaff, staffOptions } = usePosSession(staffList);
+  const { isFullscreen, toggleFullscreen } = usePosFullscreen('pos-page-root');
+  const {
+    products,
+    filteredProducts,
+    searchQuery,
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+  } = usePosCatalogFilter(inventory, categories);
 
   // Mutations
   const createPosOrderMutation = useCreatePosOrder();
   const createCustomerMutation = useCreateStoreCustomer();
 
   // POS State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [discountValue, setDiscountValue] = useState<number>(0);
@@ -114,70 +92,6 @@ export default function StorePosPage() {
   const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [newCustForm, setNewCustForm] = useState({ name: '', phone: '', email: '' });
-
-  // Fullscreen Kiosk Mode State & Handlers
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, []);
-
-  const toggleFullscreen = async () => {
-    const element = document.getElementById('pos-page-root');
-    if (!element) return;
-    try {
-      if (!document.fullscreenElement) {
-        await element.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch (err) {
-      console.error('Failed to toggle fullscreen:', err);
-      toast.error('Fullscreen kiosk mode is blocked or unsupported.');
-    }
-  };
-
-  // Map products directly from products table API response
-  const products = useMemo(() => {
-    return inventory.map((prod: any) => {
-      // Stock quantity from StoreInventory
-      const availableQty = Array.isArray(prod.inventory) && prod.inventory.length > 0
-        ? prod.inventory.reduce((sum: number, inv: any) => sum + (inv.quantity || 0), 0)
-        : (prod.quantity ?? 0);
-
-      // Tax rate from product or tax class
-      const taxRate = prod.taxRate ||
-        prod.taxClass?.rates?.[0]?.components?.reduce((sum: number, c: any) => sum + (c.rate || 0), 0) || 0;
-
-      const taxSplit = prod.taxClass?.rates?.[0]?.components?.reduce((acc: any, c: any) => {
-        acc[c.name] = c.rate;
-        return acc;
-      }, {}) || null;
-
-      return {
-        id: prod.id,
-        name: prod.name || 'Unnamed Product',
-        sku: prod.sku,
-        barcode: prod.barcode,
-        price: prod.basePrice ?? prod.sellingPrice ?? prod.price ?? 0,
-        mrp: prod.mrp,
-        unit: prod.unit || 'pcs',
-        taxRate: taxRate,
-        taxSplit: taxSplit,
-        categoryId: prod.categoryId,
-        categoryName: prod.category?.name || 'General',
-        availableQty: availableQty,
-        imageUrl: prod.imageUrls || prod.imageUrl || prod.images || prod.masterProduct?.imageUrls || prod.masterProduct?.imageUrl || null,
-        rawProduct: prod,
-      };
-    });
-  }, [inventory]);
 
   // Customer options directly from store_customers table
   const customerOptions = useMemo(() => {
@@ -196,36 +110,47 @@ export default function StorePosPage() {
     return customers.find((c: any) => (c.userId || c.user?.id || c.id) === selectedCustomerId);
   }, [customers, selectedCustomerId]);
 
-  // Filter Products by Cascading Category & Search Term
-  const filteredProducts = useMemo(() => {
-    return products.filter((p: any) => {
-      let matchCat = true;
-      if (selectedCategory && selectedCategory !== 'ALL') {
-        const catIds = new Set<string>([selectedCategory]);
-        const addChildren = (parentId: string) => {
-          categories.forEach((c: any) => {
-            if (c.parentId === parentId && !catIds.has(c.id)) {
-              catIds.add(c.id);
-              addChildren(c.id);
-            }
-          });
-        };
-        addChildren(selectedCategory);
-        matchCat = catIds.has(p.categoryId);
+  // Add Item to POS Cart
+  const handleAddToCart = (product: any) => {
+    if (product.availableQty <= 0) {
+      toast.error(`"${product.name}" is Out of Stock!`);
+      return;
+    }
+
+    setCart((prev) => {
+      const existingIdx = prev.findIndex((item) => item.productId === product.id);
+      if (existingIdx > -1) {
+        const item = prev[existingIdx];
+        if (item.quantity >= product.availableQty) {
+          toast.error(`Cannot add more. Available stock: ${product.availableQty}`);
+          return prev;
+        }
+        const updated = [...prev];
+        updated[existingIdx] = { ...item, quantity: item.quantity + 1 };
+        return updated;
       }
 
-      const q = searchQuery.toLowerCase().trim();
-      const matchSearch = !q ||
-        (p.name || '').toLowerCase().includes(q) ||
-        (p.barcode || '').toLowerCase().includes(q) ||
-        (p.sku || '').toLowerCase().includes(q);
-
-      return matchCat && matchSearch;
+      return [
+        ...prev,
+        {
+          productId: product.id,
+          name: product.name,
+          sku: product.sku,
+          barcode: product.barcode,
+          price: product.price,
+          mrp: product.mrp,
+          unit: product.unit,
+          taxRate: product.taxRate || 0,
+          taxSplit: product.taxSplit || null,
+          quantity: 1,
+          availableQty: product.availableQty,
+        },
+      ];
     });
-  }, [products, selectedCategory, categories, searchQuery]);
+  };
 
   // DataTable Column Definitions for Product Catalog
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     {
       header: 'Product Details',
       cell: (item) => (
@@ -303,46 +228,7 @@ export default function StorePosPage() {
         </Button>
       ),
     },
-  ];
-
-  // Add Item to POS Cart
-  const handleAddToCart = (product: any) => {
-    if (product.availableQty <= 0) {
-      toast.error(`"${product.name}" is Out of Stock!`);
-      return;
-    }
-
-    setCart((prev) => {
-      const existingIdx = prev.findIndex((item) => item.productId === product.id);
-      if (existingIdx > -1) {
-        const item = prev[existingIdx];
-        if (item.quantity >= product.availableQty) {
-          toast.error(`Cannot add more. Available stock: ${product.availableQty}`);
-          return prev;
-        }
-        const updated = [...prev];
-        updated[existingIdx] = { ...item, quantity: item.quantity + 1 };
-        return updated;
-      }
-
-      return [
-        ...prev,
-        {
-          productId: product.id,
-          name: product.name,
-          sku: product.sku,
-          barcode: product.barcode,
-          price: product.price,
-          mrp: product.mrp,
-          unit: product.unit,
-          taxRate: product.taxRate || 0,
-          taxSplit: product.taxSplit || null,
-          quantity: 1,
-          availableQty: product.availableQty,
-        },
-      ];
-    });
-  };
+  ], [handleAddToCart]);
 
   // Update Item Quantity in Cart
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -409,7 +295,7 @@ export default function StorePosPage() {
     return Math.max(0, tendered - grandTotal);
   }, [cashTendered, grandTotal]);
 
-  // Auto-fill cash received (cashTendered) with grandTotal by default
+  // Auto-fill cash received with grandTotal for CASH method
   useEffect(() => {
     if (paymentMethod === 'CASH') {
       setCashTendered(grandTotal > 0 ? grandTotal.toFixed(2) : '');
@@ -472,13 +358,12 @@ export default function StorePosPage() {
           setDiscountValue(0);
           setCashTendered('');
           setOrderNotes('');
-          // Success Modal opens automatically via setCompletedOrder
         },
       }
     );
   };
 
-  // Download PDF Invoice helper function
+  // Download PDF Invoice
   const handleDownloadInvoicePdf = () => {
     if (!completedOrder) return;
     const pdfUrl = completedOrder.invoicePdfUrl;
@@ -513,7 +398,7 @@ export default function StorePosPage() {
       });
   };
 
-  // Open New Customer Modal with prefilled phone/name from search term
+  // Open New Customer Modal
   const handleOpenNewCustomerModal = (initialSearchTerm?: string) => {
     let name = '';
     let phone = '';

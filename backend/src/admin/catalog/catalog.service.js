@@ -1,6 +1,10 @@
 import { catalogRepository } from './catalog.repository.js';
+import { CatalogValidator } from './catalog.validator.js';
 import { AppError } from '../../utils/AppError.js';
 
+/**
+ * Single Responsibility: Master Catalog business logic and data orchestration.
+ */
 export class CatalogService {
   async getMasterCategories() {
     return await catalogRepository.getMasterCategories();
@@ -63,49 +67,9 @@ export class CatalogService {
     return await catalogRepository.getMasterProducts(filters);
   }
 
-  validateMasterProductData(data, isUpdate = false) {
-    if (!isUpdate || data.name !== undefined) {
-      if (!data.name || !String(data.name).trim()) {
-        throw new AppError('Product Title is required.', 400);
-      }
-    }
-    if (!isUpdate || data.barcode !== undefined) {
-      if (!data.barcode || !String(data.barcode).trim()) {
-        throw new AppError('Barcode is required.', 400);
-      }
-    }
-    if (!isUpdate || data.brand !== undefined) {
-      if (!data.brand || !String(data.brand).trim()) {
-        throw new AppError('Brand Name is required.', 400);
-      }
-    }
-    if (!isUpdate || data.categoryId !== undefined) {
-      if (!data.categoryId) {
-        throw new AppError('Master Category is required.', 400);
-      }
-    }
-    if (data.productType === 'simple' || data.productType === 'loose') {
-      if (!isUpdate || data.unit !== undefined) {
-        if (!data.unit || !String(data.unit).trim()) {
-          throw new AppError('Measuring Unit is required.', 400);
-        }
-      }
-      if (!isUpdate || data.basePrice !== undefined) {
-        if (data.basePrice === undefined || data.basePrice === null || Number(data.basePrice) <= 0) {
-          throw new AppError('Base Price (₹) is required and must be greater than 0.', 400);
-        }
-      }
-      if (!isUpdate || data.mrp !== undefined) {
-        if (data.mrp === undefined || data.mrp === null || Number(data.mrp) <= 0) {
-          throw new AppError('MRP (Maximum Retail Price) is required and must be greater than 0.', 400);
-        }
-      }
-    }
-  }
-
   async createMasterProduct(data) {
     try {
-      this.validateMasterProductData(data, false);
+      CatalogValidator.validateMasterProductData(data, false);
       const result = await catalogRepository.createMasterProduct(data);
       return {
         success: true,
@@ -122,7 +86,7 @@ export class CatalogService {
 
   async updateMasterProduct(id, data) {
     try {
-      this.validateMasterProductData(data, true);
+      CatalogValidator.validateMasterProductData(data, true);
       const result = await catalogRepository.updateMasterProduct(id, data);
       return {
         success: true,
