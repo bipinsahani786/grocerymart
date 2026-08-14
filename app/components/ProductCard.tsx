@@ -12,128 +12,161 @@ interface ProductCardProps {
   isMini?: boolean;
 }
 
+/**
+ * Single Responsibility: Renders standard and mini product cards with fixed heights,
+ * clean responsive layouts, and zero grid overflow.
+ */
 export const ProductCard: React.FC<ProductCardProps> = ({ product, width, isMini = false }) => {
   const { cart, addToCart, removeFromCart } = useCart();
 
   const cartItem = cart.find((item) => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  const shadowStyle = Platform.OS === 'android' ? { elevation: 3 } : {
-    shadowColor: '#94A3B8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  };
+  const shadowStyle = Platform.OS === 'android'
+    ? { elevation: 2 }
+    : {
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      };
 
-  // Determine badge type based on rating/price
   const showBadge = product.rating >= 4.8;
 
-  return (
-    <View style={[
-      tw`rounded-2xl border`,
-      isMini ? tw`p-1.5 m-0.5` : tw`p-3.5 m-1.5`,
-      { 
-        backgroundColor: theme.colors.cardBackground, 
-        borderColor: '#F1F5F9', // light slate-100 border
-      },
-      width ? { width } : tw`flex-1`,
-      shadowStyle
-    ]}>
-      {/* Top Tag & Like/Heart */}
-      {!isMini && (
-        <View style={tw`flex-row justify-between items-center mb-2.5`}>
-          {showBadge ? (
-            <View style={[tw`flex-row items-center px-2 py-0.5 rounded-full bg-amber-50`]}>
-              <Ionicons name="star" size={10} color="#D97706" />
-              <Text style={tw`text-[9px] font-black text-amber-700 ml-0.5`}>POPULAR</Text>
+  // Mini 4-column Card Layout
+  if (isMini) {
+    return (
+      <View
+        style={[
+          tw`w-full rounded-xl border bg-white overflow-hidden justify-between p-1.5`,
+          {
+            height: 148,
+            borderColor: theme.colors.border || '#F1F5F9',
+          },
+          shadowStyle,
+        ]}
+      >
+        {/* Emoji graphic representation */}
+        <View style={tw`h-13 w-full rounded-lg bg-slate-50 border border-slate-100/60 items-center justify-center`}>
+          <Text style={{ fontSize: 26 }}>{product.emoji}</Text>
+        </View>
+
+        {/* Product Info */}
+        <View style={tw`w-full mt-1`}>
+          <Text style={[tw`text-[8px] font-semibold text-slate-400`]} numberOfLines={1}>
+            {product.weight}
+          </Text>
+          <Text style={[tw`text-[10px] font-black text-slate-800 mt-0.5`]} numberOfLines={1}>
+            {product.name}
+          </Text>
+        </View>
+
+        {/* Price & Add Action Row */}
+        <View style={tw`flex-row justify-between items-center w-full mt-auto pt-1`}>
+          <Text style={[tw`text-[11px] font-black text-slate-900`]}>
+            ₹{product.price.toFixed(0)}
+          </Text>
+
+          {quantity > 0 ? (
+            <View style={tw`flex-row items-center bg-emerald-50 rounded-full border border-emerald-200 px-1 py-0.5`}>
+              <TouchableOpacity onPress={() => removeFromCart(product.id)} style={tw`p-0.5`}>
+                <Ionicons name="remove" size={9} color="#047857" />
+              </TouchableOpacity>
+              <Text style={tw`text-[9px] font-black text-emerald-800 px-0.5`}>{quantity}</Text>
+              <TouchableOpacity onPress={() => addToCart(product)} style={tw`p-0.5`}>
+                <Ionicons name="add" size={9} color="#047857" />
+              </TouchableOpacity>
             </View>
           ) : (
-            <View style={[tw`flex-row items-center px-2 py-0.5 rounded-full bg-emerald-50`]}>
-              <Text style={tw`text-[9px] font-black text-emerald-700`}>ORGANIC</Text>
-            </View>
+            <TouchableOpacity
+              onPress={() => addToCart(product)}
+              activeOpacity={0.8}
+              style={[tw`w-5.5 h-5.5 rounded-full items-center justify-center shadow-2xs`, { backgroundColor: theme.colors.primary }]}
+            >
+              <Ionicons name="add" size={12} color="#FFFFFF" />
+            </TouchableOpacity>
           )}
-          <TouchableOpacity style={[tw`w-7 h-7 rounded-full items-center justify-center bg-gray-50`]}>
-            <Ionicons name="heart-outline" size={15} color="#6B7280" />
-          </TouchableOpacity>
         </View>
-      )}
+      </View>
+    );
+  }
+
+  // Standard / Horizontal Carousel Card Layout
+  return (
+    <View
+      style={[
+        tw`rounded-2xl border bg-white p-3.5`,
+        {
+          borderColor: theme.colors.border || '#F1F5F9',
+          minHeight: 220,
+        },
+        width ? { width } : tw`w-full`,
+        shadowStyle,
+      ]}
+    >
+      {/* Top Tag & Like/Heart */}
+      <View style={tw`flex-row justify-between items-center mb-2.5`}>
+        {showBadge ? (
+          <View style={tw`flex-row items-center px-2 py-0.5 rounded-full bg-amber-50`}>
+            <Ionicons name="star" size={10} color="#D97706" />
+            <Text style={tw`text-[9px] font-black text-amber-700 ml-0.5`}>POPULAR</Text>
+          </View>
+        ) : (
+          <View style={tw`flex-row items-center px-2 py-0.5 rounded-full bg-emerald-50`}>
+            <Text style={tw`text-[9px] font-black text-emerald-700`}>ORGANIC</Text>
+          </View>
+        )}
+        <TouchableOpacity style={tw`w-7 h-7 rounded-full items-center justify-center bg-gray-50`}>
+          <Ionicons name="heart-outline" size={15} color="#6B7280" />
+        </TouchableOpacity>
+      </View>
 
       {/* Main product representation inside a graphic backdrop */}
-      <View style={[
-        isMini ? tw`h-15 rounded-xl mb-1.5` : tw`h-26 rounded-2xl mb-3`,
-        tw`items-center justify-center bg-slate-50 border border-slate-100/50`
-      ]}>
-        <Text style={{ fontSize: isMini ? 32 : 64 }}>{product.emoji}</Text>
+      <View style={tw`h-24 rounded-2xl mb-3 items-center justify-center bg-slate-50 border border-slate-100/50`}>
+        <Text style={{ fontSize: 52 }}>{product.emoji}</Text>
       </View>
 
       {/* Product Details */}
       <View style={tw`mt-auto`}>
-        {isMini ? (
-          <Text style={[tw`text-[8px] font-bold mb-0.5`, { color: theme.colors.textMuted }]}>{product.weight}</Text>
-        ) : (
-          <View style={tw`flex-row items-center justify-between mb-0.5`}>
-            <Text style={[tw`text-[10px] font-bold`, { color: theme.colors.textMuted }]}>{product.weight}</Text>
-            <View style={tw`flex-row items-center`}>
-              <Ionicons name="star" size={10} color="#F59E0B" />
-              <Text style={tw`text-[10px] font-bold text-gray-500 ml-0.5`}>{product.rating}</Text>
-            </View>
+        <View style={tw`flex-row items-center justify-between mb-0.5`}>
+          <Text style={[tw`text-[10px] font-bold text-slate-400`]}>{product.weight}</Text>
+          <View style={tw`flex-row items-center`}>
+            <Ionicons name="star" size={10} color="#F59E0B" />
+            <Text style={tw`text-[10px] font-bold text-gray-500 ml-0.5`}>{product.rating}</Text>
           </View>
-        )}
+        </View>
 
-        <Text 
-          style={[
-            isMini ? tw`text-[10px] font-black mb-1.5` : tw`text-[14px] font-black mb-2.5`, 
-            { color: theme.colors.text }
-          ]} 
-          numberOfLines={1}
-        >
+        <Text style={[tw`text-[13px] font-black mb-2`, { color: theme.colors.text }]} numberOfLines={1}>
           {product.name}
         </Text>
 
         <View style={tw`flex-row justify-between items-center`}>
-          <Text style={[isMini ? tw`text-[11px] font-black` : tw`text-[16px] font-black`, { color: theme.colors.text }]}>
-            ${product.price.toFixed(1)}
+          <Text style={[tw`text-[15px] font-black`, { color: theme.colors.text }]}>
+            ₹{product.price.toFixed(0)}
           </Text>
 
           {quantity > 0 ? (
-            <View style={[tw`flex-row items-center rounded-full border border-emerald-200 bg-emerald-50`]}>
-              <TouchableOpacity
-                onPress={() => removeFromCart(product.id)}
-                style={isMini ? tw`p-1` : tw`px-2.5 py-1.5`}
-              >
-                <Ionicons name="remove" size={isMini ? 9 : 13} color="#047857" />
+            <View style={tw`flex-row items-center rounded-full border border-emerald-200 bg-emerald-50 px-1 py-1`}>
+              <TouchableOpacity onPress={() => removeFromCart(product.id)} style={tw`px-2 py-1`}>
+                <Ionicons name="remove" size={12} color="#047857" />
               </TouchableOpacity>
-              <Text style={[isMini ? tw`text-[9px] px-0.5` : tw`text-[12px] px-0.5`, tw`font-black text-emerald-800`]}>{quantity}</Text>
-              <TouchableOpacity
-                onPress={() => addToCart(product)}
-                style={isMini ? tw`p-1` : tw`px-2.5 py-1.5`}
-              >
-                <Ionicons name="add" size={isMini ? 9 : 13} color="#047857" />
+              <Text style={tw`text-[11px] px-1 font-black text-emerald-800`}>{quantity}</Text>
+              <TouchableOpacity onPress={() => addToCart(product)} style={tw`px-2 py-1`}>
+                <Ionicons name="add" size={12} color="#047857" />
               </TouchableOpacity>
             </View>
           ) : (
-            isMini ? (
-              <TouchableOpacity
-                onPress={() => addToCart(product)}
-                style={[tw`w-6 h-6 rounded-full items-center justify-center bg-emerald-600 shadow-sm`]}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={11} color={theme.colors.white} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={() => addToCart(product)}
-                style={[tw`flex-row items-center px-3.5 py-1.5 rounded-full bg-emerald-600 shadow-sm`]}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={14} color={theme.colors.white} />
-                <Text style={[tw`font-extrabold text-[11px] ml-0.5`, { color: theme.colors.white }]}>ADD</Text>
-              </TouchableOpacity>
-            )
+            <TouchableOpacity
+              onPress={() => addToCart(product)}
+              style={[tw`flex-row items-center px-3 py-1.5 rounded-full shadow-2xs`, { backgroundColor: theme.colors.primary }]}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={13} color="#FFFFFF" />
+              <Text style={[tw`font-extrabold text-[10px] ml-0.5 text-white`]}>ADD</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
     </View>
   );
 };
-

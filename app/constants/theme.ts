@@ -6,6 +6,7 @@ export const theme = {
     accent: '#F59E0B', // Amber gold
     accentLight: '#FEF3C7',
     background: '#F9FAFB', // Off-white
+    card: '#FFFFFF',
     cardBackground: '#FFFFFF',
     text: '#111827', // Dark slate
     textLight: '#4B5563', // Gray text

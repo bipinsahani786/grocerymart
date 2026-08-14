@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCart } from '../context/CartContext';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
@@ -11,16 +12,18 @@ interface CartFooterProps {
 
 export const CartFooter: React.FC<CartFooterProps> = ({ onPress }) => {
   const { totalItems, totalAmount, clearCart } = useCart();
+  const insets = useSafeAreaInsets();
 
   if (totalItems === 0) return null;
 
-  const bottomSpacing = Platform.OS === 'ios' ? 'bottom-6' : 'bottom-4';
+  const bottomOffset = Math.max(insets.bottom, 12) + (Platform.OS === 'ios' ? 4 : 8);
 
   return (
     <View
       style={[
-        tw`absolute ${bottomSpacing} left-4 right-4 rounded-xl border px-4 py-3`,
+        tw`absolute left-4 right-4 rounded-2xl border px-4 py-3`,
         {
+          bottom: bottomOffset,
           backgroundColor: theme.colors.white,
           borderColor: theme.colors.border,
         },

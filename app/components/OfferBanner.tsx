@@ -49,8 +49,8 @@ export const OfferBanner: React.FC = () => {
               <View style={[tw`absolute rounded-full`, { right: 90, bottom: -40, width: 130, height: 130, backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
 
               <View style={tw`flex-1 justify-between z-10`}>
-                {/* Top Badge */}
-                <View style={[tw`self-start px-3 py-1 rounded-full mb-1`, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                {/* Top Badge (Shifted slightly down) */}
+                <View style={[tw`self-start px-3 py-1 rounded-full mt-6 mb-1`, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
                   <Text style={[tw`font-extrabold text-[10px] tracking-wider uppercase`, { color: theme.colors.white }]}>{offer.discount}</Text>
                 </View>
 
@@ -74,23 +74,23 @@ export const OfferBanner: React.FC = () => {
               {/* Fading Overlay mixing with below UI */}
               <LinearGradient
                 colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.4)', theme.colors.cardBackground]}
-                style={[tw`absolute bottom-0 left-0 right-0 h-28 z-20`]}
+                style={[tw`absolute bottom-0 left-0 right-0 h-16 z-20`]}
               />
             </LinearGradient>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Floating Slide Indicators / Dots Inside the Banner */}
-      <View style={[tw`absolute flex-row justify-center items-center w-full z-20`, { bottom: 125 }]}>
+      {/* Floating Slide Indicators / Dots at the bottom of the Hero Banner */}
+      <View style={[tw`absolute flex-row justify-center items-center w-full z-30`, { bottom: 12 }]}>
         {offers.map((_, index) => (
           <View
             key={index}
             style={[
-              tw`h-1.5 rounded-full mx-1`,
+              tw`h-1.5 rounded-full mx-1 shadow-sm`,
               {
-                width: activeIndex === index ? 14 : 6,
-                backgroundColor: activeIndex === index ? theme.colors.white : 'rgba(255, 255, 255, 0.4)',
+                width: activeIndex === index ? 16 : 6,
+                backgroundColor: activeIndex === index ? theme.colors.primary : 'rgba(156, 163, 175, 0.5)',
               }
             ]}
           />

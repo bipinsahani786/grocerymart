@@ -3,14 +3,10 @@ import {
   Boxes,
   Plus,
   Edit3,
-  ArrowUpRight,
-  ArrowDownRight,
   Upload,
   FileSpreadsheet,
   RefreshCw,
   FolderOpen,
-  AlertTriangle,
-  CheckCircle,
   PackageSearch,
   Layers,
   Trash2,
@@ -35,7 +31,6 @@ import {
   Loader2,
   Printer
 } from 'lucide-react';
-import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -278,23 +273,6 @@ export default function StoreInventoryPage() {
     { value: 'service', label: 'Service / Non-inventory' },
   ];
 
-  const productOptions = useMemo(() => {
-    return products.map((p: any) => {
-      const invQty = p.inventory?.[0]?.quantity ?? 0;
-      return {
-        value: p.id,
-        label: `${p.name} (Current: ${invQty})`
-      };
-    });
-  }, [products]);
-
-  const reasonOptions = [
-    { value: 'Restocking', label: 'Restocking Shipment' },
-    { value: 'Wastage / damaged', label: 'Wastage / damaged items' },
-    { value: 'Audit discrepancy', label: 'Physical audit correction' },
-    { value: 'Customer Return', label: 'Customer Return' }
-  ];
-
   const stockFilterOptions = [
     { value: 'All', label: 'All Stock Status' },
     { value: 'InStock', label: 'In Stock' },
@@ -372,14 +350,6 @@ export default function StoreInventoryPage() {
       setActiveTab('list');
     }, 1200);
   };
-
-  const totalProducts = products.length;
-  const totalCategories = categories.length;
-  const outOfStock = products.filter((p: any) => (p.inventory?.[0]?.quantity || 0) <= 0).length;
-  const lowStock = products.filter((p: any) => {
-    const q = p.inventory?.[0]?.quantity || 0;
-    return q > 0 && q <= (p.lowStockAt || 10);
-  }).length;
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-8">

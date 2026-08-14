@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Modal, Platform, Alert } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCart } from '../context/CartContext';
+import { CustomCurvedNavBar, TabKey } from './CustomCurvedNavBar';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -10,14 +13,27 @@ interface CartModalProps {
   onClose: () => void;
 }
 
+/**
+ * Single Responsibility: Modal presentation for viewing cart items, pricing breakdown, and checking out.
+ */
 export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
-  const { cart, addToCart, removeFromCart, clearCart, totalItems, totalAmount } = useCart();
+  const { cart, addToCart, removeFromCart, clearCart, totalItems, pricing } = useCart();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isOrdered, setIsOrdered] = useState(false);
 
-  // Bill Calculations
-  const deliveryFee = totalAmount >= 20 ? 0 : 2.00;
-  const tax = totalAmount * 0.05; // 5% GST
-  const grandTotal = totalAmount + deliveryFee + tax;
+  const handleTabPress = (tab: TabKey) => {
+    if (tab === 'home') {
+      onClose();
+      router.replace('/home');
+    } else if (tab === 'search') {
+      onClose();
+      router.replace('/home');
+    } else if (tab === 'profile') {
+      onClose();
+      router.replace('/profile');
+    }
+  };
 
   const handleCheckout = () => {
     setIsOrdered(true);
@@ -42,9 +58,10 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     >
       <View style={tw`flex-1 bg-black/60 justify-end`}>
         <View style={[
-          tw`h-[88%] w-full rounded-t-3xl p-5 flex-col bg-slate-50`,
+          tw`h-[90%] w-full rounded-t-3xl p-5 flex-col bg-slate-50`,
           {
             backgroundColor: theme.colors.background || '#F8FAFC',
+            paddingBottom: Math.max(insets.bottom, 12) + 76,
           }
         ]}>
           {/* Success Overlay state */}
@@ -98,130 +115,120 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
               ) : (
                 /* Active Cart Contents */
                 <>
-                  <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
-                    {/* Cart Items List */}
-                    <View style={tw`space-y-3 mb-6`}>
-                      {cart.map((item) => (
-                        <View
-                          key={item.id}
-                          style={[
-                            tw`flex-row items-center bg-white p-3.5 rounded-2xl border border-slate-100/50 shadow-xs mb-3`,
-                            { backgroundColor: theme.colors.cardBackground }
-                          ]}
-                        >
-                          {/* Emoji representation */}
-                          <View style={[tw`w-14 h-14 rounded-xl items-center justify-center bg-slate-50 border border-slate-100 mr-3`]}>
-                            <Text style={tw`text-[32px]`}>{item.emoji}</Text>
+                  <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1 mb-4`}>
+                    {cart.map((item) => (
+                      <View
+                        key={item.id}
+                        style={[
+                          tw`flex-row items-center justify-between p-3.5 mb-3 rounded-2xl border`,
+                          {
+                            backgroundColor: theme.colors.card || '#FFFFFF',
+                            borderColor: theme.colors.border || '#F1F5F9',
+                          }
+                        ]}
+                      >
+                        <View style={tw`flex-row items-center gap-3`}>
+                          <View style={tw`w-12 h-12 rounded-xl bg-slate-50 justify-center items-center`}>
+                            <Text style={tw`text-2xl`}>{item.emoji}</Text>
                           </View>
-
-                          {/* Info */}
-                          <View style={tw`flex-1 mr-2`}>
-                            <Text style={[tw`text-sm font-black mb-0.5`, { color: theme.colors.text }]} numberOfLines={1}>
+                          <View>
+                            <Text style={[tw`text-sm font-black`, { color: theme.colors.text }]}>
                               {item.name}
                             </Text>
-                            <Text style={[tw`text-[10px] font-bold`, { color: theme.colors.textMuted }]}>
-                              {item.weight} • ${item.price.toFixed(2)}/unit
+                            <Text style={[tw`text-xs font-bold`, { color: theme.colors.textMuted }]}>
+                              ${item.price.toFixed(2)} • {item.weight}
                             </Text>
-                            <Text style={[tw`text-xs font-extrabold mt-1.5`, { color: theme.colors.primaryDark }]}>
-                              Subtotal: ${(item.price * item.quantity).toFixed(2)}
-                            </Text>
-                          </View>
-
-                          {/* Inline Controls */}
-                          <View style={[tw`flex-row items-center rounded-full border border-emerald-100 bg-emerald-50 px-1 py-0.5`]}>
-                            <TouchableOpacity
-                              onPress={() => removeFromCart(item.id)}
-                              style={tw`p-1.5`}
-                            >
-                              <Ionicons name="remove" size={13} color="#047857" />
-                            </TouchableOpacity>
-                            <Text style={tw`text-xs font-black text-emerald-800 px-1.5`}>{item.quantity}</Text>
-                            <TouchableOpacity
-                              onPress={() => addToCart(item)}
-                              style={tw`p-1.5`}
-                            >
-                              <Ionicons name="add" size={13} color="#047857" />
-                            </TouchableOpacity>
                           </View>
                         </View>
-                      ))}
-                    </View>
 
-                    {/* Bill breakdown card */}
+                        {/* Quantity Controls */}
+                        <View style={tw`flex-row items-center bg-slate-50 rounded-full p-1 border border-slate-100`}>
+                          <TouchableOpacity
+                            onPress={() => removeFromCart(item.id)}
+                            style={[tw`w-7 h-7 rounded-full justify-center items-center bg-white shadow-2xs`]}
+                          >
+                            <Ionicons name="remove" size={14} color={theme.colors.text} />
+                          </TouchableOpacity>
+                          <Text style={[tw`px-2.5 text-xs font-black`, { color: theme.colors.text }]}>
+                            {item.quantity}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => addToCart(item)}
+                            style={[tw`w-7 h-7 rounded-full justify-center items-center shadow-2xs`, { backgroundColor: theme.colors.primary }]}
+                          >
+                            <Ionicons name="add" size={14} color={theme.colors.white} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+
+                    {/* Order Summary breakdown */}
                     <View style={[
-                      tw`bg-white border border-slate-100 rounded-3xl p-5 shadow-xs mb-6`,
-                      { backgroundColor: theme.colors.cardBackground }
+                      tw`p-4 rounded-2xl border border-slate-100 my-2`,
+                      { backgroundColor: theme.colors.card || '#FFFFFF' }
                     ]}>
-                      <Text style={[tw`text-xs font-black uppercase tracking-wider mb-3.5`, { color: theme.colors.text }]}>
+                      <Text style={[tw`text-xs font-black uppercase tracking-wider mb-3`, { color: theme.colors.textMuted }]}>
                         Bill Details
                       </Text>
-                      
-                      <View style={tw`flex-row justify-between items-center mb-2.5`}>
-                        <Text style={[tw`text-xs font-semibold`, { color: theme.colors.textMuted }]}>Items Subtotal</Text>
-                        <Text style={[tw`text-xs font-extrabold`, { color: theme.colors.text }]}>${totalAmount.toFixed(2)}</Text>
-                      </View>
-
-                      <View style={tw`flex-row justify-between items-center mb-2.5`}>
-                        <Text style={[tw`text-xs font-semibold`, { color: theme.colors.textMuted }]}>Delivery Charge</Text>
-                        <Text style={[tw`text-xs font-extrabold`, { color: deliveryFee === 0 ? '#10B981' : theme.colors.text }]}>
-                          {deliveryFee === 0 ? 'FREE' : `$${deliveryFee.toFixed(2)}`}
+                      <View style={tw`flex-row justify-between mb-2`}>
+                        <Text style={[tw`text-xs font-medium`, { color: theme.colors.textMuted }]}>Item Total</Text>
+                        <Text style={[tw`text-xs font-bold`, { color: theme.colors.text }]}>
+                          ${pricing.subtotal.toFixed(2)}
                         </Text>
                       </View>
-
-                      <View style={tw`flex-row justify-between items-center mb-3.5`}>
-                        <Text style={[tw`text-xs font-semibold`, { color: theme.colors.textMuted }]}>Taxes & GST (5%)</Text>
-                        <Text style={[tw`text-xs font-extrabold`, { color: theme.colors.text }]}>${tax.toFixed(2)}</Text>
+                      <View style={tw`flex-row justify-between mb-2`}>
+                        <Text style={[tw`text-xs font-medium`, { color: theme.colors.textMuted }]}>Delivery Fee</Text>
+                        <Text style={[tw`text-xs font-bold`, { color: pricing.deliveryFee === 0 ? '#10B981' : theme.colors.text }]}>
+                          {pricing.deliveryFee === 0 ? 'FREE' : `$${pricing.deliveryFee.toFixed(2)}`}
+                        </Text>
                       </View>
-
-                      {/* Divider line */}
-                      <View style={tw`border-t border-dashed border-slate-200 pt-3.5 flex-row justify-between items-center`}>
+                      <View style={tw`flex-row justify-between mb-3`}>
+                        <Text style={[tw`text-xs font-medium`, { color: theme.colors.textMuted }]}>Taxes & GST (5%)</Text>
+                        <Text style={[tw`text-xs font-bold`, { color: theme.colors.text }]}>
+                          ${pricing.tax.toFixed(2)}
+                        </Text>
+                      </View>
+                      <View style={tw`h-px bg-slate-100 my-1`} />
+                      <View style={tw`flex-row justify-between items-center mt-2`}>
                         <Text style={[tw`text-sm font-black`, { color: theme.colors.text }]}>Grand Total</Text>
-                        <Text style={[tw`text-lg font-black`, { color: theme.colors.primaryDark }]}>${grandTotal.toFixed(2)}</Text>
+                        <Text style={[tw`text-base font-black`, { color: theme.colors.primary }]}>
+                          ${pricing.grandTotal.toFixed(2)}
+                        </Text>
                       </View>
                     </View>
                   </ScrollView>
 
-                  {/* Checkout Footer Controls */}
-                  <View style={tw`pt-4 border-t border-slate-100 flex-row gap-3`}>
-                    <TouchableOpacity
-                      style={[
-                        tw`w-13 h-13 rounded-2xl justify-center items-center border border-rose-100`,
-                        { backgroundColor: theme.colors.dangerLight }
-                      ]}
-                      onPress={() => {
-                        Alert.alert(
-                          "Clear Cart",
-                          "Are you sure you want to empty all items from your cart?",
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            { text: "Yes, Empty", style: "destructive", onPress: clearCart }
-                          ]
-                        );
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="trash-outline" size={22} color={theme.colors.danger} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        tw`flex-1 h-13 rounded-2xl flex-row justify-center items-center shadow-md`,
-                        { backgroundColor: theme.colors.primary }
-                      ]}
-                      onPress={handleCheckout}
-                      activeOpacity={0.9}
-                    >
-                      <Text style={[tw`text-base font-black mr-1.5`, { color: theme.colors.white }]}>
-                        Checkout (${grandTotal.toFixed(2)})
+                  {/* Checkout Button */}
+                  <TouchableOpacity
+                    onPress={handleCheckout}
+                    style={[
+                      tw`w-full py-4 rounded-full flex-row items-center justify-between px-6 shadow-md`,
+                      { backgroundColor: theme.colors.primary }
+                    ]}
+                  >
+                    <View>
+                      <Text style={[tw`text-[10px] uppercase font-black text-white/80 tracking-wider`]}>
+                        Total to Pay
                       </Text>
-                      <Ionicons name="shield-checkmark" size={20} color={theme.colors.white} />
-                    </TouchableOpacity>
-                  </View>
+                      <Text style={[tw`text-lg font-black text-white`]}>
+                        ${pricing.grandTotal.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={tw`flex-row items-center gap-1`}>
+                      <Text style={[tw`text-sm font-black text-white uppercase tracking-wider`]}>
+                        Place Order
+                      </Text>
+                      <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                    </View>
+                  </TouchableOpacity>
                 </>
               )}
             </>
           )}
         </View>
+
+        {/* Fluid Organic Curved Bottom Navigation Bar (BNB-27 Style) on Cart */}
+        <CustomCurvedNavBar activeTab="cart" onTabPress={handleTabPress} />
       </View>
     </Modal>
   );

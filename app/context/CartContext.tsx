@@ -1,4 +1,32 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
+import { calculatePricing, PricingSummary } from '../utils/pricing';
+
+export type FulfillmentMode = 'delivery' | 'pickup';
+
+export interface StoreLocation {
+  id: string;
+  name: string;
+  address: string;
+  distance: string;
+  readyTime: string;
+}
+
+export const STORE_LOCATIONS: StoreLocation[] = [
+  {
+    id: 's1',
+    name: 'GroceryMart - Downtown Flagship',
+    address: 'Shop 14, Central Market, Connaught Place',
+    distance: '1.2 km away',
+    readyTime: 'Ready in 10 mins',
+  },
+  {
+    id: 's2',
+    name: 'GroceryMart - Green Park Express',
+    address: 'Plot 22, Main Market, Green Park',
+    distance: '2.8 km away',
+    readyTime: 'Ready in 15 mins',
+  },
+];
 
 export interface CartItem {
   id: string;
@@ -9,19 +37,30 @@ export interface CartItem {
   quantity: number;
 }
 
-interface CartContextType {
+export interface CartContextType {
   cart: CartItem[];
   addToCart: (product: { id: string; name: string; price: number; weight: string; emoji: string }) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalAmount: number;
+  pricing: PricingSummary;
+  fulfillmentMode: FulfillmentMode;
+  setFulfillmentMode: (mode: FulfillmentMode) => void;
+  selectedStore: StoreLocation;
+  setSelectedStore: (store: StoreLocation) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+/**
+ * Single Responsibility: Manages cart state, dynamic pricing, and Domino's-style
+ * Delivery vs Store Pickup fulfillment modes.
+ */
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('delivery');
+  const [selectedStore, setSelectedStore] = useState<StoreLocation>(STORE_LOCATIONS[0]);
 
   const addToCart = (product: { id: string; name: string; price: number; weight: string; emoji: string }) => {
     setCart((prevCart) => {
@@ -58,12 +97,42 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  const totalAmount = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
+  const pricing = useMemo(() => {
+    const rawPricing = calculatePricing(cart);
+    // If Store Pickup / Takeaway is selected, delivery fee is always ₹0
+    if (fulfillmentMode === 'pickup') {
+      const grandTotalWithoutDelivery = Math.max(
+        0,
+        rawPricing.subtotal - rawPricing.discount + rawPricing.tax
+      );
+      return {
+        ...rawPricing,
+        deliveryFee: 0,
+        isFreeDelivery: true,
+        grandTotal: grandTotalWithoutDelivery,
+      };
+    }
+    return rawPricing;
+  }, [cart, fulfillmentMode]);
+
+  const totalAmount = pricing.subtotal;
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, totalItems, totalAmount }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        removeFromCart,
+        clearCart,
+        totalItems,
+        totalAmount,
+        pricing,
+        fulfillmentMode,
+        setFulfillmentMode,
+        selectedStore,
+        setSelectedStore,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -1,41 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, FlatList, ScrollView, TouchableOpacity, Platform, ActivityIndicator, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Text,
+  View,
+  FlatList,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Animated,
+  BackHandler,
+  TextInput,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CartProvider } from '../context/CartContext';
 import { theme } from '../constants/theme';
-import { products as localProductData } from '../data/groceryData';
 import { Header } from '../components/Header';
 import { OfferBanner } from '../components/OfferBanner';
 import { CategoryList } from '../components/CategoryList';
 import { ProductCard } from '../components/ProductCard';
-import { CartFooter } from '../components/CartFooter';
-import { CartModal } from '../components/CartModal';
+import { CustomCurvedNavBar, TabKey } from '../components/CustomCurvedNavBar';
+import { CartView } from '../components/CartView';
+import { ProfileView } from '../components/ProfileView';
+import { Footer } from '../components/Footer';
+import { FloatingCartBar } from '../components/FloatingCartBar';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useAuthContext } from '../context/AuthContext';
+import { productService } from '../services/product.service';
+import { Product } from '../data/groceryData';
 import tw from 'twrnc';
 
-// Simulated Backend API Client that fetches products page-by-page.
-// In a real app, this would perform a fetch request to `API_URL/api/products?page=${page}&limit=${limit}&category=${category}&search=${search}`
-const fetchProductsApi = async (category: string, search: string): Promise<typeof localProductData> => {
-  // Simulate network latency (250ms)
-  await new Promise((resolve) => setTimeout(resolve, 250));
-
-  // Perform backend-like filtering
-  return localProductData.filter(
-    (product) =>
-      (category === 'all' || product.category === category) &&
-      product.name.toLowerCase().includes(search.toLowerCase())
-  );
-};
-
+/**
+ * Single Responsibility & High Performance Shell:
+ * Production-level persistent tab navigator housing Home, Search, Cart, and Profile
+ * with zero reload flashes, persistent BNB-27 navigation bar, and instant tab switching.
+ */
 function MainApp() {
   const router = useRouter();
   const { user } = useAuthContext();
   const insets = useSafeAreaInsets();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Stack-based tab navigation history (LIFO stack)
+  const [tabStack, setTabStack] = useState<TabKey[]>(['home']);
+  const activeTab = tabStack[tabStack.length - 1] || 'home';
+
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCategorySticky, setIsCategorySticky] = useState(false);
   const [fadeAnim] = useState(() => new Animated.Value(0));
 
@@ -46,14 +57,62 @@ function MainApp() {
       useNativeDriver: true,
     }).start();
   }, [isCategorySticky]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const isLoggedIn = !!user;
-  const popularProducts = localProductData.filter((p) => p.rating >= 4.8);
+
+  const handleTabPress = (tab: TabKey) => {
+    if (tab === activeTab) {
+      if (tab === 'home') {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      } else if (tab === 'search') {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        searchInputRef.current?.focus();
+      }
+      return;
+    }
+    // Push new tab onto stack
+    setTabStack((prev) => [...prev, tab]);
+
+    if (tab === 'search') {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+      });
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 250);
+    }
+  };
+
+  const handleBack = () => {
+    if (tabStack.length > 1) {
+      setTabStack((prev) => prev.slice(0, prev.length - 1));
+      return true;
+    }
+    return false;
+  };
+
+  // Hardware / System back button listener
+  useEffect(() => {
+    const onBackPress = () => {
+      if (tabStack.length > 1) {
+        handleBack();
+        return true;
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [tabStack]);
 
   const handleScroll = (event: any) => {
     const y = event.nativeEvent.contentOffset.y;
-    // Adjusted threshold for banner height (460px) + margin (16px) - header height (approx 140px) = 336px
     if (y > 330) {
       if (!isCategorySticky) setIsCategorySticky(true);
     } else {
@@ -61,7 +120,7 @@ function MainApp() {
     }
   };
 
-  // Debounce search query changes to prevent API spam while typing
+  // Debounce search query changes
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -72,18 +131,26 @@ function MainApp() {
     };
   }, [searchQuery]);
 
-  // 1. React Query integration with debounced search to save API calls
+  // Query products via productService
   const { data: allFilteredProducts = [], isLoading } = useQuery({
     queryKey: ['products', selectedCategory, debouncedSearchQuery],
-    queryFn: () => fetchProductsApi(selectedCategory, debouncedSearchQuery),
-    staleTime: 1000 * 60 * 5, // Keep cache fresh for 5 minutes
+    queryFn: () =>
+      productService.fetchProducts({ category: selectedCategory, search: debouncedSearchQuery }),
+    staleTime: 1000 * 60 * 5,
   });
 
-  // 2. Infinite Scroll Pagination states
-  const [displayedProducts, setDisplayedProducts] = useState<typeof localProductData>([]);
+  // Query popular products via productService
+  const { data: popularProducts = [] } = useQuery({
+    queryKey: ['popular-products'],
+    queryFn: () => productService.getPopularProducts(),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Infinite Scroll Pagination
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
-  const itemsPerPage = 6; // Low number to easily demonstrate scroll pagination
+  const itemsPerPage = 12;
 
   // Reset pagination when category or search changes
   useEffect(() => {
@@ -91,169 +158,224 @@ function MainApp() {
     setDisplayedProducts(allFilteredProducts.slice(0, itemsPerPage));
   }, [allFilteredProducts]);
 
-  // Load next chunk of products on scroll end
   const handleLoadMore = () => {
     if (isPaginationLoading || displayedProducts.length >= allFilteredProducts.length) {
       return;
     }
 
     setIsPaginationLoading(true);
-    // Simulate loading next page of products (150ms delay)
     setTimeout(() => {
       const nextPage = page + 1;
-      const nextProducts = allFilteredProducts.slice(0, nextPage * itemsPerPage);
-      setDisplayedProducts(nextProducts);
+      const nextBatch = allFilteredProducts.slice(0, nextPage * itemsPerPage);
+      setDisplayedProducts(nextBatch);
       setPage(nextPage);
       setIsPaginationLoading(false);
-    }, 150);
+    }, 400);
   };
 
-
   return (
-    <View style={[tw`flex-1`, { backgroundColor: theme.colors.primary }]}>
+    <View style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}>
       <StatusBar style="light" translucent />
       <View style={[tw`flex-1 relative`, { backgroundColor: theme.colors.background }]}>
-        <View style={[tw`absolute top-0 left-0 right-0 z-50`]}>
-          <Header
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            isLoggedIn={isLoggedIn}
-            onToggleLogin={() => router.push('/profile')}
-            isSticky={isCategorySticky}
-            onCartPress={() => setIsCartOpen(true)}
-          />
-          <Animated.View 
-            pointerEvents={isCategorySticky ? 'auto' : 'none'}
-            style={[
-              tw`shadow-md border-b border-slate-100`,
-              { 
-                backgroundColor: theme.colors.cardBackground,
-                opacity: fadeAnim,
-                transform: [{
-                  translateY: fadeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-15, 0],
-                  })
-                }]
-              }
-            ]}
-          >
-            <CategoryList
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-              isSticky={true}
-            />
-          </Animated.View>
-        </View>
+        
+        {/* ── Active Tab View Rendering (Instant zero-flash switching with LIFO history stack) ── */}
+        {activeTab === 'profile' ? (
+          <ProfileView onBack={handleBack} />
+        ) : activeTab === 'cart' ? (
+          <CartView onShopMore={handleBack} onBack={handleBack} />
+        ) : (
+          /* Home & Search Catalog View */
+          <>
+            {/* Floating Header & Sticky Category Bar */}
+            <View style={[tw`absolute top-0 left-0 right-0 z-40`]}>
+              <Header
+                searchQuery={searchQuery}
+                onSearchQueryChange={(text) => {
+                  setSearchQuery(text);
+                  if (activeTab !== 'search' && text.length > 0) {
+                    handleTabPress('search');
+                  }
+                }}
+                isLoggedIn={isLoggedIn}
+                onToggleLogin={() => {
+                  if (isLoggedIn) {
+                    handleTabPress('profile');
+                  } else {
+                    router.push('/login');
+                  }
+                }}
+                isSticky={isCategorySticky}
+                onCartPress={() => handleTabPress('cart')}
+                searchInputRef={searchInputRef}
+              />
+              <Animated.View
+                pointerEvents={isCategorySticky ? 'auto' : 'none'}
+                style={[
+                  tw`shadow-md border-b border-slate-100`,
+                  {
+                    backgroundColor: theme.colors.cardBackground,
+                    opacity: fadeAnim,
+                    transform: [
+                      {
+                        translateY: fadeAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-15, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <CategoryList
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                  isSticky={true}
+                />
+              </Animated.View>
+            </View>
 
-        {/* 3. Performance-Optimized FlatList replacing heavy nested ScrollView */}
-        <FlatList
-          data={displayedProducts}
-          keyExtractor={(item) => item.id}
-          numColumns={4}
-          columnWrapperStyle={tw`flex-row justify-start px-0.5`}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={tw`pb-[120px]`}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.4}
-          ListHeaderComponent={
-            <View>
-              {/* Active Offers & Integrated Categories Selector */}
+            <ScrollView
+              ref={scrollViewRef}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={[tw`pb-36`, { paddingBottom: Math.max(insets.bottom, 16) + 110 }]}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
+              {/* Visual Hero Banner */}
               <View style={[tw`relative z-20`, { elevation: 10 }]}>
                 <OfferBanner />
               </View>
-              <View style={[tw`relative z-30 mt-4 mb-2`]}>
+
+              {/* Categories Bar */}
+              <View style={tw`mb-4`}>
                 <CategoryList
                   selectedCategory={selectedCategory}
                   onSelectCategory={setSelectedCategory}
                 />
               </View>
 
-               {/* Popular Items horizontal shelf (Only show when on "All" category) */}
-              {selectedCategory === 'all' && (
-                <View style={tw`py-2`}>
+              {/* Featured Popular Section */}
+              {selectedCategory === 'all' && !searchQuery && (
+                <View style={tw`mb-5`}>
                   <View style={tw`flex-row justify-between items-center px-4 mb-2`}>
-                    <View>
-                      <Text style={[tw`text-lg font-black`, { color: theme.colors.text }]}>Trending Products 🔥</Text>
-                      <Text style={[tw`text-xs mt-0.5`, { color: theme.colors.textMuted }]}>Customer favorites this week</Text>
+                    <View style={tw`flex-row items-center gap-1.5`}>
+                      <Text style={tw`text-base`}>🔥</Text>
+                      <Text style={[tw`text-sm font-black tracking-tight`, { color: theme.colors.text }]}>
+                        Trending This Week
+                      </Text>
                     </View>
-                    <TouchableOpacity activeOpacity={0.7}>
-                      <Text style={[tw`text-xs font-bold`, { color: theme.colors.primary }]}>See All</Text>
-                    </TouchableOpacity>
+                    <Text style={[tw`text-[11px] font-black uppercase tracking-wider`, { color: theme.colors.primary }]}>
+                      Top Rated
+                    </Text>
                   </View>
-                  <ScrollView
+                  <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={tw`px-2.5 pb-2`}
-                  >
-                    {popularProducts.map((item) => (
-                      <ProductCard key={'pop-' + item.id} product={item} width={160} />
-                    ))}
-                  </ScrollView>
+                    data={popularProducts.length > 0 ? popularProducts : allFilteredProducts.slice(0, 5)}
+                    keyExtractor={(item) => `pop-${item.id}`}
+                    renderItem={({ item }) => (
+                      <View style={[tw`ml-4`, { width: 160 }]}>
+                        <ProductCard product={item} />
+                      </View>
+                    )}
+                    contentContainerStyle={tw`pr-4`}
+                  />
                 </View>
               )}
 
-              <View style={[
-                tw`px-4 pb-2`, 
-                { 
-                  backgroundColor: theme.colors.background,
-                  paddingTop: selectedCategory === 'all' ? 16 : 24,
-                }
-              ]}>
-                <Text style={[tw`text-lg font-black`, { color: theme.colors.text }]}>
-                  {selectedCategory === 'all'
-                    ? 'All Products 🥦'
-                    : `${localProductData.find((p) => p.category === selectedCategory)?.emoji || ''} Fresh ${
-                        selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)
-                      }`}
-                </Text>
-                <Text style={[tw`text-xs mt-0.5`, { color: theme.colors.textMuted }]}>
-                  {selectedCategory === 'all' 
-                    ? 'Fresh picks delivered to your door'
-                    : `${allFilteredProducts.length} items available`}
-                </Text>
+              {/* Main Products Grid */}
+              <View style={tw`px-4`}>
+                <View style={tw`flex-row justify-between items-center mb-3`}>
+                  <View>
+                    <Text style={[tw`text-sm font-black uppercase tracking-wider`, { color: theme.colors.text }]}>
+                      {searchQuery.trim().length > 0
+                        ? `Search: "${searchQuery}"`
+                        : (selectedCategory === 'all' ? 'All Groceries' : `${selectedCategory}`)}
+                    </Text>
+                    <Text style={[tw`text-[10px] font-bold mt-0.5`, { color: theme.colors.textMuted }]}>
+                      Showing {displayedProducts.length} of {allFilteredProducts.length} items
+                    </Text>
+                  </View>
+                  {searchQuery.trim().length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => setSearchQuery('')}
+                      style={tw`px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 flex-row items-center gap-1`}
+                    >
+                      <Ionicons name="close" size={12} color="#64748B" />
+                      <Text style={tw`text-[10px] font-bold text-slate-600`}>Clear</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {isLoading ? (
+                  <View style={tw`py-12 items-center justify-center`}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <Text style={[tw`text-xs font-bold mt-3`, { color: theme.colors.textMuted }]}>
+                      Loading fresh groceries...
+                    </Text>
+                  </View>
+                ) : displayedProducts.length === 0 ? (
+                  <View style={tw`py-16 items-center justify-center bg-white rounded-3xl border border-slate-100 mt-2`}>
+                    <Text style={tw`text-4xl mb-3`}>🔍</Text>
+                    <Text style={[tw`text-base font-black`, { color: theme.colors.text }]}>No products found</Text>
+                    <Text style={[tw`text-xs text-center px-8 mt-1`, { color: theme.colors.textMuted }]}>
+                      Try adjusting your search query or selecting a different category.
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <View style={tw`flex-row flex-wrap justify-between`}>
+                      {displayedProducts.map((product) => (
+                        <View key={product.id} style={{ width: '23.8%', marginBottom: 8 }}>
+                          <ProductCard product={product} isMini={true} />
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Pagination Load More Button */}
+                    {displayedProducts.length < allFilteredProducts.length && (
+                      <View style={tw`mt-4 items-center`}>
+                        <TouchableOpacity
+                          onPress={handleLoadMore}
+                          disabled={isPaginationLoading}
+                          style={[
+                            tw`px-6 py-3 rounded-full flex-row items-center gap-2 border border-slate-200 bg-white shadow-2xs`,
+                          ]}
+                        >
+                          {isPaginationLoading ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                          ) : (
+                            <>
+                              <Text style={[tw`text-xs font-black uppercase tracking-wider`, { color: theme.colors.primary }]}>
+                                Load More Products
+                              </Text>
+                              <Text style={tw`text-xs text-slate-400 font-bold`}>
+                                ({allFilteredProducts.length - displayedProducts.length} remaining)
+                              </Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </>
+                )}
               </View>
 
-              {isLoading && (
-                <View style={tw`py-8 justify-center items-center`}>
-                  <ActivityIndicator size="large" color={theme.colors.primary} />
-                  <Text style={[tw`text-xs font-semibold mt-2`, { color: theme.colors.textMuted }]}>Loading fresh picks...</Text>
-                </View>
-              )}
-            </View>
-          }
-          renderItem={({ item }) => (
-            <ProductCard product={item} isMini={true} />
-          )}
-          ListEmptyComponent={
-            !isLoading ? (
-              <View style={tw`items-center justify-center py-12 px-5`}>
-                <Text style={tw`text-[48px] mb-2`}>🔍</Text>
-                <Text style={[tw`text-base font-bold mb-1`, { color: theme.colors.text }]}>
-                  No items match your search
-                </Text>
-                <Text style={[tw`text-xs`, { color: theme.colors.textMuted }]}>
-                  Try searching for something else
-                </Text>
-              </View>
-            ) : null
-          }
-          ListFooterComponent={
-            isPaginationLoading ? (
-              <View style={tw`py-4 justify-center items-center`}>
-                <ActivityIndicator size="small" color={theme.colors.primary} />
-              </View>
-            ) : null
-          }
+              {/* Branded Trust & Customer Care Footer */}
+              <Footer />
+            </ScrollView>
+          </>
+        )}
+
+        {/* ── Floating Sticky Mini-Cart Bar (Shown on any page when cart has items) ── */}
+        <FloatingCartBar
+          onPress={() => handleTabPress('cart')}
+          visible={activeTab !== 'cart'}
         />
 
-        {/* Dynamic Sticky Bottom Cart */}
-        <CartFooter onPress={() => setIsCartOpen(true)} />
-
-        {/* Dedicated Shopping Cart Modal */}
-        <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+        {/* ── Persistent Fluid Organic Curved Bottom Navigation Bar (BNB-27) ── */}
+        <CustomCurvedNavBar activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
     </View>
   );
@@ -262,9 +384,7 @@ function MainApp() {
 export default function Home() {
   return (
     <SafeAreaProvider>
-      <CartProvider>
-        <MainApp />
-      </CartProvider>
+      <MainApp />
     </SafeAreaProvider>
   );
 }
