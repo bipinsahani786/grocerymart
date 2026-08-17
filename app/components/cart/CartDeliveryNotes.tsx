@@ -23,11 +23,11 @@ export const CartDeliveryNotes: React.FC = () => {
   if (fulfillmentMode === 'pickup') {
     return (
       <View style={tw`mb-4`}>
-        <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1`}>
+        <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-5`}>
           Store Pickup Information
         </Text>
 
-        <View style={tw`p-4 rounded-3xl bg-white border border-slate-100 shadow-2xs`}>
+        <View style={tw`p-4 rounded-3xl bg-white border border-slate-100 shadow-sm`}>
           {/* Pickup Counter Guideline */}
           <View style={tw`flex-row items-center gap-3 pb-3 mb-3 border-b border-slate-50`}>
             <View style={tw`w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center`}>
@@ -70,11 +70,11 @@ export const CartDeliveryNotes: React.FC = () => {
   // Home Delivery Mode Preferences
   return (
     <View style={tw`mb-4`}>
-      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1`}>
+      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-5`}>
         Delivery Preferences
       </Text>
 
-      <View style={tw`p-3.5 rounded-3xl bg-white border border-slate-100 shadow-2xs`}>
+      <View style={tw`p-3.5 rounded-3xl bg-white border border-slate-100 shadow-sm`}>
         {/* Instruction Chips */}
         <Text style={tw`text-[11px] font-bold text-slate-600 mb-2`}>Delivery Instructions</Text>
         <View style={tw`flex-row gap-2 mb-3.5`}>

@@ -21,11 +21,11 @@ export const CartPromoCode: React.FC<CartPromoCodeProps> = ({
 
   return (
     <View style={tw`mb-4`}>
-      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1`}>
+      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-5`}>
         Offers & Coupons
       </Text>
 
-      <View style={tw`p-3.5 rounded-3xl bg-white border border-slate-100 shadow-2xs`}>
+      <View style={tw`p-3.5 rounded-3xl bg-white border border-slate-100 shadow-sm`}>
         {isApplied ? (
           <View style={tw`flex-row items-center justify-between`}>
             <View style={tw`flex-row items-center gap-2.5`}>

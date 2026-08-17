@@ -9,6 +9,7 @@ import {
   Animated,
   BackHandler,
   TextInput,
+  Keyboard,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,8 @@ import { Header } from '../components/Header';
 import { OfferBanner } from '../components/OfferBanner';
 import { CategoryList } from '../components/CategoryList';
 import { ProductCard } from '../components/ProductCard';
+import { ProductDetailModal } from '../components/ProductDetailModal';
+import { SearchView } from '../components/SearchView';
 import { CustomCurvedNavBar, TabKey } from '../components/CustomCurvedNavBar';
 import { CartView } from '../components/CartView';
 import { ProfileView } from '../components/ProfileView';
@@ -28,6 +31,7 @@ import { useRouter } from 'expo-router';
 import { useAuthContext } from '../context/AuthContext';
 import { productService } from '../services/product.service';
 import { Product } from '../data/groceryData';
+import { useCart } from '../context/CartContext';
 import tw from 'twrnc';
 
 /**
@@ -38,6 +42,7 @@ import tw from 'twrnc';
 function MainApp() {
   const router = useRouter();
   const { user } = useAuthContext();
+  const { fulfillmentMode, selectedStore } = useCart();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const searchInputRef = useRef<TextInput>(null);
@@ -50,6 +55,18 @@ function MainApp() {
   const [isCategorySticky, setIsCategorySticky] = useState(false);
   const [fadeAnim] = useState(() => new Animated.Value(0));
 
+  // Product detail modal states
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
+
+  // Search input focus states
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  const handleProductPress = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDetailVisible(true);
+  };
+
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: isCategorySticky ? 1 : 0,
@@ -58,24 +75,39 @@ function MainApp() {
     }).start();
   }, [isCategorySticky]);
 
+  // Reset sticky category state when switching active tabs to prevent duplicate rendering
+  useEffect(() => {
+    if (activeTab === 'home') {
+      setIsCategorySticky(false);
+      fadeAnim.setValue(0);
+    }
+  }, [activeTab]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const isLoggedIn = !!user;
 
   const handleTabPress = (tab: TabKey) => {
-    if (tab === activeTab) {
-      if (tab === 'home') {
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      } else if (tab === 'search') {
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-        searchInputRef.current?.focus();
-      }
-      return;
+    // If user clicks home/profile/cart, dismiss search focus, blur input, and close keyboard
+    if (tab !== 'search') {
+      Keyboard.dismiss();
+      searchInputRef.current?.blur();
+      setIsSearchFocused(false);
     }
-    // Push new tab onto stack
-    setTabStack((prev) => [...prev, tab]);
 
     if (tab === 'search') {
+      // Switch active tab back to home if not already on it
+      if (activeTab !== 'home') {
+        setTabStack((prev) => {
+          const homeIndex = prev.indexOf('home');
+          if (homeIndex !== -1) {
+            return prev.slice(0, homeIndex + 1);
+          }
+          return ['home'];
+        });
+      }
+      
+      // Scroll to top and focus home search bar input
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       requestAnimationFrame(() => {
         searchInputRef.current?.focus();
@@ -86,10 +118,38 @@ function MainApp() {
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 250);
+      return;
     }
+
+    if (tab === activeTab) {
+      if (tab === 'home') {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      }
+      return;
+    }
+    // Push new tab onto stack
+    setTabStack((prev) => [...prev, tab]);
+  };
+
+  const handleSearchSubmit = (query: string) => {
+    setSearchQuery(query);
+    setDebouncedSearchQuery(query);
+    setIsSearchFocused(false);
+    Keyboard.dismiss();
+    searchInputRef.current?.blur();
+    
+    // Explicitly transition to the dedicated search view tab
+    setTabStack((prev) => [...prev.filter(t => t !== 'search'), 'search']);
   };
 
   const handleBack = () => {
+    // Reset search states when navigating back to home catalog
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    setIsSearchFocused(false);
+    Keyboard.dismiss();
+    searchInputRef.current?.blur();
+    
     if (tabStack.length > 1) {
       setTabStack((prev) => prev.slice(0, prev.length - 1));
       return true;
@@ -120,29 +180,29 @@ function MainApp() {
     }
   };
 
-  // Debounce search query changes
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 400);
+  // Note: Search results are updated on explicit submission (Enter press / suggestion select) rather than typing.
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchQuery]);
+  // Derive active pincode based on fulfillment mode details
+  const activePincode = fulfillmentMode === 'delivery' 
+    ? '10001' 
+    : (selectedStore?.address?.includes('10016') ? '10016' : '10001');
 
   // Query products via productService
   const { data: allFilteredProducts = [], isLoading } = useQuery({
-    queryKey: ['products', selectedCategory, debouncedSearchQuery],
+    queryKey: ['products', selectedCategory, debouncedSearchQuery, activePincode],
     queryFn: () =>
-      productService.fetchProducts({ category: selectedCategory, search: debouncedSearchQuery }),
+      productService.fetchProducts({ 
+        category: selectedCategory, 
+        search: debouncedSearchQuery, 
+        pincode: activePincode 
+      }),
     staleTime: 1000 * 60 * 5,
   });
 
   // Query popular products via productService
   const { data: popularProducts = [] } = useQuery({
-    queryKey: ['popular-products'],
-    queryFn: () => productService.getPopularProducts(),
+    queryKey: ['popular-products', activePincode],
+    queryFn: () => productService.fetchProducts({ category: 'all', pincode: activePincode }).then(list => list.filter(p => p.rating >= 4.8)),
     staleTime: 1000 * 60 * 10,
   });
 
@@ -183,19 +243,40 @@ function MainApp() {
           <ProfileView onBack={handleBack} />
         ) : activeTab === 'cart' ? (
           <CartView onShopMore={handleBack} onBack={handleBack} />
+        ) : activeTab === 'search' ? (
+          <SearchView
+            onBack={handleBack}
+            initialQuery={searchQuery}
+            onNavigateToCart={() => handleTabPress('cart')}
+          />
         ) : (
-          /* Home & Search Catalog View */
+          /* Home Catalog View */
           <>
+            {isSearchFocused && (
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  searchInputRef.current?.blur();
+                  setIsSearchFocused(false);
+                }}
+                style={tw`absolute inset-0 bg-black/30 z-35`}
+              />
+            )}
             {/* Floating Header & Sticky Category Bar */}
             <View style={[tw`absolute top-0 left-0 right-0 z-40`]}>
               <Header
                 searchQuery={searchQuery}
                 onSearchQueryChange={(text) => {
                   setSearchQuery(text);
-                  if (activeTab !== 'search' && text.length > 0) {
-                    handleTabPress('search');
-                  }
                 }}
+                onSearchFocus={() => {
+                  setIsSearchFocused(true);
+                }}
+                onSearchBlur={() => {
+                  setIsSearchFocused(false);
+                }}
+                onSubmitSearch={handleSearchSubmit}
                 isLoggedIn={isLoggedIn}
                 onToggleLogin={() => {
                   if (isLoggedIn) {
@@ -276,7 +357,7 @@ function MainApp() {
                     keyExtractor={(item) => `pop-${item.id}`}
                     renderItem={({ item }) => (
                       <View style={[tw`ml-4`, { width: 160 }]}>
-                        <ProductCard product={item} />
+                        <ProductCard product={item} onPress={handleProductPress} />
                       </View>
                     )}
                     contentContainerStyle={tw`pr-4`}
@@ -299,7 +380,10 @@ function MainApp() {
                   </View>
                   {searchQuery.trim().length > 0 && (
                     <TouchableOpacity
-                      onPress={() => setSearchQuery('')}
+                      onPress={() => {
+                        setSearchQuery('');
+                        setDebouncedSearchQuery('');
+                      }}
                       style={tw`px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 flex-row items-center gap-1`}
                     >
                       <Ionicons name="close" size={12} color="#64748B" />
@@ -328,7 +412,7 @@ function MainApp() {
                     <View style={tw`flex-row flex-wrap justify-between`}>
                       {displayedProducts.map((product) => (
                         <View key={product.id} style={{ width: '23.8%', marginBottom: 8 }}>
-                          <ProductCard product={product} isMini={true} />
+                          <ProductCard product={product} isMini={true} onPress={handleProductPress} />
                         </View>
                       ))}
                     </View>
@@ -340,7 +424,7 @@ function MainApp() {
                           onPress={handleLoadMore}
                           disabled={isPaginationLoading}
                           style={[
-                            tw`px-6 py-3 rounded-full flex-row items-center gap-2 border border-slate-200 bg-white shadow-2xs`,
+                            tw`px-6 py-3 rounded-full flex-row items-center gap-2 border border-slate-200 bg-white shadow-sm`,
                           ]}
                         >
                           {isPaginationLoading ? (
@@ -375,8 +459,16 @@ function MainApp() {
         />
 
         {/* ── Persistent Fluid Organic Curved Bottom Navigation Bar (BNB-27) ── */}
-        <CustomCurvedNavBar activeTab={activeTab} onTabPress={handleTabPress} />
+        <CustomCurvedNavBar activeTab={activeTab === 'search' || isSearchFocused ? 'search' : activeTab} onTabPress={handleTabPress} />
       </View>
+
+      <ProductDetailModal
+        product={selectedProduct}
+        visible={isDetailVisible}
+        onClose={() => setIsDetailVisible(false)}
+        onNavigateToCart={() => handleTabPress('cart')}
+        onPressProduct={(p) => setSelectedProduct(p)}
+      />
     </View>
   );
 }

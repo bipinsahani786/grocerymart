@@ -26,7 +26,7 @@ export const CartHeader: React.FC<CartHeaderProps> = ({ totalItems, onClear, onB
   };
 
   return (
-    <View style={tw`pt-14 pb-4 px-5 bg-white border-b border-slate-100 flex-row justify-between items-center shadow-2xs`}>
+    <View style={tw`pt-14 pb-4 px-5 bg-white border-b border-slate-100 flex-row justify-between items-center shadow-sm`}>
       <View style={tw`flex-row items-center gap-3`}>
         {onBack && (
           <TouchableOpacity

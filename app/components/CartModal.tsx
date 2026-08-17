@@ -145,7 +145,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                         <View style={tw`flex-row items-center bg-slate-50 rounded-full p-1 border border-slate-100`}>
                           <TouchableOpacity
                             onPress={() => removeFromCart(item.id)}
-                            style={[tw`w-7 h-7 rounded-full justify-center items-center bg-white shadow-2xs`]}
+                            style={[tw`w-7 h-7 rounded-full justify-center items-center bg-white shadow-sm`]}
                           >
                             <Ionicons name="remove" size={14} color={theme.colors.text} />
                           </TouchableOpacity>
@@ -154,7 +154,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                           </Text>
                           <TouchableOpacity
                             onPress={() => addToCart(item)}
-                            style={[tw`w-7 h-7 rounded-full justify-center items-center shadow-2xs`, { backgroundColor: theme.colors.primary }]}
+                            style={[tw`w-7 h-7 rounded-full justify-center items-center shadow-sm`, { backgroundColor: theme.colors.primary }]}
                           >
                             <Ionicons name="add" size={14} color={theme.colors.white} />
                           </TouchableOpacity>

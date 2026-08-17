@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleProp, ViewStyle, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
 import { theme } from '../constants/theme';
@@ -8,9 +8,12 @@ import tw from 'twrnc';
 interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
+  onSubmitSearch?: (query: string) => void;
   onClear?: () => void;
   inputRef?: React.RefObject<TextInput | null>;
   onFilterPress?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   style?: StyleProp<ViewStyle>;
   customPlaceholder?: string;
 }
@@ -22,9 +25,12 @@ interface SearchBarProps {
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
+  onSubmitSearch,
   onClear,
   inputRef,
   onFilterPress,
+  onFocus,
+  onBlur,
   style,
   customPlaceholder,
 }) => {
@@ -38,12 +44,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
 
     const placeholders = [
-      'Search fresh organic apples...',
-      'Search farm fresh whole milk...',
-      'Search bakery sourdough bread...',
-      'Search baby spinach leaves...',
-      'Search sweet strawberries...',
-      'Search roasted salted almonds...',
+      'Search apples...',
+      'Search milk...',
+      'Search bread...',
+      'Search spinach...',
+      'Search soap...',
+      'Search refined oil...',
+      'Search veggies...',
     ];
     let wordIndex = 0;
     let charIndex = 0;
@@ -88,6 +95,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const handleSelectSuggestion = (selected: string) => {
     onChangeText(selected);
     setIsDropdownOpen(false);
+    Keyboard.dismiss();
+    if (onSubmitSearch) {
+      onSubmitSearch(selected);
+    }
   };
 
   return (
@@ -97,6 +108,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         onPress={() => {
           inputRef?.current?.focus();
           setIsDropdownOpen(true);
+          if (onFocus) onFocus();
         }}
         style={[
           tw`flex-row items-center rounded-2xl px-4 h-13 bg-white shadow-xl border border-slate-100/80`,
@@ -117,10 +129,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             onChangeText(text);
             if (!isDropdownOpen) setIsDropdownOpen(true);
           }}
-          onFocus={() => setIsDropdownOpen(true)}
+          onFocus={() => {
+            setIsDropdownOpen(true);
+            if (onFocus) onFocus();
+          }}
+          onBlur={() => {
+            if (onBlur) onBlur();
+          }}
           returnKeyType="search"
           autoCorrect={false}
           autoCapitalize="none"
+          onSubmitEditing={() => {
+            setIsDropdownOpen(false);
+            Keyboard.dismiss();
+            if (onSubmitSearch) {
+              onSubmitSearch(value);
+            }
+          }}
         />
 
         {/* Clear Button */}

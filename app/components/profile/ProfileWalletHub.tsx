@@ -18,7 +18,7 @@ export const ProfileWalletHub: React.FC<ProfileWalletHubProps> = ({
   return (
     <View style={tw`flex-row gap-3 mb-4`}>
       {/* Wallet Card */}
-      <View style={tw`flex-1 p-3.5 rounded-2xl bg-white border border-slate-100 shadow-2xs justify-between`}>
+      <View style={tw`flex-1 p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm justify-between`}>
         <View style={tw`flex-row justify-between items-center mb-2`}>
           <Text style={tw`text-[11px] font-bold text-slate-400 uppercase tracking-wider`}>
             Wallet Cash
@@ -41,7 +41,7 @@ export const ProfileWalletHub: React.FC<ProfileWalletHubProps> = ({
       </View>
 
       {/* Reward Points Card */}
-      <View style={tw`flex-1 p-3.5 rounded-2xl bg-white border border-slate-100 shadow-2xs justify-between`}>
+      <View style={tw`flex-1 p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm justify-between`}>
         <View style={tw`flex-row justify-between items-center mb-2`}>
           <Text style={tw`text-[11px] font-bold text-slate-400 uppercase tracking-wider`}>
             Reward Coins
