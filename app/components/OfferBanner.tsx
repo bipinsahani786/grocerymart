@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../constants/theme';
 import { offers } from '../data/groceryData';
@@ -32,51 +32,63 @@ export const OfferBanner: React.FC = () => {
       >
         {offers.map((offer) => (
           <TouchableOpacity key={offer.id} activeOpacity={0.95}>
-            <LinearGradient
-              colors={offer.gradientColors as [string, string, ...string[]]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                tw`h-[460px] rounded-none p-6 justify-between overflow-hidden relative shadow-xl z-20`,
-                { 
-                  width: CARD_WIDTH, 
-                  paddingTop: 185,
-                }
-              ]}
-            >
-              {/* Modern Graphic Abstract Circles in Background */}
-              <View style={[tw`absolute rounded-full`, { right: -30, top: -20, width: 220, height: 220, backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
-              <View style={[tw`absolute rounded-full`, { right: 90, bottom: -40, width: 130, height: 130, backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
-
-              <View style={tw`flex-1 justify-between z-10`}>
-                {/* Top Badge (Shifted slightly down) */}
-                <View style={[tw`self-start px-3 py-1 rounded-full mt-6 mb-1`, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
-                  <Text style={[tw`font-extrabold text-[10px] tracking-wider uppercase`, { color: theme.colors.white }]}>{offer.discount}</Text>
-                </View>
-
-                {/* Offer Text Content */}
-                <View style={tw`mb-2`}>
-                  <Text style={[tw`text-2xl font-black tracking-tight leading-7`, { color: theme.colors.white }]}>{offer.title}</Text>
-                  <Text style={[tw`text-sm font-semibold mt-1 opacity-90`, { color: theme.colors.white }]}>{offer.subTitle}</Text>
-                </View>
-
-                {/* Call To Action Button */}
-                <TouchableOpacity style={[tw`px-5 py-2 rounded-xl self-start shadow-md mb-6`, { backgroundColor: theme.colors.white }]}>
-                  <Text style={[tw`text-xs font-black uppercase tracking-wider`, { color: offer.gradientColors[0] }]}>Shop Now</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Graphic Right-side Emoji Float */}
-              <View style={[tw`absolute justify-center items-center z-10`, { right: 16, bottom: 36 }]}>
-                <Text style={tw`text-[110px] opacity-95`}>{offer.emoji}</Text>
-              </View>
-
-              {/* Fading Overlay mixing with below UI */}
+            <View style={[tw`h-[460px] overflow-hidden relative shadow-xl z-20`, { width: CARD_WIDTH }]}>
+              {offer.imageUrl && (
+                <Image
+                  source={{ uri: offer.imageUrl }}
+                  style={tw`absolute inset-0 w-full h-full`}
+                  resizeMode="cover"
+                />
+              )}
               <LinearGradient
-                colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.4)', theme.colors.cardBackground]}
-                style={[tw`absolute bottom-0 left-0 right-0 h-16 z-20`]}
-              />
-            </LinearGradient>
+                colors={offer.gradientColors as [string, string, ...string[]]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[
+                  tw`absolute inset-0 p-6 justify-between`,
+                  { paddingTop: 185 }
+                ]}
+              >
+                {/* Modern Graphic Abstract Circles in Background */}
+                {!offer.imageUrl && (
+                  <>
+                    <View style={[tw`absolute rounded-full`, { right: -30, top: -20, width: 220, height: 220, backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
+                    <View style={[tw`absolute rounded-full`, { right: 90, bottom: -40, width: 130, height: 130, backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+                  </>
+                )}
+
+                <View style={tw`flex-1 justify-between z-10`}>
+                  {/* Top Badge (Shifted slightly down) */}
+                  <View style={[tw`self-start px-3 py-1 rounded-full mt-6 mb-1`, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                    <Text style={[tw`font-extrabold text-[10px] tracking-wider uppercase`, { color: theme.colors.white }]}>{offer.discount}</Text>
+                  </View>
+
+                  {/* Offer Text Content */}
+                  <View style={tw`mb-2`}>
+                    <Text style={[tw`text-2xl font-black tracking-tight leading-7`, { color: theme.colors.white }]}>{offer.title}</Text>
+                    <Text style={[tw`text-sm font-semibold mt-1 opacity-90`, { color: theme.colors.white }]}>{offer.subTitle}</Text>
+                  </View>
+
+                  {/* Call To Action Button */}
+                  <TouchableOpacity style={[tw`px-5 py-2 rounded-xl self-start shadow-md mb-6`, { backgroundColor: theme.colors.white }]}>
+                    <Text style={[tw`text-xs font-black uppercase tracking-wider`, { color: offer.gradientColors[0].startsWith('rgba') ? '#0F172A' : offer.gradientColors[0] }]}>Shop Now</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Graphic Right-side Emoji Float */}
+                {!offer.imageUrl && offer.emoji && (
+                  <View style={[tw`absolute justify-center items-center z-10`, { right: 16, bottom: 36 }]}>
+                    <Text style={tw`text-[110px] opacity-95`}>{offer.emoji}</Text>
+                  </View>
+                )}
+
+                {/* Fading Overlay mixing with below UI */}
+                <LinearGradient
+                  colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.4)', theme.colors.cardBackground]}
+                  style={[tw`absolute bottom-0 left-0 right-0 h-16 z-20`]}
+                />
+              </LinearGradient>
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>

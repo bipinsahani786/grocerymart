@@ -22,7 +22,10 @@ export const CartCheckoutFooter: React.FC<CartCheckoutFooterProps> = ({
   const { fulfillmentMode, selectedStore } = useCart();
 
   return (
-    <View style={tw`p-4 bg-white rounded-3xl border border-slate-100 shadow-lg mb-4`}>
+    <View style={[
+      tw`absolute left-4 right-4 bg-white rounded-3xl border border-slate-100 shadow-lg z-40 p-4`,
+      { bottom: 104 }
+    ]}>
       {/* Address & Payment Method Row */}
       <View style={tw`flex-row items-center justify-between pb-3 mb-3 border-b border-slate-100`}>
         <View style={tw`flex-row items-center gap-2 flex-1 mr-2`}>

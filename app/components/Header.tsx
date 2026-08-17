@@ -11,6 +11,9 @@ import tw from 'twrnc';
 interface HeaderProps {
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
+  onSubmitSearch?: (query: string) => void;
+  onSearchFocus?: () => void;
+  onSearchBlur?: () => void;
   isLoggedIn: boolean;
   onToggleLogin: () => void;
   isSticky?: boolean;
@@ -25,6 +28,9 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   searchQuery,
   onSearchQueryChange,
+  onSubmitSearch,
+  onSearchFocus,
+  onSearchBlur,
   isLoggedIn,
   onToggleLogin,
   isSticky = false,
@@ -66,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
             <View style={tw`flex-row items-center`}>
               <Text style={[tw`text-sm font-extrabold mr-1 max-w-[85%]`, { color: theme.colors.white }]} numberOfLines={1}>
                 {fulfillmentMode === 'delivery'
-                  ? 'Home - 123 Main Street, New York'
+                   ? 'Home - 123 Main Street, New York'
                   : `${selectedStore.name} (${selectedStore.distance})`}
               </Text>
               <Ionicons name="chevron-down" size={14} color={theme.colors.white} />
@@ -181,7 +187,13 @@ export const Header: React.FC<HeaderProps> = ({
       <SearchBar
         value={searchQuery}
         onChangeText={onSearchQueryChange}
-        onClear={() => onSearchQueryChange('')}
+        onSubmitSearch={onSubmitSearch}
+        onFocus={onSearchFocus}
+        onBlur={onSearchBlur}
+        onClear={() => {
+          onSearchQueryChange('');
+          if (onSubmitSearch) onSubmitSearch('');
+        }}
         inputRef={searchInputRef}
       />
     </LinearGradient>

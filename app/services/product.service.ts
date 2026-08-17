@@ -21,7 +21,17 @@ export class ProductService {
     // Perform query filtering
     return localProductData.filter((product) => {
       const matchesCategory = category === 'all' || product.category.toLowerCase() === category.toLowerCase();
-      const matchesSearch = !search || product.name.toLowerCase().includes(search.toLowerCase());
+      
+      const searchLower = search.toLowerCase().trim();
+      const matchesSearch = !search || 
+        product.name.toLowerCase().includes(searchLower) ||
+        product.category.toLowerCase().includes(searchLower) ||
+        (searchLower === 'veggies' && product.category === 'vegetables') ||
+        (searchLower === 'veg' && product.category === 'vegetables') ||
+        (searchLower === 'beverage' && product.category === 'beverages') ||
+        (searchLower === 'drinks' && product.category === 'beverages') ||
+        (searchLower === 'drink' && product.category === 'beverages');
+        
       return matchesCategory && matchesSearch;
     });
   }
