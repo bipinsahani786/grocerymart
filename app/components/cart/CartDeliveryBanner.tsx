@@ -7,14 +7,15 @@ import tw from 'twrnc';
 
 interface CartDeliveryBannerProps {
   subtotal: number;
+  onChangeLocation?: () => void;
 }
 
 /**
  * Single Responsibility: Domino's style Delivery vs Store Pickup switcher,
  * ETA status, and threshold meter.
  */
-export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal }) => {
-  const { fulfillmentMode, setFulfillmentMode, selectedStore } = useCart();
+export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal, onChangeLocation }) => {
+  const { fulfillmentMode, setFulfillmentMode, selectedStore, selectedAddress } = useCart();
   const freeThreshold = 299.0;
   const amountLeft = Math.max(0, freeThreshold - subtotal);
   const progress = Math.min(1, subtotal / freeThreshold);
@@ -29,7 +30,7 @@ export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal
           style={[
             tw`flex-1 py-2 rounded-xl flex-row items-center justify-center gap-1.5`,
             fulfillmentMode === 'delivery'
-              ? tw`bg-white shadow-2xs`
+              ? tw`bg-white shadow-sm`
               : tw`bg-transparent`,
           ]}
         >
@@ -54,7 +55,7 @@ export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal
           style={[
             tw`flex-1 py-2 rounded-xl flex-row items-center justify-center gap-1.5`,
             fulfillmentMode === 'pickup'
-              ? tw`bg-white shadow-2xs`
+              ? tw`bg-white shadow-sm`
               : tw`bg-transparent`,
           ]}
         >
@@ -75,7 +76,7 @@ export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal
       </View>
 
       {/* ── Location / Store Preview Card ── */}
-      <View style={tw`p-3.5 rounded-3xl bg-white border border-slate-100 shadow-2xs mb-2.5 flex-row items-center justify-between`}>
+      <View style={tw`p-3.5 rounded-3xl bg-white border border-slate-100 shadow-sm mb-2.5 flex-row items-center justify-between`}>
         <View style={tw`flex-row items-center gap-2.5 flex-1 mr-2`}>
           <View
             style={[
@@ -98,7 +99,7 @@ export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal
             </View>
             <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`} numberOfLines={1}>
               {fulfillmentMode === 'delivery' ? (
-                <>Deliver to: <Text style={tw`font-bold text-slate-600`}>Home - 123 Main St, New York</Text></>
+                <>Deliver to: <Text style={tw`font-bold text-slate-600`}>{selectedAddress === 'home' ? 'Home - Stellar Park, Noida' : selectedAddress === 'office' ? 'Office - Stellar IT Park, Noida' : `Custom Address (${selectedAddress})`}</Text></>
               ) : (
                 <>Pickup at: <Text style={tw`font-bold text-slate-600`}>{selectedStore.name}</Text></>
               )}
@@ -106,7 +107,11 @@ export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal
           </View>
         </View>
 
-        <TouchableOpacity style={tw`px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-100`}>
+        <TouchableOpacity 
+          onPress={onChangeLocation}
+          activeOpacity={0.7}
+          style={tw`px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-100`}
+        >
           <Text style={[tw`text-[10px] font-black uppercase tracking-wider`, { color: theme.colors.primary }]}>
             Change
           </Text>

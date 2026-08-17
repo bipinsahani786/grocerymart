@@ -182,7 +182,7 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
               <TouchableOpacity
                 onPress={() => addToCart(product)}
                 style={[
-                  tw`px-3 py-1.5 rounded-full flex-row items-center gap-1 shadow-2xs`,
+                  tw`px-3 py-1.5 rounded-full flex-row items-center gap-1 shadow-sm`,
                   inCartQty > 0
                     ? tw`bg-emerald-50 border border-emerald-300`
                     : { backgroundColor: theme.colors.primary },

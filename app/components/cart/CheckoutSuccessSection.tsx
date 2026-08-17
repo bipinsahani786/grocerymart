@@ -29,7 +29,7 @@ export const CheckoutSuccessSection: React.FC<CheckoutSuccessSectionProps> = ({
     <View style={tw`flex-1`}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`p-5 pb-28`}>
         {/* Success Check Header */}
-        <View style={tw`items-center py-6 bg-white rounded-3xl border border-slate-100 shadow-2xs mb-5`}>
+        <View style={tw`items-center py-6 bg-white rounded-3xl border border-slate-100 shadow-sm mb-5`}>
           <View style={tw`w-18 h-18 bg-emerald-50 rounded-full items-center justify-center mb-3 shadow-inner`}>
             <Ionicons name="checkmark-circle" size={54} color="#059669" />
           </View>
@@ -50,7 +50,7 @@ export const CheckoutSuccessSection: React.FC<CheckoutSuccessSectionProps> = ({
         </View>
 
         {/* Stepper Logistics Timeline */}
-        <View style={tw`bg-white p-5 rounded-3xl border border-slate-100 shadow-2xs mb-5`}>
+        <View style={tw`bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-5`}>
           <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-4`}>📦 Order Tracker Status</Text>
 
           <View style={tw`pl-4 border-l-2 border-slate-100 gap-4.5`}>
@@ -81,7 +81,7 @@ export const CheckoutSuccessSection: React.FC<CheckoutSuccessSectionProps> = ({
         </View>
 
         {/* Delivery or Pickup Address Card */}
-        <View style={tw`bg-white p-5 rounded-3xl border border-slate-100 shadow-2xs mb-5`}>
+        <View style={tw`bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-5`}>
           <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-3`}>📍 Logistics Details</Text>
           <Text style={tw`text-sm font-black text-slate-800`}>
             {finalSummary.fulfillmentMode === 'delivery' ? '🛵 Destination Address:' : '🏬 Pickup Store Location:'}
@@ -100,7 +100,7 @@ export const CheckoutSuccessSection: React.FC<CheckoutSuccessSectionProps> = ({
         </View>
 
         {/* Detailed Invoice Summary List */}
-        <View style={tw`bg-white p-5 rounded-3xl border border-slate-100 shadow-2xs mb-5`}>
+        <View style={tw`bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-5`}>
           <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-3`}>📄 Invoice Items</Text>
 
           {/* List elements */}

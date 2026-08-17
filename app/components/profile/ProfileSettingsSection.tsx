@@ -37,7 +37,7 @@ export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = ({
       <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1`}>
         Preferences & Support
       </Text>
-      <View style={tw`rounded-3xl bg-white border border-slate-100 p-2 mb-4 shadow-2xs`}>
+      <View style={tw`rounded-3xl bg-white border border-slate-100 p-2 mb-4 shadow-sm`}>
         {/* Notifications Toggle */}
         <View style={tw`flex-row items-center justify-between p-3 border-b border-slate-50`}>
           <View style={tw`flex-row items-center gap-3`}>

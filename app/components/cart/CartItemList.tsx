@@ -25,11 +25,11 @@ interface CartItemListProps {
 export const CartItemList: React.FC<CartItemListProps> = ({ items, onAdd, onRemove }) => {
   return (
     <View style={tw`mb-4`}>
-      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1`}>
+      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-5`}>
         Items in Basket ({items.length})
       </Text>
 
-      <View style={tw`rounded-3xl bg-white border border-slate-100 p-2 shadow-2xs`}>
+      <View style={tw`rounded-3xl bg-white border border-slate-100 p-2 shadow-sm`}>
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const itemSubtotal = (item.price * item.quantity).toFixed(2);
@@ -64,7 +64,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({ items, onAdd, onRemo
               <View style={tw`flex-row items-center bg-slate-50 rounded-full p-1 border border-slate-100`}>
                 <TouchableOpacity
                   onPress={() => onRemove(item.id)}
-                  style={tw`w-7 h-7 rounded-full justify-center items-center bg-white shadow-2xs`}
+                  style={tw`w-7 h-7 rounded-full justify-center items-center bg-white shadow-sm`}
                   activeOpacity={0.7}
                 >
                   <Ionicons
@@ -81,7 +81,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({ items, onAdd, onRemo
                 <TouchableOpacity
                   onPress={() => onAdd(item)}
                   style={[
-                    tw`w-7 h-7 rounded-full justify-center items-center shadow-2xs`,
+                    tw`w-7 h-7 rounded-full justify-center items-center shadow-sm`,
                     { backgroundColor: theme.colors.primary },
                   ]}
                   activeOpacity={0.7}

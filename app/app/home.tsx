@@ -31,6 +31,7 @@ import { useRouter } from 'expo-router';
 import { useAuthContext } from '../context/AuthContext';
 import { productService } from '../services/product.service';
 import { Product } from '../data/groceryData';
+import { useCart } from '../context/CartContext';
 import tw from 'twrnc';
 
 /**
@@ -41,6 +42,7 @@ import tw from 'twrnc';
 function MainApp() {
   const router = useRouter();
   const { user } = useAuthContext();
+  const { fulfillmentMode, selectedStore } = useCart();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const searchInputRef = useRef<TextInput>(null);
@@ -180,18 +182,27 @@ function MainApp() {
 
   // Note: Search results are updated on explicit submission (Enter press / suggestion select) rather than typing.
 
+  // Derive active pincode based on fulfillment mode details
+  const activePincode = fulfillmentMode === 'delivery' 
+    ? '10001' 
+    : (selectedStore?.address?.includes('10016') ? '10016' : '10001');
+
   // Query products via productService
   const { data: allFilteredProducts = [], isLoading } = useQuery({
-    queryKey: ['products', selectedCategory, debouncedSearchQuery],
+    queryKey: ['products', selectedCategory, debouncedSearchQuery, activePincode],
     queryFn: () =>
-      productService.fetchProducts({ category: selectedCategory, search: debouncedSearchQuery }),
+      productService.fetchProducts({ 
+        category: selectedCategory, 
+        search: debouncedSearchQuery, 
+        pincode: activePincode 
+      }),
     staleTime: 1000 * 60 * 5,
   });
 
   // Query popular products via productService
   const { data: popularProducts = [] } = useQuery({
-    queryKey: ['popular-products'],
-    queryFn: () => productService.getPopularProducts(),
+    queryKey: ['popular-products', activePincode],
+    queryFn: () => productService.fetchProducts({ category: 'all', pincode: activePincode }).then(list => list.filter(p => p.rating >= 4.8)),
     staleTime: 1000 * 60 * 10,
   });
 
@@ -413,7 +424,7 @@ function MainApp() {
                           onPress={handleLoadMore}
                           disabled={isPaginationLoading}
                           style={[
-                            tw`px-6 py-3 rounded-full flex-row items-center gap-2 border border-slate-200 bg-white shadow-2xs`,
+                            tw`px-6 py-3 rounded-full flex-row items-center gap-2 border border-slate-200 bg-white shadow-sm`,
                           ]}
                         >
                           {isPaginationLoading ? (

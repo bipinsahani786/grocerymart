@@ -70,7 +70,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, isMini
 
         {/* Price & Add Action Row */}
         <View style={tw`flex-row justify-between items-center w-full mt-auto pt-1`}>
-          <Text style={[tw`text-[11px] font-black text-slate-900`]}>
+          <Text style={[tw`text-[11px] font-black`, product.outOfStock ? tw`text-slate-400` : tw`text-slate-900`]}>
             ₹{product.price.toFixed(0)}
           </Text>
 
@@ -84,11 +84,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, isMini
                 <Ionicons name="add" size={9} color="#047857" />
               </TouchableOpacity>
             </View>
+          ) : product.outOfStock ? (
+            <View style={tw`bg-slate-50 border border-slate-200/60 px-2 py-1 rounded`}>
+              <Text style={tw`text-[7px] font-black text-slate-400 uppercase`}>OUT</Text>
+            </View>
           ) : (
             <TouchableOpacity
               onPress={() => addToCart(product)}
               activeOpacity={0.8}
-              style={[tw`w-5.5 h-5.5 rounded-full items-center justify-center shadow-2xs`, { backgroundColor: theme.colors.primary }]}
+              style={[tw`w-5.5 h-5.5 rounded-full items-center justify-center shadow-sm`, { backgroundColor: theme.colors.primary }]}
             >
               <Ionicons name="add" size={12} color="#FFFFFF" />
             </TouchableOpacity>
@@ -118,7 +122,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, isMini
       >
         {/* Top Tag & Like/Heart */}
         <View style={tw`flex-row justify-between items-center mb-2.5`}>
-          {showBadge ? (
+          {product.outOfStock ? (
+            <View style={tw`flex-row items-center px-2 py-0.5 rounded-full bg-slate-100`}>
+              <Text style={tw`text-[9px] font-black text-slate-500`}>UNAVAILABLE</Text>
+            </View>
+          ) : showBadge ? (
             <View style={tw`flex-row items-center px-2 py-0.5 rounded-full bg-amber-50`}>
               <Ionicons name="star" size={10} color="#D97706" />
               <Text style={tw`text-[9px] font-black text-amber-700 ml-0.5`}>POPULAR</Text>
@@ -134,7 +142,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, isMini
         </View>
 
         {/* Main product representation inside a graphic backdrop */}
-        <View style={tw`h-24 rounded-2xl mb-3 items-center justify-center bg-slate-50 border border-slate-100/50`}>
+        <View style={[tw`h-24 rounded-2xl mb-3 items-center justify-center bg-slate-50 border border-slate-100/50`, product.outOfStock && tw`opacity-40`]}>
           <Text style={{ fontSize: 52 }}>{product.emoji}</Text>
         </View>
 
@@ -148,14 +156,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, isMini
             </View>
           </View>
 
-          <Text style={[tw`text-[13px] font-black mb-2`, { color: theme.colors.text }]} numberOfLines={1}>
+          <Text style={[tw`text-[13px] font-black mb-2`, { color: theme.colors.text }, product.outOfStock && tw`text-slate-400`]} numberOfLines={1}>
             {product.name}
           </Text>
         </View>
       </TouchableOpacity>
 
       <View style={tw`flex-row justify-between items-center`}>
-        <Text style={[tw`text-[15px] font-black`, { color: theme.colors.text }]}>
+        <Text style={[tw`text-[15px] font-black`, product.outOfStock ? tw`text-slate-400` : { color: theme.colors.text }]}>
           ₹{product.price.toFixed(0)}
         </Text>
 
@@ -169,10 +177,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, isMini
               <Ionicons name="add" size={12} color="#047857" />
             </TouchableOpacity>
           </View>
+        ) : product.outOfStock ? (
+          <View style={tw`bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-full`}>
+            <Text style={tw`text-[9px] font-black text-slate-400 uppercase`}>Out of stock</Text>
+          </View>
         ) : (
           <TouchableOpacity
             onPress={() => addToCart(product)}
-            style={[tw`flex-row items-center px-3 py-1.5 rounded-full shadow-2xs`, { backgroundColor: theme.colors.primary }]}
+            style={[tw`flex-row items-center px-3 py-1.5 rounded-full shadow-sm`, { backgroundColor: theme.colors.primary }]}
             activeOpacity={0.8}
           >
             <Ionicons name="add" size={13} color="#FFFFFF" />

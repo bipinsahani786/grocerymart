@@ -25,11 +25,11 @@ export const CartBillSummary: React.FC<CartBillSummaryProps> = ({
 
   return (
     <View style={tw`mb-4`}>
-      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1`}>
-        Bill Breakdown
+      <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-5`}>
+        Bill Details
       </Text>
 
-      <View style={tw`p-4 rounded-3xl bg-white border border-slate-100 shadow-2xs`}>
+      <View style={tw`p-4 rounded-3xl bg-white border border-slate-100 shadow-sm`}>
         {/* Item Total */}
         <View style={tw`flex-row justify-between mb-2`}>
           <Text style={tw`text-xs font-medium text-slate-500`}>Item Total</Text>

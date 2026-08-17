@@ -29,7 +29,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   // Cart integration
-  const { cart, addToCart, removeFromCart } = useCart();
+  const { cart, addToCart, removeFromCart, fulfillmentMode, selectedStore } = useCart();
 
   // Detail Modal states
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -89,10 +89,18 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
     }
   };
 
+  const activePincode = fulfillmentMode === 'delivery' 
+    ? '10001' 
+    : (selectedStore?.address?.includes('10016') ? '10016' : '10001');
+
   // Fetch filtered products based on search term
   const { data: searchResults = [], isLoading } = useQuery({
-    queryKey: ['search-products', submittedQuery],
-    queryFn: () => productService.fetchProducts({ category: 'all', search: submittedQuery }),
+    queryKey: ['search-products', submittedQuery, activePincode],
+    queryFn: () => productService.fetchProducts({ 
+      category: 'all', 
+      search: submittedQuery, 
+      pincode: activePincode 
+    }),
     enabled: submittedQuery.trim().length > 0,
   });
 
@@ -134,7 +142,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
       <StatusBar style="dark" />
 
       {/* 1. Fully Redesigned Header Bar with extra top margin spacing */}
-      <View style={tw`px-4 pb-4 flex-row items-center gap-3 border-b border-slate-100/60 bg-white shadow-2xs`}>
+      <View style={tw`px-4 pb-4 flex-row items-center gap-3 border-b border-slate-100/60 bg-white shadow-sm`}>
         <TouchableOpacity
           onPress={onBack}
           style={tw`w-11 h-11 rounded-full bg-slate-50 border border-slate-100 justify-center items-center`}
@@ -188,7 +196,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
                     <TouchableOpacity
                       key={index}
                       onPress={() => handleQuickSearch(term)}
-                      style={tw`px-4 py-2.2 bg-white rounded-full border border-slate-100 shadow-2xs flex-row items-center gap-1.5`}
+                      style={tw`px-4 py-2.2 bg-white rounded-full border border-slate-100 shadow-sm flex-row items-center gap-1.5`}
                       activeOpacity={0.85}
                     >
                       <Ionicons name="time-outline" size={13} color="#64748B" />
@@ -218,7 +226,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
           </View>
         ) : searchResults.length === 0 ? (
           /* ──── C. No Results View ──── */
-          <View style={tw`px-6 py-20 justify-center items-center bg-white rounded-3xl border border-slate-100/60 mx-4 mt-6 shadow-2xs`}>
+          <View style={tw`px-6 py-20 justify-center items-center bg-white rounded-3xl border border-slate-100/60 mx-4 mt-6 shadow-sm`}>
             <Text style={tw`text-5xl mb-4`}>🔍</Text>
             <Text style={[tw`text-base font-black`, { color: theme.colors.text }]}>
               No items match "{submittedQuery}"
@@ -231,7 +239,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
           /* ──── D. Fully Redesigned Active Search List (Flipkart Style) ──── */
           <View style={tw`px-4 pt-5`}>
             {/* Dedicated Sort & Results Summary Row */}
-            <View style={tw`flex-row justify-between items-center mb-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-2xs`}>
+            <View style={tw`flex-row justify-between items-center mb-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm`}>
               <View>
                 <Text style={tw`text-xs font-bold text-slate-400`}>
                   Showing results for
@@ -310,7 +318,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
                       </View>
 
                       {quantity > 0 ? (
-                        <View style={tw`flex-row items-center rounded-full border border-emerald-200 bg-emerald-50 px-1 py-0.5 shadow-2xs`}>
+                        <View style={tw`flex-row items-center rounded-full border border-emerald-200 bg-emerald-50 px-1 py-0.5 shadow-sm`}>
                           <TouchableOpacity onPress={() => removeFromCart(product.id)} style={tw`p-2`}>
                             <Ionicons name="remove" size={12} color="#047857" />
                           </TouchableOpacity>
@@ -322,7 +330,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
                       ) : (
                         <TouchableOpacity
                           onPress={() => addToCart(product)}
-                          style={[tw`flex-row items-center px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 shadow-2xs`, { borderColor: theme.colors.primary }]}
+                          style={[tw`flex-row items-center px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 shadow-sm`, { borderColor: theme.colors.primary }]}
                           activeOpacity={0.85}
                         >
                           <Ionicons name="add" size={12} color={theme.colors.primary} />

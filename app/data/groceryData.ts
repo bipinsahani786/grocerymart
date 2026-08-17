@@ -13,6 +13,7 @@ export interface Product {
   emoji: string;
   rating: number;
   description: string;
+  outOfStock?: boolean;
 }
 
 export interface Offer {

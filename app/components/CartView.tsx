@@ -68,12 +68,14 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
     fulfillmentMode,
     selectedStore,
     setSelectedStore,
+    pincode,
+    setPincode,
+    selectedAddress,
+    setSelectedAddress,
   } = useCart();
 
   // Wizard steps: 'cart' -> 'address' -> 'payment' -> 'success'
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'address' | 'payment' | 'success'>('cart');
-  const [pincode, setPincode] = useState('10001');
-  const [selectedAddress, setSelectedAddress] = useState<'home' | 'office'>('home');
   const [selectedPayment, setSelectedPayment] = useState<'cod' | 'wallet' | 'upi' | 'card'>('cod');
   const [orderId, setOrderId] = useState('');
   const [finalSummary, setFinalSummary] = useState<any>(null);
@@ -111,8 +113,10 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
       selectedStore: { ...selectedStore },
       address:
         selectedAddress === 'home'
-          ? 'Home - 123 Main Street, New York, NY (10001)'
-          : 'Office - 55 Wall Street, New York, NY (10005)',
+          ? 'Home - Flat 402, Stellar Park, Sector 62, Noida, UP (201301)'
+          : selectedAddress === 'office'
+          ? 'Office - Stellar IT Park, Tower A, Sector 62, Noida, UP (201301)'
+          : 'Custom Address Location Selected',
       paymentMethod:
         selectedPayment === 'cod'
           ? 'Cash on Delivery (COD)'
@@ -135,7 +139,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
 
   // Render a clean customized Header for checkout sub-wizard steps
   const renderCheckoutHeader = (title: string, showBack = true, backStep: typeof checkoutStep = 'cart') => (
-    <View style={tw`pt-14 pb-4 px-5 bg-white border-b border-slate-100 flex-row items-center shadow-2xs`}>
+    <View style={tw`pt-14 pb-4 px-5 bg-white border-b border-slate-100 flex-row items-center shadow-sm`}>
       {showBack && (
         <TouchableOpacity
           onPress={() => setCheckoutStep(backStep)}
@@ -161,7 +165,47 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
         <CartHeader totalItems={totalItems} onClear={clearCart} onBack={onBack} />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`pb-72`}>
-          <CartDeliveryBanner subtotal={pricing.subtotal} />
+          <CartDeliveryBanner subtotal={pricing.subtotal} onChangeLocation={() => setCheckoutStep('address')} />
+
+          {/* ── Dynamic Address & Store Location Change Card ── */}
+          <TouchableOpacity
+            onPress={() => setCheckoutStep('address')}
+            activeOpacity={0.9}
+            style={tw`mx-4 mb-4 bg-white rounded-3xl p-4.5 border border-slate-100/80 shadow-sm flex-row justify-between items-center`}
+          >
+            <View style={tw`flex-row items-center gap-3.5 flex-1 pr-4`}>
+              <View style={tw`w-11 h-11 bg-emerald-50 rounded-2xl items-center justify-center`}>
+                <Ionicons
+                  name={fulfillmentMode === 'delivery' ? 'location' : 'storefront'}
+                  size={20}
+                  color="#059669"
+                />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider`}>
+                  {fulfillmentMode === 'delivery' ? 'Delivering to Address' : 'Takeaway Counter Store'}
+                </Text>
+                <Text style={tw`text-xs font-black text-slate-800 mt-0.5`} numberOfLines={1}>
+                  {fulfillmentMode === 'delivery'
+                    ? selectedAddress === 'home'
+                      ? 'Home - Stellar Park, Noida'
+                      : 'Office - Stellar IT Park, Noida'
+                    : selectedStore.name}
+                </Text>
+                <Text style={tw`text-[10px] text-slate-400 font-bold mt-0.5`} numberOfLines={1}>
+                  {fulfillmentMode === 'delivery'
+                    ? selectedAddress === 'home'
+                      ? 'Flat 402, Stellar Park, Sector 62, Noida, UP (201301)'
+                      : 'Stellar IT Park, Tower A, Sector 62, Noida, UP (201301)'
+                    : selectedStore.address}
+                </Text>
+              </View>
+            </View>
+            <View style={tw`px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100`}>
+              <Text style={tw`text-[9px] font-black text-emerald-700 uppercase tracking-wider`}>Change</Text>
+            </View>
+          </TouchableOpacity>
+
           <CartItemList items={cart} onAdd={addToCart} onRemove={removeFromCart} />
           <CartPromoCode discountAmount={discountAmount} onApplyPromo={handleApplyPromo} />
           <CartDeliveryNotes />

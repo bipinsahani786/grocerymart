@@ -14,16 +14,16 @@ export interface StoreLocation {
 export const STORE_LOCATIONS: StoreLocation[] = [
   {
     id: 's1',
-    name: 'GroceryMart - Downtown Flagship',
-    address: 'Shop 14, Central Market, Connaught Place',
+    name: 'GroceryMart - Noida Sector 62 Outlet',
+    address: 'Sector 62, Noida, UP - 201301',
     distance: '1.2 km away',
     readyTime: 'Ready in 10 mins',
   },
   {
     id: 's2',
-    name: 'GroceryMart - Green Park Express',
-    address: 'Plot 22, Main Market, Green Park',
-    distance: '2.8 km away',
+    name: 'GroceryMart - Indirapuram Depot',
+    address: 'Niti Khand 1, Indirapuram, Ghaziabad - 201014',
+    distance: '3.5 km away',
     readyTime: 'Ready in 15 mins',
   },
 ];
@@ -49,18 +49,20 @@ export interface CartContextType {
   setFulfillmentMode: (mode: FulfillmentMode) => void;
   selectedStore: StoreLocation;
   setSelectedStore: (store: StoreLocation) => void;
+  pincode: string;
+  setPincode: (pin: string) => void;
+  selectedAddress: string;
+  setSelectedAddress: (addr: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-/**
- * Single Responsibility: Manages cart state, dynamic pricing, and Domino's-style
- * Delivery vs Store Pickup fulfillment modes.
- */
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('delivery');
   const [selectedStore, setSelectedStore] = useState<StoreLocation>(STORE_LOCATIONS[0]);
+  const [pincode, setPincode] = useState('201301');
+  const [selectedAddress, setSelectedAddress] = useState<string>('home');
 
   const addToCart = (product: { id: string; name: string; price: number; weight: string; emoji: string }) => {
     setCart((prevCart) => {
@@ -99,7 +101,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const pricing = useMemo(() => {
     const rawPricing = calculatePricing(cart);
-    // If Store Pickup / Takeaway is selected, delivery fee is always ₹0
     if (fulfillmentMode === 'pickup') {
       const grandTotalWithoutDelivery = Math.max(
         0,
@@ -131,6 +132,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFulfillmentMode,
         selectedStore,
         setSelectedStore,
+        pincode,
+        setPincode,
+        selectedAddress,
+        setSelectedAddress,
       }}
     >
       {children}

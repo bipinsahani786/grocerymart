@@ -57,7 +57,7 @@ export const ProfileDetailsForm: React.FC<ProfileDetailsFormProps> = ({
   };
 
   return (
-    <View style={tw`p-4 rounded-3xl bg-white border border-slate-100 mb-4 shadow-2xs`}>
+    <View style={tw`p-4 rounded-3xl bg-white border border-slate-100 mb-4 shadow-sm`}>
       <View style={tw`flex-row justify-between items-center mb-3 pb-2 border-b border-slate-50`}>
         <View style={tw`flex-row items-center gap-2`}>
           <Ionicons name="person-circle-outline" size={18} color={theme.colors.primary} />

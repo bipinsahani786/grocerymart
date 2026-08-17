@@ -208,11 +208,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
               {/* Floating detail tag overlays */}
               <View style={tw`absolute bottom-5 flex-row gap-2`}>
-                <View style={tw`px-3 py-1.5 rounded-full bg-white border border-slate-100 shadow-2xs flex-row items-center gap-1`}>
+                <View style={tw`px-3 py-1.5 rounded-full bg-white border border-slate-100 shadow-sm flex-row items-center gap-1`}>
                   <Ionicons name="star" size={12} color="#F59E0B" />
                   <Text style={tw`text-[10px] font-black text-slate-800`}>{product.rating} (120+ reviews)</Text>
                 </View>
-                <View style={tw`px-3 py-1.5 rounded-full bg-white border border-slate-100 shadow-2xs flex-row items-center gap-1`}>
+                <View style={tw`px-3 py-1.5 rounded-full bg-white border border-slate-100 shadow-sm flex-row items-center gap-1`}>
                   <Ionicons name="shield-checkmark" size={12} color="#059669" />
                   <Text style={tw`text-[10px] font-black text-slate-800`}>100% Chilled Transit</Text>
                 </View>
@@ -419,7 +419,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {/* Cart adjustments */}
             <View>
               {quantity > 0 ? (
-                <View style={tw`flex-row items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-2 shadow-2xs`}>
+                <View style={tw`flex-row items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-2 shadow-sm`}>
                   <TouchableOpacity
                     onPress={() => removeFromCart(product.id)}
                     style={tw`px-3 py-1.5`}

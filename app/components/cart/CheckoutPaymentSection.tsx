@@ -7,7 +7,7 @@ import tw from 'twrnc';
 
 interface CheckoutPaymentSectionProps {
   fulfillmentMode: 'delivery' | 'pickup';
-  selectedAddress: 'home' | 'office';
+  selectedAddress: string;
   selectedStore: StoreLocation;
   selectedPayment: 'cod' | 'wallet' | 'upi' | 'card';
   setSelectedPayment: (pay: 'cod' | 'wallet' | 'upi' | 'card') => void;
@@ -28,7 +28,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
     <View style={tw`flex-1`}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`p-5 pb-28`}>
         {/* Order Summary banner */}
-        <View style={tw`bg-white p-4.5 rounded-3xl border border-slate-100 shadow-2xs mb-5`}>
+        <View style={tw`bg-white p-4.5 rounded-3xl border border-slate-100 shadow-sm mb-5`}>
           <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2`}>📍 Order Summary</Text>
           <Text style={tw`text-sm font-black text-slate-800`}>
             {fulfillmentMode === 'delivery' ? '🛵 Fast delivery to:' : '🏬 Takeaway counter pickup:'}
@@ -36,8 +36,10 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
           <Text style={tw`text-xs text-slate-500 font-bold mt-1`} numberOfLines={1}>
             {fulfillmentMode === 'delivery'
               ? selectedAddress === 'home'
-                ? 'Home (123 Main Street, New York, NY)'
-                : 'Office (55 Wall Street, New York, NY)'
+                ? 'Home (Stellar Park, Sector 62, Noida)'
+                : selectedAddress === 'office'
+                ? 'Office (Stellar IT Park, Sector 62, Noida)'
+                : `Address: ${selectedAddress}`
               : `${selectedStore.name} - ${selectedStore.address}`}
           </Text>
         </View>
@@ -50,7 +52,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
           onPress={() => setSelectedPayment('cod')}
           activeOpacity={0.9}
           style={[
-            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-2xs`,
+            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-sm`,
             selectedPayment === 'cod' ? tw`border-emerald-600 bg-emerald-50/10` : tw`border-slate-100`,
           ]}
         >
@@ -77,7 +79,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
           onPress={() => setSelectedPayment('wallet')}
           activeOpacity={0.9}
           style={[
-            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-2xs`,
+            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-sm`,
             selectedPayment === 'wallet' ? tw`border-emerald-600 bg-emerald-50/10` : tw`border-slate-100`,
           ]}
         >
@@ -107,7 +109,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
           onPress={() => setSelectedPayment('upi')}
           activeOpacity={0.9}
           style={[
-            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-2xs`,
+            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-sm`,
             selectedPayment === 'upi' ? tw`border-emerald-600 bg-emerald-50/10` : tw`border-slate-100`,
           ]}
         >
@@ -132,7 +134,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
           onPress={() => setSelectedPayment('card')}
           activeOpacity={0.9}
           style={[
-            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-2xs`,
+            tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-sm`,
             selectedPayment === 'card' ? tw`border-emerald-600 bg-emerald-50/10` : tw`border-slate-100`,
           ]}
         >

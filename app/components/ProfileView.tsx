@@ -8,6 +8,7 @@ import { ProfileHeader } from './profile/ProfileHeader';
 import { ProfileVipCard } from './profile/ProfileVipCard';
 import { ProfileWalletHub } from './profile/ProfileWalletHub';
 import { ProfileActivityGrid } from './profile/ProfileActivityGrid';
+import { ProfileAddressesModal } from './profile/ProfileAddressesModal';
 import { ProfileDetailsForm } from './profile/ProfileDetailsForm';
 import { ProfileOffersSection } from './profile/ProfileOffersSection';
 import { ProfileSettingsSection } from './profile/ProfileSettingsSection';
@@ -40,6 +41,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
     logout,
   } = useProfile();
 
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const [isScrolled, setIsScrolled] = React.useState(false);
+  const [isAddressesModalOpen, setIsAddressesModalOpen] = React.useState(false);
+
   const handleLogoutAction = async () => {
     await logout();
     router.replace('/login');
@@ -47,13 +52,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
 
   return (
     <View style={tw`flex-1 bg-slate-50`}>
-      <StatusBar style="light" />
+      <StatusBar style={isScrolled ? 'dark' : 'light'} animated />
 
       {/* ── Continuous Full-Page Scrollable View (Header + Content together) ── */}
       <ScrollView
+        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         style={tw`flex-1`}
         contentContainerStyle={[tw`pb-36`, { paddingBottom: 120 }]}
+        onScroll={(e) => {
+          const offsetY = e.nativeEvent.contentOffset.y;
+          setIsScrolled(offsetY > 100);
+        }}
+        scrollEventThrottle={16}
       >
         {/* ── 1. Top Gradient Profile Header ── */}
         <ProfileHeader
@@ -119,7 +130,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
           )}
 
           {/* Activity & Orders 4-Card Quick Matrix */}
-          <ProfileActivityGrid />
+          <ProfileActivityGrid onPressAddresses={() => setIsAddressesModalOpen(true)} />
 
           {/* Personal Information Form */}
           <ProfileDetailsForm
@@ -149,6 +160,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
           <Footer />
         </View>
       </ScrollView>
+
+      {/* ── My Addresses Modal Sheet ── */}
+      <ProfileAddressesModal
+        visible={isAddressesModalOpen}
+        onClose={() => setIsAddressesModalOpen(false)}
+      />
     </View>
   );
 };
