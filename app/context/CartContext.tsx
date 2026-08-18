@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculatePricing, PricingSummary } from '../utils/pricing';
 
 export type FulfillmentMode = 'delivery' | 'pickup';
@@ -10,23 +11,6 @@ export interface StoreLocation {
   distance: string;
   readyTime: string;
 }
-
-export const STORE_LOCATIONS: StoreLocation[] = [
-  {
-    id: 's1',
-    name: 'GroceryMart - Noida Sector 62 Outlet',
-    address: 'Sector 62, Noida, UP - 201301',
-    distance: '1.2 km away',
-    readyTime: 'Ready in 10 mins',
-  },
-  {
-    id: 's2',
-    name: 'GroceryMart - Indirapuram Depot',
-    address: 'Niti Khand 1, Indirapuram, Ghaziabad - 201014',
-    distance: '3.5 km away',
-    readyTime: 'Ready in 15 mins',
-  },
-];
 
 export interface CartItem {
   id: string;
@@ -47,8 +31,8 @@ export interface CartContextType {
   pricing: PricingSummary;
   fulfillmentMode: FulfillmentMode;
   setFulfillmentMode: (mode: FulfillmentMode) => void;
-  selectedStore: StoreLocation;
-  setSelectedStore: (store: StoreLocation) => void;
+  selectedStore: StoreLocation | null;
+  setSelectedStore: (store: StoreLocation | null) => void;
   pincode: string;
   setPincode: (pin: string) => void;
   selectedAddress: string;
@@ -60,9 +44,61 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('delivery');
-  const [selectedStore, setSelectedStore] = useState<StoreLocation>(STORE_LOCATIONS[0]);
-  const [pincode, setPincode] = useState('');
-  const [selectedAddress, setSelectedAddress] = useState<string>('');
+  const [selectedStore, setSelectedStoreState] = useState<StoreLocation | null>(null);
+  const [pincode, setPincodeState] = useState('');
+  const [selectedAddress, setSelectedAddressState] = useState<string>('');
+
+  // Load previously chosen delivery address, pincode, and outlet on app start
+  useEffect(() => {
+    const restorePersistedLocation = async () => {
+      try {
+        const [savedAddr, savedPin, savedStore] = await Promise.all([
+          AsyncStorage.getItem('@gm_selected_address'),
+          AsyncStorage.getItem('@gm_pincode'),
+          AsyncStorage.getItem('@gm_selected_store'),
+        ]);
+
+        if (savedAddr) setSelectedAddressState(savedAddr);
+        if (savedPin) setPincodeState(savedPin);
+        if (savedStore) {
+          try {
+            setSelectedStoreState(JSON.parse(savedStore));
+          } catch (_) {}
+        }
+      } catch (err) {
+        console.error('Failed to restore location state:', err);
+      }
+    };
+
+    restorePersistedLocation();
+  }, []);
+
+  const setSelectedAddress = (addr: string) => {
+    setSelectedAddressState(addr);
+    if (addr) {
+      AsyncStorage.setItem('@gm_selected_address', addr).catch(() => {});
+    } else {
+      AsyncStorage.removeItem('@gm_selected_address').catch(() => {});
+    }
+  };
+
+  const setPincode = (pin: string) => {
+    setPincodeState(pin);
+    if (pin) {
+      AsyncStorage.setItem('@gm_pincode', pin).catch(() => {});
+    } else {
+      AsyncStorage.removeItem('@gm_pincode').catch(() => {});
+    }
+  };
+
+  const setSelectedStore = (store: StoreLocation | null) => {
+    setSelectedStoreState(store);
+    if (store) {
+      AsyncStorage.setItem('@gm_selected_store', JSON.stringify(store)).catch(() => {});
+    } else {
+      AsyncStorage.removeItem('@gm_selected_store').catch(() => {});
+    }
+  };
 
   const addToCart = (product: { id: string; name: string; price: number; weight: string; emoji: string }) => {
     setCart((prevCart) => {

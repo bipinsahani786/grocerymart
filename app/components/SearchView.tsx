@@ -29,7 +29,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   // Cart integration
-  const { cart, addToCart, removeFromCart, fulfillmentMode, selectedStore } = useCart();
+  const { cart, addToCart, removeFromCart, fulfillmentMode, selectedStore, pincode } = useCart();
 
   // Detail Modal states
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -89,9 +89,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
     }
   };
 
-  const activePincode = fulfillmentMode === 'delivery' 
-    ? '10001' 
-    : (selectedStore?.address?.includes('10016') ? '10016' : '10001');
+  const activePincode = pincode;
 
   // Fetch filtered products based on search term
   const { data: searchResults = [], isLoading } = useQuery({

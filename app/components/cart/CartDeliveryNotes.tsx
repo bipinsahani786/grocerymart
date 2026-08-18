@@ -58,9 +58,9 @@ export const CartDeliveryNotes: React.FC = () => {
           <View style={tw`flex-row items-center justify-between pt-1`}>
             <View style={tw`flex-row items-center gap-1.5`}>
               <Ionicons name="navigate-circle" size={16} color="#7C3AED" />
-              <Text style={tw`text-[11px] font-bold text-purple-700`}>{selectedStore.distance}</Text>
+              <Text style={tw`text-[11px] font-bold text-purple-700`}>{selectedStore?.distance || 'Nearest Hub'}</Text>
             </View>
-            <Text style={tw`text-[10px] font-bold text-slate-400`}>{selectedStore.address}</Text>
+            <Text style={tw`text-[10px] font-bold text-slate-400`}>{selectedStore?.address || 'Pickup Outlet'}</Text>
           </View>
         </View>
       </View>

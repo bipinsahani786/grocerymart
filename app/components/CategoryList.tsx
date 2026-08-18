@@ -30,12 +30,17 @@ export const CategoryList: React.FC<CategoryListProps> = ({
   onSelectCategory,
   isSticky = false,
 }) => {
-  const { pincode } = useCart();
+  const { pincode, fulfillmentMode, selectedStore } = useCart();
+
+  const activePincode = fulfillmentMode === 'delivery'
+    ? pincode
+    : (selectedStore?.address ? pincode : undefined);
+  const activeStoreId = selectedStore?.id;
 
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ['customer-categories', pincode],
-    queryFn: () => productService.fetchCategories(pincode),
-    staleTime: 1000 * 60 * 5, // 5 mins
+    queryKey: ['customer-categories', activePincode, activeStoreId],
+    queryFn: () => productService.fetchCategories({ pincode: activePincode, storeId: activeStoreId }),
+    staleTime: 1000 * 60 * 2,
   });
 
   return (
@@ -50,6 +55,11 @@ export const CategoryList: React.FC<CategoryListProps> = ({
           <View style={tw`flex-row items-center py-2 px-3 gap-2`}>
             <ActivityIndicator size="small" color={theme.colors.primary} />
             <Text style={tw`text-[11px] font-bold text-slate-400`}>Loading categories...</Text>
+          </View>
+        ) : categories.length === 0 ? (
+          <View style={tw`flex-row items-center py-2 px-4 bg-slate-100/90 rounded-2xl border border-slate-200/80 mx-2 gap-2`}>
+            <Text style={tw`text-sm`}>🛍️</Text>
+            <Text style={tw`text-xs font-bold text-slate-600`}>No categories found</Text>
           </View>
         ) : (
           categories.map((category, index) => {

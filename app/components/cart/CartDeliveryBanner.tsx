@@ -99,9 +99,9 @@ export const CartDeliveryBanner: React.FC<CartDeliveryBannerProps> = ({ subtotal
             </View>
             <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`} numberOfLines={1}>
               {fulfillmentMode === 'delivery' ? (
-                <>Deliver to: <Text style={tw`font-bold text-slate-600`}>{selectedAddress === 'home' ? 'Home - Stellar Park, Noida' : selectedAddress === 'office' ? 'Office - Stellar IT Park, Noida' : `Custom Address (${selectedAddress})`}</Text></>
+                <>Deliver to: <Text style={tw`font-bold text-slate-600`}>{selectedAddress || 'Delivery Address'}</Text></>
               ) : (
-                <>Pickup at: <Text style={tw`font-bold text-slate-600`}>{selectedStore.name}</Text></>
+                <>Pickup at: <Text style={tw`font-bold text-slate-600`}>{selectedStore?.name || 'Nearest Outlet'}</Text></>
               )}
             </Text>
           </View>

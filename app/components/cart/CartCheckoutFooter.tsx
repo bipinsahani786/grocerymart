@@ -38,7 +38,7 @@ export const CartCheckoutFooter: React.FC<CartCheckoutFooterProps> = ({
             {fulfillmentMode === 'delivery' ? (
               <>Delivering to <Text style={tw`font-extrabold text-slate-900`}>{selectedAddress || (pincode ? `PIN: ${pincode}` : 'Location not set')}</Text></>
             ) : (
-              <>Pickup at <Text style={tw`font-extrabold text-slate-900`}>{selectedStore.name}</Text></>
+              <>Pickup at <Text style={tw`font-extrabold text-slate-900`}>{selectedStore?.name || 'Nearest Outlet'}</Text></>
             )}
           </Text>
         </View>

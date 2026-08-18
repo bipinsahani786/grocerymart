@@ -8,7 +8,7 @@ import tw from 'twrnc';
 interface CheckoutPaymentSectionProps {
   fulfillmentMode: 'delivery' | 'pickup';
   selectedAddress: string;
-  selectedStore: StoreLocation;
+  selectedStore: StoreLocation | null;
   selectedPayment: 'cod' | 'wallet' | 'upi' | 'card';
   setSelectedPayment: (pay: 'cod' | 'wallet' | 'upi' | 'card') => void;
   totalAmount: number;
@@ -36,7 +36,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
           <Text style={tw`text-xs text-slate-500 font-bold mt-1`} numberOfLines={1}>
             {fulfillmentMode === 'delivery'
               ? selectedAddress || 'Location not set'
-              : `${selectedStore.name} - ${selectedStore.address}`}
+              : `${selectedStore?.name || 'Nearest Store'} - ${selectedStore?.address || 'Pickup Outlet'}`}
           </Text>
         </View>
 

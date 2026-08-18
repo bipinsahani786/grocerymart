@@ -3,11 +3,12 @@ import { prisma } from "../../../config/prisma.js";
 export class CustomerStoresRepository {
   async findStoreByPincode(pincode) {
     let store = null;
+    const cleanPin = String(pincode || "").trim();
 
-    if (pincode) {
+    if (cleanPin) {
       store = await prisma.store.findFirst({
         where: {
-          address: { contains: String(pincode).trim() },
+          address: { contains: cleanPin, mode: "insensitive" },
           isActive: true,
         },
       });
