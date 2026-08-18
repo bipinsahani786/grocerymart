@@ -1,7 +1,55 @@
 import { customerProductsRepository } from "./products.repository.js";
 
 export class CustomerProductsService {
-  async getProducts({ category = "all", pincode = "201301", q = "" }) {
+  /**
+   * Fetches real categories from the database and returns structured metadata for the customer app.
+   */
+  async getCategories({ pincode } = {}) {
+    const store = await customerProductsRepository.findServingStore(pincode);
+    const storeId = store ? store.id : null;
+    const dbCategories = await customerProductsRepository.findCategoriesByStore(storeId);
+
+    const getCategoryEmoji = (name = "") => {
+      const lower = name.toLowerCase();
+      if (lower.includes("fruit") || lower.includes("vegetable") || lower.includes("fresh")) return "🍎";
+      if (lower.includes("dairy") || lower.includes("milk") || lower.includes("egg") || lower.includes("cheese")) return "🥛";
+      if (lower.includes("snack") || lower.includes("munch") || lower.includes("biscuit") || lower.includes("chips")) return "🍿";
+      if (lower.includes("beverage") || lower.includes("drink") || lower.includes("tea") || lower.includes("coffee") || lower.includes("juice")) return "🧃";
+      if (lower.includes("bakery") || lower.includes("bread") || lower.includes("cake")) return "🍞";
+      if (lower.includes("staple") || lower.includes("grain") || lower.includes("atta") || lower.includes("rice") || lower.includes("dal")) return "🌾";
+      if (lower.includes("clean") || lower.includes("household") || lower.includes("detergent") || lower.includes("wash")) return "🧼";
+      if (lower.includes("meat") || lower.includes("fish") || lower.includes("chicken")) return "🍗";
+      if (lower.includes("personal") || lower.includes("beauty") || lower.includes("care")) return "🧴";
+      if (lower.includes("baby")) return "👶";
+      if (lower.includes("pet")) return "🐾";
+      return "📦";
+    };
+
+    const totalProductCount = dbCategories.reduce((acc, c) => acc + (c._count?.products || 0), 0);
+
+    const formatted = [
+      {
+        id: "all",
+        name: "All",
+        slug: "all",
+        emoji: "🛍️",
+        itemCount: totalProductCount,
+      },
+      ...dbCategories.map((cat) => ({
+        id: cat.slug || cat.id,
+        dbId: cat.id,
+        name: cat.name,
+        slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-"),
+        emoji: getCategoryEmoji(cat.name),
+        image: cat.image || null,
+        itemCount: cat._count?.products || 0,
+      })),
+    ];
+
+    return formatted;
+  }
+
+  async getProducts({ category = "all", pincode, q = "" } = {}) {
     const store = await customerProductsRepository.findServingStore(pincode);
 
     if (!store) {

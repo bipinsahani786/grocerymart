@@ -35,11 +35,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
           </Text>
           <Text style={tw`text-xs text-slate-500 font-bold mt-1`} numberOfLines={1}>
             {fulfillmentMode === 'delivery'
-              ? selectedAddress === 'home'
-                ? 'Home (Stellar Park, Sector 62, Noida)'
-                : selectedAddress === 'office'
-                ? 'Office (Stellar IT Park, Sector 62, Noida)'
-                : `Address: ${selectedAddress}`
+              ? selectedAddress || 'Location not set'
               : `${selectedStore.name} - ${selectedStore.address}`}
           </Text>
         </View>

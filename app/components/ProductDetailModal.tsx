@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Product, products } from '../data/groceryData';
+import { useQuery } from '@tanstack/react-query';
+import { Product } from '../data/groceryData';
+import { productService } from '../services/product.service';
 import { ProductCard } from './ProductCard';
 import { FloatingCartBar } from './FloatingCartBar';
 import { useCart } from '../context/CartContext';
@@ -27,7 +29,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onNavigateToCart,
   onPressProduct,
 }) => {
-  const { cart, addToCart, removeFromCart } = useCart();
+  const { cart, addToCart, removeFromCart, pincode } = useCart();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -38,6 +40,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       setActiveTab('overview');
     }
   }, [product?.id]);
+
+  const { data: categoryProducts = [] } = useQuery<Product[]>({
+    queryKey: ['products', product?.category, pincode],
+    queryFn: () => productService.fetchProducts({ category: product?.category, pincode }),
+    enabled: !!product?.category,
+  });
 
   const handleCartPress = () => {
     onClose();
@@ -51,9 +59,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const cartItem = cart.find((item) => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  // Fetch related products in the same category
-  const relatedProducts = products
-    .filter((p) => p.category === product.category && p.id !== product.id)
+  // Fetch real related products in the same category from database
+  const relatedProducts = categoryProducts
+    .filter((p) => p.id !== product.id)
     .slice(0, 5);
 
   // Category specific styles
