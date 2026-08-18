@@ -34,9 +34,9 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
 
   // Form inputs
   const [street, setStreet] = useState('');
-  const [city, setCity] = useState('Noida');
-  const [state, setState] = useState('Uttar Pradesh');
-  const [zipCode, setZipCode] = useState('201301');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zipCode, setZipCode] = useState('');
 
   const { data: addresses = [], isLoading } = useQuery<AddressItem[]>({
     queryKey: ['customer-addresses'],
@@ -85,17 +85,17 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
     setIsFormOpen(false);
     setEditingId(null);
     setStreet('');
-    setCity('Noida');
-    setState('Uttar Pradesh');
-    setZipCode('201301');
+    setCity('');
+    setState('');
+    setZipCode('');
   };
 
   const handleStartAdd = () => {
     setEditingId(null);
     setStreet('');
-    setCity('Noida');
-    setState('Uttar Pradesh');
-    setZipCode('201301');
+    setCity('');
+    setState('');
+    setZipCode('');
     setIsFormOpen(true);
   };
 
@@ -291,7 +291,7 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
               </Text>
               <TextInput
                 style={tw`bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-800 mb-3.5 font-medium`}
-                placeholder="e.g. Flat 402, Block B, Stellar Park, Sector 62"
+                placeholder="Enter street, flat, or building name"
                 placeholderTextColor="#94A3B8"
                 value={street}
                 onChangeText={setStreet}
@@ -305,6 +305,8 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
                   </Text>
                   <TextInput
                     style={tw`bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-800 font-medium`}
+                    placeholder="Enter city"
+                    placeholderTextColor="#94A3B8"
                     value={city}
                     onChangeText={setCity}
                   />
@@ -315,6 +317,8 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
                   </Text>
                   <TextInput
                     style={tw`bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-800 font-medium`}
+                    placeholder="6-digit PIN"
+                    placeholderTextColor="#94A3B8"
                     keyboardType="numeric"
                     maxLength={6}
                     value={zipCode}
@@ -329,6 +333,8 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
               </Text>
               <TextInput
                 style={tw`bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-800 mb-5 font-medium`}
+                placeholder="Enter state"
+                placeholderTextColor="#94A3B8"
                 value={state}
                 onChangeText={setState}
               />

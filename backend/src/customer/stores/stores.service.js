@@ -1,14 +1,14 @@
 import { customerStoresRepository } from "./stores.repository.js";
 
 export class CustomerStoresService {
-  async getLocationByPincode(pincode = "201301") {
+  async getLocationByPincode(pincode) {
     const store = await customerStoresRepository.findStoreByPincode(pincode);
     if (!store) {
       return null;
     }
 
     return {
-      pincode,
+      pincode: pincode || "",
       storeName: store.name,
       address: store.address,
     };

@@ -1,17 +1,22 @@
 import { prisma } from "../../../config/prisma.js";
 
 export class CustomerStoresRepository {
-  async findStoreByPincode(pincode = "201301") {
-    let store = await prisma.store.findFirst({
-      where: {
-        address: { contains: pincode },
-        isActive: true,
-      },
-    });
+  async findStoreByPincode(pincode) {
+    let store = null;
+
+    if (pincode) {
+      store = await prisma.store.findFirst({
+        where: {
+          address: { contains: String(pincode).trim() },
+          isActive: true,
+        },
+      });
+    }
 
     if (!store) {
       store = await prisma.store.findFirst({
         where: { isActive: true },
+        orderBy: { createdAt: "asc" },
       });
     }
 

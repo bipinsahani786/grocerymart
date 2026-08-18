@@ -46,15 +46,25 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [gpsAddress, setGpsAddress] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
   const [isAddressesModalOpen, setIsAddressesModalOpen] = useState(false);
 
   const handleFetchGpsLocation = async () => {
     try {
       setGpsLoading(true);
+      setLocationError(null);
+
+      // Check if location services (GPS hardware) is enabled on device
+      const isLocationEnabled = await Location.hasServicesEnabledAsync();
+      if (!isLocationEnabled) {
+        setLocationError('Failed to detect location');
+        return;
+      }
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        alert('Permission to access location was denied. Showing default location.');
+        setLocationError('Failed to detect location');
         return;
       }
 
@@ -70,44 +80,59 @@ export const Header: React.FC<HeaderProps> = ({
 
       if (geocode.length > 0) {
         const addr = geocode[0];
-        // Filter out Google Plus codes (e.g., G2XM+X3J)
-        const isPlusCode = (val?: string | null) => !val || val.includes('+') || /^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}$/i.test(val.trim());
+        // Filter out raw Plus Codes like "87G8+9F"
+        const isPlusCode = (val?: string | null) =>
+          !val || val.includes('+') || /^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}$/i.test(val.trim());
 
         const validParts: string[] = [];
 
-        if (addr.name && !isPlusCode(addr.name) && isNaN(Number(addr.name))) {
-          validParts.push(addr.name);
+        // 1. House/Plot/Building number if available
+        if (addr.streetNumber && !isPlusCode(addr.streetNumber) && !validParts.includes(addr.streetNumber.trim())) {
+          validParts.push(addr.streetNumber.trim());
         }
-        if (addr.street && !isPlusCode(addr.street) && !validParts.includes(addr.street)) {
-          validParts.push(addr.street);
+
+        // 2. Name / Building / House name
+        if (addr.name && !isPlusCode(addr.name) && !validParts.includes(addr.name.trim())) {
+          validParts.push(addr.name.trim());
         }
+
+        // 3. Street / Road name
+        if (addr.street && !isPlusCode(addr.street) && !validParts.includes(addr.street.trim())) {
+          validParts.push(addr.street.trim());
+        }
+
+        // 4. Locality / District / Subregion
         const locality = addr.district || addr.subregion;
-        if (locality && !validParts.includes(locality)) {
-          validParts.push(locality);
+        if (locality && !isPlusCode(locality) && !validParts.includes(locality.trim())) {
+          validParts.push(locality.trim());
         }
-        if (addr.city && !validParts.includes(addr.city)) {
-          validParts.push(addr.city);
+
+        // 5. City
+        if (addr.city && !validParts.includes(addr.city.trim())) {
+          validParts.push(addr.city.trim());
         }
 
         if (validParts.length === 0) {
-          if (addr.city) validParts.push(addr.city);
-          if (addr.region) validParts.push(addr.region);
+          if (addr.city) validParts.push(addr.city.trim());
+          if (addr.region) validParts.push(addr.region.trim());
         }
 
         const baseAddress = validParts.join(', ');
         const displayAddr = addr.postalCode ? `${baseAddress} (${addr.postalCode})` : baseAddress;
         
         setGpsAddress(displayAddr || 'Current Location');
+        setLocationError(null);
         if (addr.postalCode) {
           setPincode(addr.postalCode);
           setSelectedAddress('gps');
         }
       } else {
-        setGpsAddress(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        setSelectedAddress('gps');
+        setGpsAddress(null);
+        setLocationError('Failed to detect location');
       }
     } catch (err) {
-      console.error('GPS error:', err);
+      console.error('Location error:', err);
+      setLocationError('Failed to detect location');
     } finally {
       setGpsLoading(false);
     }
@@ -167,16 +192,20 @@ export const Header: React.FC<HeaderProps> = ({
               color={theme.colors.white}
             />
           </View>
-          <View style={tw`ml-2.5 flex-1`}>
+          <View style={tw`ml-2.5 flex-1 pr-1`}>
             <Text style={[tw`text-[9px] font-black tracking-wider opacity-85 uppercase`, { color: theme.colors.white }]}>
-              {fulfillmentMode === 'delivery' ? 'DELIVER TO HOME' : 'STORE PICKUP'}
+              {fulfillmentMode === 'delivery' ? 'DELIVER TO' : 'STORE PICKUP'}
             </Text>
-            <View style={tw`flex-row items-center`}>
-              <Text style={[tw`text-sm font-extrabold mr-1 max-w-[85%]`, { color: theme.colors.white }]} numberOfLines={1}>
+            <View style={tw`flex-row items-center flex-1`}>
+              <Text
+                style={[tw`text-sm font-extrabold mr-1 flex-1`, { color: theme.colors.white }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {fulfillmentMode === 'delivery'
                   ? gpsLoading
-                    ? 'Locating...'
-                    : gpsAddress || (locationData ? locationData.address : 'Locating by GPS...')
+                    ? 'Detecting location...'
+                    : gpsAddress || (locationData ? locationData.address : (selectedAddress || (pincode ? `Delivery Area (${pincode})` : (locationError || 'Failed to detect location'))))
                   : `${activeOutlet.name} (${activeOutlet.distance})`}
               </Text>
               <Ionicons name="chevron-down" size={14} color={theme.colors.white} />
@@ -336,6 +365,16 @@ export const Header: React.FC<HeaderProps> = ({
               </TouchableOpacity>
             </View>
 
+            {/* Location Service Disabled Banner */}
+            {locationError && !gpsAddress && (
+              <View style={tw`bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-3 flex-row items-center gap-2`}>
+                <Ionicons name="warning" size={18} color="#D97706" />
+                <Text style={tw`text-xs font-bold text-amber-800 flex-1`}>
+                  Unable to detect location. Please turn on location services or pick from saved addresses.
+                </Text>
+              </View>
+            )}
+
             {/* Current Detected Address Card */}
             <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-3.5`}>
               <View style={tw`flex-row items-center justify-between mb-1.5`}>
@@ -344,12 +383,12 @@ export const Header: React.FC<HeaderProps> = ({
                 </Text>
                 <View style={tw`bg-emerald-100/80 px-2 py-0.5 rounded-full`}>
                   <Text style={tw`text-[9px] font-black text-emerald-800`}>
-                    PIN: {pincode || '201301'}
+                    {pincode ? `PIN: ${pincode}` : 'PIN: Not Set'}
                   </Text>
                 </View>
               </View>
               <Text style={tw`text-xs font-black text-slate-800 leading-5`}>
-                {gpsAddress || locationData?.address || 'Sector 62, Noida, UP (201301)'}
+                {gpsAddress || locationData?.address || selectedAddress || 'Unable to detect location. Please turn on location services.'}
               </Text>
             </View>
 
@@ -415,7 +454,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </View>
               </TouchableOpacity>
 
-              {/* Refresh GPS Button */}
+              {/* Detect Location Button */}
               <TouchableOpacity
                 onPress={async () => {
                   await handleFetchGpsLocation();
@@ -450,7 +489,7 @@ export const Header: React.FC<HeaderProps> = ({
                     ]}
                     numberOfLines={1}
                   >
-                    {gpsLoading ? 'Locating...' : 'Refresh GPS'}
+                    {gpsLoading ? 'Locating...' : 'Detect Location'}
                   </Text>
                   <Text style={[tw`text-[10px] font-bold opacity-90`, { color: theme.colors.white }]}>
                     Live Location

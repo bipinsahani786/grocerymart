@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import { Product } from '../data/groceryData';
+import { Product, Category } from '../data/groceryData';
 
 export interface ProductFilters {
   category?: string;
@@ -12,12 +12,22 @@ export interface ProductFilters {
  * Supports active pincode sourcing to evaluate inventory and out-of-stock statuses.
  */
 export class ProductService {
+  async fetchCategories(pincode?: string): Promise<Category[]> {
+    const response = await apiClient.get<Category[]>('/api/customer/categories', {
+      params: pincode ? { pincode } : {},
+    });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return [];
+  }
+
   async fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
     const response = await apiClient.get<Product[]>('/api/customer/products', {
       params: {
-        category: filters.category,
-        search: filters.search,
-        pincode: filters.pincode || '10001',
+        ...(filters.category ? { category: filters.category } : {}),
+        ...(filters.search ? { search: filters.search } : {}),
+        ...(filters.pincode ? { pincode: filters.pincode } : {}),
       },
     });
 
@@ -29,9 +39,9 @@ export class ProductService {
     return [];
   }
 
-  async getPopularProducts(): Promise<Product[]> {
+  async getPopularProducts(pincode?: string): Promise<Product[]> {
     // Fetch from backend standard outlet and filter by rating
-    const products = await this.fetchProducts({ category: 'all', pincode: '201301' });
+    const products = await this.fetchProducts({ category: 'all', pincode });
     return products.filter((p) => p.rating >= 4.8);
   }
 

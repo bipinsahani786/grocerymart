@@ -61,8 +61,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cart, setCart] = useState<CartItem[]>([]);
   const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('delivery');
   const [selectedStore, setSelectedStore] = useState<StoreLocation>(STORE_LOCATIONS[0]);
-  const [pincode, setPincode] = useState('201301');
-  const [selectedAddress, setSelectedAddress] = useState<string>('home');
+  const [pincode, setPincode] = useState('');
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
 
   const addToCart = (product: { id: string; name: string; price: number; weight: string; emoji: string }) => {
     setCart((prevCart) => {

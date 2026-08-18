@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { Text, View, TouchableOpacity, ScrollView, Platform, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { products } from '../data/groceryData';
+import { useQuery } from '@tanstack/react-query';
+import { Product } from '../data/groceryData';
+import { productService } from '../services/product.service';
 import { useCart } from '../context/CartContext';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
@@ -21,7 +23,7 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
   onSelectSuggestion,
   onClose,
 }) => {
-  const { cart, addToCart } = useCart();
+  const { cart, addToCart, pincode } = useCart();
   const trimmedQuery = query.trim().toLowerCase();
 
   // Animation values for smooth entrance
@@ -51,17 +53,17 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
     ]).start();
   }, []);
 
+  // Fetch real matching products from database
+  const { data: matchingProducts = [] } = useQuery<Product[]>({
+    queryKey: ['search-suggestions', trimmedQuery, pincode],
+    queryFn: () => productService.fetchProducts({ search: trimmedQuery, pincode }),
+    enabled: trimmedQuery.length > 0,
+  });
+
   // If searchbar is empty, return null immediately
   if (trimmedQuery.length === 0) {
     return null;
   }
-
-  // Find live product matches
-  const matchingProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(trimmedQuery) ||
-    p.category.toLowerCase().includes(trimmedQuery) ||
-    p.description.toLowerCase().includes(trimmedQuery)
-  );
 
   // ── Small / Compact Dropdown when nothing is found ──
   if (matchingProducts.length === 0) {
