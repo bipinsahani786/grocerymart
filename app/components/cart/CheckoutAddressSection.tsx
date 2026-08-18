@@ -14,8 +14,8 @@ interface CheckoutAddressSectionProps {
   setSelectedAddress: (addr: string) => void;
   pincode: string;
   setPincode: (pin: string) => void;
-  selectedStore: StoreLocation;
-  setSelectedStore: (store: StoreLocation) => void;
+  selectedStore: StoreLocation | null;
+  setSelectedStore: (store: StoreLocation | null) => void;
   activeStores: StoreLocation[];
   onContinue: () => void;
   totalAmount: number;
@@ -390,7 +390,7 @@ export const CheckoutAddressSection: React.FC<CheckoutAddressSectionProps> = ({
                 activeOpacity={0.9}
                 style={[
                   tw`bg-white p-4.5 rounded-3xl border mb-3 flex-row items-center justify-between shadow-sm`,
-                  selectedStore.id === store.id ? tw`border-emerald-600 bg-emerald-50/10` : tw`border-slate-100`,
+                  selectedStore?.id === store.id ? tw`border-emerald-600 bg-emerald-50/10` : tw`border-slate-100`,
                 ]}
               >
                 <View style={tw`flex-row items-center gap-3.5 flex-1 pr-4`}>
@@ -410,9 +410,9 @@ export const CheckoutAddressSection: React.FC<CheckoutAddressSectionProps> = ({
                 </View>
 
                 <Ionicons
-                  name={selectedStore.id === store.id ? 'radio-button-on' : 'radio-button-off'}
+                  name={selectedStore?.id === store.id ? 'radio-button-on' : 'radio-button-off'}
                   size={22}
-                  color={selectedStore.id === store.id ? '#059669' : '#CBD5E1'}
+                  color={selectedStore?.id === store.id ? '#059669' : '#CBD5E1'}
                 />
               </TouchableOpacity>
             ))}

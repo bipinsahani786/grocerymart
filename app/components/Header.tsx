@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,14 @@ interface HeaderProps {
   isSticky?: boolean;
   onCartPress?: () => void;
   searchInputRef?: React.RefObject<TextInput | null>;
+}
+
+interface AddressItem {
+  id: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
 }
 
 /**
@@ -50,7 +58,13 @@ export const Header: React.FC<HeaderProps> = ({
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
   const [isAddressesModalOpen, setIsAddressesModalOpen] = useState(false);
 
-  const handleFetchGpsLocation = async () => {
+  // Fetch real saved addresses from database
+  const { data: savedAddresses = [] } = useQuery<AddressItem[]>({
+    queryKey: ['customer-addresses'],
+    queryFn: () => productService.fetchCustomerAddresses(),
+  });
+
+  const handleFetchGpsLocation = async (andCloseModal = false) => {
     try {
       setGpsLoading(true);
       setLocationError(null);
@@ -121,10 +135,15 @@ export const Header: React.FC<HeaderProps> = ({
         const displayAddr = addr.postalCode ? `${baseAddress} (${addr.postalCode})` : baseAddress;
         
         setGpsAddress(displayAddr || 'Current Location');
+        setSelectedAddress(displayAddr || 'Current Location');
         setLocationError(null);
         if (addr.postalCode) {
           setPincode(addr.postalCode);
-          setSelectedAddress('gps');
+        } else if (addr.city || addr.district) {
+          setPincode(addr.city || addr.district || '');
+        }
+        if (andCloseModal) {
+          setIsLocationModalVisible(false);
         }
       } else {
         setGpsAddress(null);
@@ -138,17 +157,29 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const handleSelectSavedAddress = (addr: AddressItem) => {
+    const fullAddr = `${addr.street}, ${addr.city}, ${addr.state}${addr.zipCode ? ` - ${addr.zipCode}` : ''}`;
+    setSelectedAddress(fullAddr);
+    setGpsAddress(fullAddr);
+    setLocationError(null);
+    if (addr.zipCode) {
+      setPincode(addr.zipCode.trim());
+    } else {
+      const match = fullAddr.match(/\b\d{6}\b/);
+      if (match) {
+        setPincode(match[0]);
+      } else {
+        setPincode(addr.city || addr.street);
+      }
+    }
+    setIsLocationModalVisible(false);
+  };
+
   React.useEffect(() => {
-    if (fulfillmentMode === 'delivery' && !gpsAddress) {
+    if (fulfillmentMode === 'delivery' && !gpsAddress && !selectedAddress) {
       handleFetchGpsLocation();
     }
   }, [fulfillmentMode]);
-
-  const { data: locationData } = useQuery({
-    queryKey: ['location-by-pincode', pincode],
-    queryFn: () => productService.fetchLocationByPincode(pincode),
-    enabled: !!pincode && selectedAddress !== 'gps',
-  });
 
   const { data: storesList = [] } = useQuery({
     queryKey: ['backend-stores', pincode],
@@ -158,7 +189,7 @@ export const Header: React.FC<HeaderProps> = ({
   const activeOutlet = storesList.length > 0 ? storesList[0] : selectedStore;
 
   React.useEffect(() => {
-    if (storesList.length > 0 && selectedStore.name.includes('Flagship')) {
+    if (storesList.length > 0) {
       setSelectedStore(storesList[0]);
     }
   }, [storesList]);
@@ -205,8 +236,8 @@ export const Header: React.FC<HeaderProps> = ({
                 {fulfillmentMode === 'delivery'
                   ? gpsLoading
                     ? 'Detecting location...'
-                    : gpsAddress || (locationData ? locationData.address : (selectedAddress || (pincode ? `Delivery Area (${pincode})` : (locationError || 'Failed to detect location'))))
-                  : `${activeOutlet.name} (${activeOutlet.distance})`}
+                    : (selectedAddress || gpsAddress || (pincode ? `Delivery Area (${pincode})` : (locationError || 'Failed to detect location')))
+                  : (activeOutlet ? `${activeOutlet.name} (${activeOutlet.distance})` : 'Select a pickup store')}
               </Text>
               <Ionicons name="chevron-down" size={14} color={theme.colors.white} />
             </View>
@@ -227,10 +258,8 @@ export const Header: React.FC<HeaderProps> = ({
             />
             <View
               style={[
-                tw`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-emerald-600`,
-                { 
-                  backgroundColor: isLoggedIn ? '#34D399' : '#9CA3AF',
-                },
+                tw`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white`,
+                { backgroundColor: isLoggedIn ? (theme.colors.success || '#10B981') : (theme.colors.accent || '#F59E0B') },
               ]}
             />
           </TouchableOpacity>
@@ -240,16 +269,16 @@ export const Header: React.FC<HeaderProps> = ({
             activeOpacity={0.8}
             onPress={onCartPress}
           >
-            <Ionicons name="basket" size={18} color={theme.colors.white} />
+            <Ionicons name="cart" size={18} color={theme.colors.white} />
             {totalItems > 0 && (
               <View
                 style={[
-                  tw`absolute -top-1 -right-1 min-w-[17px] h-[17px] rounded-full justify-center items-center px-0.5 border border-emerald-700`,
+                  tw`absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full items-center justify-center border border-white`,
                   { backgroundColor: theme.colors.accent || '#F59E0B' },
                 ]}
               >
-                <Text style={[tw`text-[9px] font-black text-white`]}>
-                  {totalItems}
+                <Text style={[tw`text-[9px] font-black`, { color: theme.colors.white }]}>
+                  {totalItems > 99 ? '99+' : totalItems}
                 </Text>
               </View>
             )}
@@ -257,66 +286,66 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
       </View>
 
-      {/* ── Domino's Style Delivery vs Store Pickup Segmented Toggle ── */}
-      {!isSticky && (
-        <View style={tw`flex-row bg-black/25 p-1 rounded-2xl mb-3 border border-white/10`}>
-          <TouchableOpacity
-            onPress={() => setFulfillmentMode('delivery')}
-            activeOpacity={0.8}
+      {/* Modern Switcher: Delivery vs Pick-Up */}
+      <View style={[tw`flex-row p-1 rounded-2xl mb-3 border border-white/10`, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+        <TouchableOpacity
+          onPress={() => setFulfillmentMode('delivery')}
+          activeOpacity={0.9}
+          style={[
+            tw`flex-1 flex-row items-center justify-center py-1.5 rounded-xl gap-1.5`,
+            fulfillmentMode === 'delivery' ? tw`bg-white shadow-sm` : tw`bg-transparent`,
+          ]}
+        >
+          <Ionicons
+            name="bicycle"
+            size={14}
+            color={fulfillmentMode === 'delivery' ? theme.colors.primaryDark : theme.colors.white}
+          />
+          <Text
             style={[
-              tw`flex-1 py-1.8 rounded-xl flex-row items-center justify-center gap-1.5`,
-              fulfillmentMode === 'delivery'
-                ? tw`bg-white shadow-sm`
-                : tw`bg-transparent`,
+              tw`text-xs font-black tracking-wide`,
+              {
+                color:
+                  fulfillmentMode === 'delivery'
+                    ? theme.colors.primaryDark
+                    : theme.colors.white,
+              },
             ]}
           >
-            <Ionicons
-              name="bicycle"
-              size={14}
-              color={fulfillmentMode === 'delivery' ? '#047857' : '#FFFFFF'}
-            />
-            <Text
-              style={[
-                tw`text-[10px] font-black uppercase tracking-wider`,
-                fulfillmentMode === 'delivery'
-                  ? tw`text-emerald-800`
-                  : tw`text-white/90`,
-              ]}
-            >
-              Delivery • 15m
-            </Text>
-          </TouchableOpacity>
+            Instant Delivery
+          </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => setFulfillmentMode('pickup')}
-            activeOpacity={0.8}
+        <TouchableOpacity
+          onPress={() => setFulfillmentMode('pickup')}
+          activeOpacity={0.9}
+          style={[
+            tw`flex-1 flex-row items-center justify-center py-1.5 rounded-xl gap-1.5`,
+            fulfillmentMode === 'pickup' ? tw`bg-white shadow-sm` : tw`bg-transparent`,
+          ]}
+        >
+          <Ionicons
+            name="storefront"
+            size={14}
+            color={fulfillmentMode === 'pickup' ? theme.colors.primaryDark : theme.colors.white}
+          />
+          <Text
             style={[
-              tw`flex-1 py-1.8 rounded-xl flex-row items-center justify-center gap-1.5`,
-              fulfillmentMode === 'pickup'
-                ? tw`bg-white shadow-sm`
-                : tw`bg-transparent`,
+              tw`text-xs font-black tracking-wide`,
+              {
+                color:
+                  fulfillmentMode === 'pickup'
+                    ? theme.colors.primaryDark
+                    : theme.colors.white,
+              },
             ]}
           >
-            <Ionicons
-              name="storefront"
-              size={14}
-              color={fulfillmentMode === 'pickup' ? '#047857' : '#FFFFFF'}
-            />
-            <Text
-              style={[
-                tw`text-[10px] font-black uppercase tracking-wider`,
-                fulfillmentMode === 'pickup'
-                  ? tw`text-emerald-800`
-                  : tw`text-white/90`,
-              ]}
-            >
-              Takeaway / Store
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            Takeaway
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* ── Modular Standalone SearchBar Component ── */}
+      {/* Main Search Bar Component */}
       <SearchBar
         value={searchQuery}
         onChangeText={onSearchQueryChange}
@@ -330,7 +359,7 @@ export const Header: React.FC<HeaderProps> = ({
         inputRef={searchInputRef}
       />
 
-      {/* ── Homepage Location Viewer Sheet ── */}
+      {/* ── Real-World App Delivery Location Bottom Sheet ── */}
       <Modal
         visible={isLocationModalVisible}
         transparent
@@ -344,17 +373,20 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <TouchableOpacity
             activeOpacity={1}
-            style={tw`bg-white rounded-t-3xl p-5 pb-9 border-t border-slate-100 shadow-2xl`}
+            style={[
+              tw`bg-white rounded-t-3xl p-5 border-t border-slate-100 shadow-2xl`,
+              { maxHeight: '85%' },
+            ]}
           >
             {/* Header */}
-            <View style={tw`flex-row justify-between items-center pb-4 mb-4 border-b border-slate-100`}>
+            <View style={tw`flex-row justify-between items-center pb-3.5 mb-3 border-b border-slate-100`}>
               <View style={tw`flex-row items-center gap-2.5`}>
                 <View style={tw`w-10 h-10 rounded-2xl bg-emerald-50 items-center justify-center`}>
                   <Ionicons name="location" size={20} color="#059669" />
                 </View>
                 <View>
-                  <Text style={tw`text-sm font-black text-slate-800`}>Location Details</Text>
-                  <Text style={tw`text-[10px] font-bold text-slate-400`}>Delivering to this area</Text>
+                  <Text style={tw`text-sm font-black text-slate-800`}>Change Delivery Location</Text>
+                  <Text style={tw`text-[10px] font-bold text-slate-400`}>Select saved address or detect via GPS</Text>
                 </View>
               </View>
               <TouchableOpacity
@@ -365,155 +397,148 @@ export const Header: React.FC<HeaderProps> = ({
               </TouchableOpacity>
             </View>
 
-            {/* Location Service Disabled Banner */}
-            {locationError && !gpsAddress && (
-              <View style={tw`bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-3 flex-row items-center gap-2`}>
-                <Ionicons name="warning" size={18} color="#D97706" />
-                <Text style={tw`text-xs font-bold text-amber-800 flex-1`}>
-                  Unable to detect location. Please turn on location services or pick from saved addresses.
-                </Text>
-              </View>
-            )}
-
-            {/* Current Detected Address Card */}
-            <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-3.5`}>
-              <View style={tw`flex-row items-center justify-between mb-1.5`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider`}>
-                  📍 Current Detected Address
-                </Text>
-                <View style={tw`bg-emerald-100/80 px-2 py-0.5 rounded-full`}>
-                  <Text style={tw`text-[9px] font-black text-emerald-800`}>
-                    {pincode ? `PIN: ${pincode}` : 'PIN: Not Set'}
-                  </Text>
-                </View>
-              </View>
-              <Text style={tw`text-xs font-black text-slate-800 leading-5`}>
-                {gpsAddress || locationData?.address || selectedAddress || 'Unable to detect location. Please turn on location services.'}
-              </Text>
-            </View>
-
-            {/* Serving Outlet Information */}
-            <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-5`}>
-              <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2`}>
-                🏬 Serving Store Outlet
-              </Text>
-              <Text style={tw`text-xs font-black text-slate-800 mb-0.5`}>
-                {activeOutlet.name}
-              </Text>
-              <Text style={tw`text-[11px] font-medium text-slate-500 mb-2`}>
-                {activeOutlet.address}
-              </Text>
-              <View style={tw`flex-row items-center gap-3 pt-2 border-t border-slate-200/60`}>
-                <Text style={tw`text-[10px] font-bold text-emerald-700`}>
-                  ⚡ 12-15 Mins Express Delivery
-                </Text>
-                <Text style={tw`text-[10px] font-bold text-slate-400`}>
-                  • {activeOutlet.distance || '0.8 km away'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Actions: Dual Button Row */}
-            <View style={tw`flex-row items-center gap-3 mb-2.5`}>
-              {/* My Addresses Button */}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`pb-6`}>
+              {/* 1. Detect Current GPS Location Option */}
               <TouchableOpacity
-                onPress={() => {
-                  setIsLocationModalVisible(false);
-                  setIsAddressesModalOpen(true);
-                }}
-                activeOpacity={0.85}
-                style={[
-                  tw`flex-1 p-3.5 rounded-2xl border flex-row items-center gap-2.5 shadow-sm`,
-                  {
-                    backgroundColor: theme.colors.primaryLight,
-                    borderColor: 'rgba(16, 185, 129, 0.3)',
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    tw`w-9 h-9 rounded-xl items-center justify-center`,
-                    { backgroundColor: theme.colors.primaryDark },
-                  ]}
-                >
-                  <Ionicons name="location" size={18} color={theme.colors.white} />
-                </View>
-                <View style={tw`flex-1`}>
-                  <Text
-                    style={[
-                      tw`text-xs font-black uppercase tracking-wider`,
-                      { color: theme.colors.primaryDark },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    My Address
-                  </Text>
-                  <Text style={tw`text-[10px] font-bold text-emerald-700 mt-0.5`}>
-                    Saved Book
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Detect Location Button */}
-              <TouchableOpacity
-                onPress={async () => {
-                  await handleFetchGpsLocation();
-                }}
+                onPress={() => handleFetchGpsLocation(true)}
                 disabled={gpsLoading}
                 activeOpacity={0.85}
-                style={[
-                  tw`flex-1 p-3.5 rounded-2xl border flex-row items-center gap-2.5 shadow-sm`,
-                  {
-                    backgroundColor: theme.colors.primary,
-                    borderColor: theme.colors.primaryDark,
-                  },
-                ]}
+                style={tw`p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 mb-3.5 flex-row items-center justify-between shadow-2xs`}
               >
-                <View
-                  style={[
-                    tw`w-9 h-9 rounded-xl items-center justify-center`,
-                    { backgroundColor: 'rgba(255, 255, 255, 0.25)' },
-                  ]}
-                >
-                  {gpsLoading ? (
-                    <ActivityIndicator size="small" color={theme.colors.white} />
-                  ) : (
-                    <Ionicons name="navigate" size={18} color={theme.colors.white} />
-                  )}
+                <View style={tw`flex-row items-center gap-3 flex-1 pr-2`}>
+                  <View style={tw`w-10 h-10 rounded-xl bg-emerald-600 items-center justify-center`}>
+                    {gpsLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Ionicons name="navigate" size={20} color="#FFFFFF" />
+                    )}
+                  </View>
+                  <View style={tw`flex-1`}>
+                    <Text style={tw`text-xs font-black text-emerald-950 uppercase tracking-wider`}>
+                      {gpsLoading ? 'Detecting Location...' : 'Use Current Location'}
+                    </Text>
+                    <Text style={tw`text-[11px] text-emerald-700 font-bold mt-0.5`} numberOfLines={1}>
+                      {gpsAddress || 'Auto-detect via phone GPS'}
+                    </Text>
+                  </View>
                 </View>
-                <View style={tw`flex-1`}>
-                  <Text
-                    style={[
-                      tw`text-xs font-black uppercase tracking-wider`,
-                      { color: theme.colors.white },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {gpsLoading ? 'Locating...' : 'Detect Location'}
-                  </Text>
-                  <Text style={[tw`text-[10px] font-bold opacity-90`, { color: theme.colors.white }]}>
-                    Live Location
+                <View style={tw`bg-emerald-600 px-3 py-1.5 rounded-full`}>
+                  <Text style={tw`text-[10px] font-black text-white uppercase tracking-wider`}>
+                    {gpsLoading ? 'Detecting' : 'Detect'}
                   </Text>
                 </View>
               </TouchableOpacity>
-            </View>
 
-            {/* Done Dismiss Button */}
-            <TouchableOpacity
-              onPress={() => setIsLocationModalVisible(false)}
-              activeOpacity={0.8}
-              style={[
-                tw`py-3 rounded-2xl items-center justify-center border`,
-                { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
-              ]}
-            >
-              <Text style={[tw`text-xs font-black`, { color: theme.colors.textLight }]}>Close</Text>
-            </TouchableOpacity>
+              {/* 2. Saved Addresses List */}
+              <View style={tw`mb-3.5`}>
+                <View style={tw`flex-row items-center justify-between mb-2`}>
+                  <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider`}>
+                    Saved Addresses ({savedAddresses.length})
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setIsLocationModalVisible(false);
+                      setIsAddressesModalOpen(true);
+                    }}
+                  >
+                    <Text style={tw`text-[11px] font-black text-emerald-600`}>+ Add New</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {savedAddresses.length === 0 ? (
+                  <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 items-center justify-center`}>
+                    <Text style={tw`text-xs font-bold text-slate-400`}>No saved addresses found</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setIsLocationModalVisible(false);
+                        setIsAddressesModalOpen(true);
+                      }}
+                      style={tw`mt-2 py-1.5 px-4 rounded-xl bg-emerald-600`}
+                    >
+                      <Text style={tw`text-xs font-black text-white`}>+ Add Delivery Address</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  savedAddresses.map((addr) => {
+                    const isSelected = selectedAddress === addr.street;
+                    return (
+                      <TouchableOpacity
+                        key={addr.id}
+                        onPress={() => handleSelectSavedAddress(addr)}
+                        activeOpacity={0.85}
+                        style={[
+                          tw`p-3.5 rounded-2xl border mb-2 flex-row items-center justify-between shadow-2xs`,
+                          isSelected ? tw`bg-emerald-50/40 border-emerald-600` : tw`bg-slate-50/80 border-slate-100`,
+                        ]}
+                      >
+                        <View style={tw`flex-row items-center gap-3 flex-1 pr-3`}>
+                          <View style={[tw`w-9 h-9 rounded-xl items-center justify-center`, { backgroundColor: isSelected ? '#059669' : '#E2E8F0' }]}>
+                            <Ionicons
+                              name="location"
+                              size={18}
+                              color={isSelected ? '#FFFFFF' : '#64748B'}
+                            />
+                          </View>
+                          <View style={tw`flex-1`}>
+                            <View style={tw`flex-row items-center gap-2 mb-0.5`}>
+                              <Text style={tw`text-xs font-black text-slate-800`} numberOfLines={1}>
+                                {addr.street}
+                              </Text>
+                              <View style={tw`bg-slate-200/80 px-2 py-0.5 rounded-md`}>
+                                <Text style={tw`text-[9px] font-black text-slate-600`}>PIN: {addr.zipCode}</Text>
+                              </View>
+                            </View>
+                            <Text style={tw`text-[10px] text-slate-500 font-bold`} numberOfLines={1}>
+                              {addr.city}, {addr.state}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={[
+                          tw`px-3 py-1.5 rounded-full border`,
+                          isSelected ? tw`bg-emerald-600 border-emerald-600` : tw`bg-white border-slate-200`,
+                        ]}>
+                          <Text style={[
+                            tw`text-[10px] font-black uppercase tracking-wider`,
+                            isSelected ? tw`text-white` : tw`text-slate-600`,
+                          ]}>
+                            {isSelected ? 'Delivering' : 'Deliver Here'}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </View>
+
+              {/* 3. Nearest Serving Store Outlet Card */}
+              {activeOutlet && (
+                <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-2`}>
+                  <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5`}>
+                    🏬 Nearest Serving Outlet for this Location
+                  </Text>
+                  <Text style={tw`text-xs font-black text-slate-800 mb-0.5`}>
+                    {activeOutlet.name}
+                  </Text>
+                  <Text style={tw`text-[11px] font-medium text-slate-500 mb-2`}>
+                    {activeOutlet.address}
+                  </Text>
+                  <View style={tw`flex-row items-center gap-3 pt-2 border-t border-slate-200/60`}>
+                    <Text style={tw`text-[10px] font-bold text-emerald-700`}>
+                      ⚡ 10-15 Mins Express Delivery
+                    </Text>
+                    <Text style={tw`text-[10px] font-bold text-slate-400`}>
+                      • {activeOutlet.distance || 'Nearest Hub'}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 
-      {/* ── My Addresses Full Page Modal ── */}
+      {/* Full-Page Profile Addresses Modal */}
       <ProfileAddressesModal
         visible={isAddressesModalOpen}
         onClose={() => setIsAddressesModalOpen(false)}

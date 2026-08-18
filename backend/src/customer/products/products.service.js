@@ -4,10 +4,20 @@ export class CustomerProductsService {
   /**
    * Fetches real categories from the database and returns structured metadata for the customer app.
    */
-  async getCategories({ pincode } = {}) {
-    const store = await customerProductsRepository.findServingStore(pincode);
-    const storeId = store ? store.id : null;
-    const dbCategories = await customerProductsRepository.findCategoriesByStore(storeId);
+  async getCategories({ pincode, storeId } = {}) {
+    let store = null;
+    if (storeId) {
+      store = await customerProductsRepository.findStoreById(storeId);
+    }
+    if (!store && pincode) {
+      store = await customerProductsRepository.findServingStore(pincode);
+    }
+    if (!store) {
+      store = await customerProductsRepository.findServingStore();
+    }
+
+    const resolvedStoreId = store ? store.id : null;
+    const dbCategories = await customerProductsRepository.findCategoriesByStore(resolvedStoreId);
 
     const getCategoryEmoji = (name = "") => {
       const lower = name.toLowerCase();
@@ -49,8 +59,17 @@ export class CustomerProductsService {
     return formatted;
   }
 
-  async getProducts({ category = "all", pincode, q = "" } = {}) {
-    const store = await customerProductsRepository.findServingStore(pincode);
+  async getProducts({ category = "all", pincode, storeId, q = "" } = {}) {
+    let store = null;
+    if (storeId) {
+      store = await customerProductsRepository.findStoreById(storeId);
+    }
+    if (!store && pincode) {
+      store = await customerProductsRepository.findServingStore(pincode);
+    }
+    if (!store) {
+      store = await customerProductsRepository.findServingStore();
+    }
 
     if (!store) {
       return [];

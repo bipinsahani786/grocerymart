@@ -5,16 +5,26 @@ export interface ProductFilters {
   category?: string;
   search?: string;
   pincode?: string;
+  storeId?: string;
+}
+
+export interface CategoryFilters {
+  pincode?: string;
+  storeId?: string;
 }
 
 /**
  * Single Responsibility: Manages product catalog querying from the backend service.
- * Supports active pincode sourcing to evaluate inventory and out-of-stock statuses.
+ * Supports active pincode and store sourcing to evaluate inventory and category catalogs.
  */
 export class ProductService {
-  async fetchCategories(pincode?: string): Promise<Category[]> {
+  async fetchCategories(filters: CategoryFilters | string = {}): Promise<Category[]> {
+    const params = typeof filters === 'string' ? { pincode: filters } : filters;
     const response = await apiClient.get<Category[]>('/api/customer/categories', {
-      params: pincode ? { pincode } : {},
+      params: {
+        ...(params.pincode ? { pincode: params.pincode } : {}),
+        ...(params.storeId ? { storeId: params.storeId } : {}),
+      },
     });
     if (response.success && response.data) {
       return response.data;
@@ -28,6 +38,7 @@ export class ProductService {
         ...(filters.category ? { category: filters.category } : {}),
         ...(filters.search ? { search: filters.search } : {}),
         ...(filters.pincode ? { pincode: filters.pincode } : {}),
+        ...(filters.storeId ? { storeId: filters.storeId } : {}),
       },
     });
 

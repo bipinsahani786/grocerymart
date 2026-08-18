@@ -3,8 +3,8 @@ import { catchAsync } from "../../utils/catchAsync.js";
 
 export class CustomerProductsController {
   getCategories = catchAsync(async (req, res) => {
-    const { pincode } = req.query;
-    const categories = await customerProductsService.getCategories({ pincode });
+    const { pincode, storeId } = req.query;
+    const categories = await customerProductsService.getCategories({ pincode, storeId });
     res.json({
       success: true,
       data: categories,
@@ -12,8 +12,8 @@ export class CustomerProductsController {
   });
 
   getProducts = catchAsync(async (req, res) => {
-    const { category, pincode, q } = req.query;
-    const products = await customerProductsService.getProducts({ category, pincode, q });
+    const { category, pincode, storeId, q } = req.query;
+    const products = await customerProductsService.getProducts({ category, pincode, storeId, q });
     res.json({
       success: true,
       data: products,

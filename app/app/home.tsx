@@ -42,7 +42,7 @@ import tw from 'twrnc';
 function MainApp() {
   const router = useRouter();
   const { user } = useAuthContext();
-  const { fulfillmentMode, selectedStore } = useCart();
+  const { fulfillmentMode, selectedStore, pincode } = useCart();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const searchInputRef = useRef<TextInput>(null);
@@ -184,26 +184,28 @@ function MainApp() {
 
   // Derive active pincode based on fulfillment mode details
   const activePincode = fulfillmentMode === 'delivery' 
-    ? '10001' 
-    : (selectedStore?.address?.includes('10016') ? '10016' : '10001');
+    ? pincode 
+    : (selectedStore?.address ? pincode : undefined);
+  const activeStoreId = selectedStore?.id;
 
   // Query products via productService
   const { data: allFilteredProducts = [], isLoading } = useQuery({
-    queryKey: ['products', selectedCategory, debouncedSearchQuery, activePincode],
+    queryKey: ['products', selectedCategory, debouncedSearchQuery, activePincode, activeStoreId],
     queryFn: () =>
       productService.fetchProducts({ 
         category: selectedCategory, 
         search: debouncedSearchQuery, 
-        pincode: activePincode 
+        pincode: activePincode,
+        storeId: activeStoreId,
       }),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 2,
   });
 
   // Query popular products via productService
   const { data: popularProducts = [] } = useQuery({
-    queryKey: ['popular-products', activePincode],
-    queryFn: () => productService.fetchProducts({ category: 'all', pincode: activePincode }).then(list => list.filter(p => p.rating >= 4.8)),
-    staleTime: 1000 * 60 * 10,
+    queryKey: ['popular-products', activePincode, activeStoreId],
+    queryFn: () => productService.fetchProducts({ category: 'all', pincode: activePincode, storeId: activeStoreId }).then(list => list.filter(p => p.rating >= 4.8)),
+    staleTime: 1000 * 60 * 5,
   });
 
   // Infinite Scroll Pagination

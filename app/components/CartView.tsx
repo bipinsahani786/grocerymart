@@ -110,13 +110,11 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
       items: [...cart],
       pricing: { ...pricing },
       fulfillmentMode,
-      selectedStore: { ...selectedStore },
+      selectedStore: selectedStore ? { ...selectedStore } : null,
       address:
-        selectedAddress === 'home'
-          ? 'Home - Flat 402, Stellar Park, Sector 62, Noida, UP (201301)'
-          : selectedAddress === 'office'
-          ? 'Office - Stellar IT Park, Tower A, Sector 62, Noida, UP (201301)'
-          : 'Custom Address Location Selected',
+        fulfillmentMode === 'delivery'
+          ? (selectedAddress || (pincode ? `PIN: ${pincode}` : 'Location not set'))
+          : (selectedStore?.address || 'Pickup Outlet'),
       paymentMethod:
         selectedPayment === 'cod'
           ? 'Cash on Delivery (COD)'
@@ -188,14 +186,14 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
                 <Text style={tw`text-xs font-black text-slate-800 mt-0.5`} numberOfLines={1}>
                   {fulfillmentMode === 'delivery'
                     ? (selectedAddress || (pincode ? `Delivery Area (PIN: ${pincode})` : 'Location not detected'))
-                    : selectedStore.name}
+                    : (selectedStore?.name || 'Nearest Outlet')}
                 </Text>
                 <Text style={tw`text-[10px] text-slate-400 font-bold mt-0.5`} numberOfLines={1}>
                   {fulfillmentMode === 'delivery'
                     ? (selectedAddress
                       ? selectedAddress
                       : (pincode ? `PIN: ${pincode} • Tap to choose delivery address` : 'Tap to select or detect delivery address'))
-                    : selectedStore.address}
+                    : (selectedStore?.address || 'Select a pickup outlet')}
                 </Text>
               </View>
             </View>
