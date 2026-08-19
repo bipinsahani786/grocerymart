@@ -186,7 +186,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {/* Abstract Glowing Rings in Backdrop */}
               <View style={[tw`absolute rounded-full border items-center justify-center`, tw`${catTheme.ring}`, { width: 280, height: 280 }]} />
               <View style={[tw`absolute rounded-full border items-center justify-center`, tw`${catTheme.ring}`, { width: 190, height: 190 }]} />
-              <View style={[tw`absolute rounded-full blur-xl`, tw`${catTheme.glow}`, { width: 120, height: 120 }]} />
+              <View style={[tw`absolute rounded-full opacity-60`, tw`${catTheme.glow}`, { width: 120, height: 120 }]} />
 
               {/* Close float circle (Glassmorphic blur look) */}
               <TouchableOpacity

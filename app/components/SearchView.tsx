@@ -273,7 +273,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
                     key={product.id}
                     activeOpacity={0.9}
                     onPress={() => handleProductPress(product)}
-                    style={tw`flex-row bg-white rounded-3xl p-4 border border-slate-100 shadow-xs items-center`}
+                    style={tw`flex-row bg-white rounded-3xl p-4 border border-slate-200/80 items-center`}
                   >
                     {/* Left side: Premium Backdrop with Large Emoji */}
                     <View style={[tw`w-20 h-20 rounded-2xl items-center justify-center mr-4`, tw`${catTheme.bg}`]}>

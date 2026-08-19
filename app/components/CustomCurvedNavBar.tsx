@@ -62,18 +62,16 @@ export const CustomCurvedNavBar: React.FC<CustomCurvedNavBarProps> = ({
   const animatedIndex = useRef(new Animated.Value(activeIndex)).current;
   const bubbleScale = useRef(new Animated.Value(1)).current;
 
-  // Configure Android native system navigation bar color
+  // Configure Android native system navigation bar button style safely for edge-to-edge
   useEffect(() => {
     if (Platform.OS === 'android') {
       try {
-        NavigationBar.setPositionAsync('absolute');
-        NavigationBar.setBackgroundColorAsync('#00000000');
-        NavigationBar.setButtonStyleAsync('dark');
-      } catch (err) {
+        NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
+      } catch (_) {
         // Fallback for environments without navigation bar controls
       }
     }
-  }, []);
+  }, [isDark]);
 
   useEffect(() => {
     // Spring physics for active tab transition

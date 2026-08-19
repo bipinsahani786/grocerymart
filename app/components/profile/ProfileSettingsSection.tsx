@@ -90,7 +90,7 @@ export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = ({
       <TouchableOpacity
         onPress={confirmSignOut}
         activeOpacity={0.8}
-        style={tw`p-3.5 rounded-3xl bg-white border border-rose-100/80 mb-2 shadow-xs flex-row items-center justify-between`}
+        style={tw`p-3.5 rounded-3xl bg-white border border-rose-200/80 mb-2 flex-row items-center justify-between`}
       >
         <View style={tw`flex-row items-center gap-3`}>
           <View style={tw`w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100/60 items-center justify-center`}>

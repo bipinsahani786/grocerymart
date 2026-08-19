@@ -30,7 +30,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {onBack ? (
           <TouchableOpacity
             onPress={onBack}
-            style={tw`w-10 h-10 rounded-full bg-white/20 justify-center items-center backdrop-blur-md`}
+            style={tw`w-10 h-10 rounded-full bg-white/20 justify-center items-center`}
           >
             <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
           </TouchableOpacity>
@@ -40,7 +40,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <Text style={tw`text-xl font-black text-white tracking-wide`}>My Profile</Text>
         <TouchableOpacity
           onPress={onToggleEdit}
-          style={tw`w-10 h-10 rounded-full bg-white/20 justify-center items-center backdrop-blur-md`}
+          style={tw`w-10 h-10 rounded-full bg-white/20 justify-center items-center`}
         >
           <Ionicons name={isEditing ? 'close' : 'create-outline'} size={20} color="#FFFFFF" />
         </TouchableOpacity>

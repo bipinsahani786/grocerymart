@@ -184,15 +184,33 @@ export const Header: React.FC<HeaderProps> = ({
   const { data: storesList = [] } = useQuery({
     queryKey: ['backend-stores', pincode],
     queryFn: () => productService.fetchStores(pincode),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
-  const activeOutlet = storesList.length > 0 ? storesList[0] : selectedStore;
+  const activeOutlet = React.useMemo(() => {
+    if (storesList.length > 0) {
+      if (selectedStore?.id) {
+        const found = storesList.find((s: any) => s.id === selectedStore.id);
+        if (found) return found;
+      }
+      return storesList[0];
+    }
+    return selectedStore;
+  }, [storesList, selectedStore]);
 
   React.useEffect(() => {
     if (storesList.length > 0) {
-      setSelectedStore(storesList[0]);
+      if (!selectedStore) {
+        setSelectedStore(storesList[0]);
+      } else {
+        const found = storesList.find((s: any) => s.id === selectedStore.id);
+        if (found && (found.name !== selectedStore.name || found.address !== selectedStore.address)) {
+          setSelectedStore(found);
+        }
+      }
     }
-  }, [storesList]);
+  }, [storesList, selectedStore?.id]);
 
   return (
     <LinearGradient
@@ -403,7 +421,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onPress={() => handleFetchGpsLocation(true)}
                 disabled={gpsLoading}
                 activeOpacity={0.85}
-                style={tw`p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 mb-3.5 flex-row items-center justify-between shadow-2xs`}
+                style={tw`p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 mb-3.5 flex-row items-center justify-between`}
               >
                 <View style={tw`flex-row items-center gap-3 flex-1 pr-2`}>
                   <View style={tw`w-10 h-10 rounded-xl bg-emerald-600 items-center justify-center`}>
@@ -467,7 +485,7 @@ export const Header: React.FC<HeaderProps> = ({
                         onPress={() => handleSelectSavedAddress(addr)}
                         activeOpacity={0.85}
                         style={[
-                          tw`p-3.5 rounded-2xl border mb-2 flex-row items-center justify-between shadow-2xs`,
+                          tw`p-3.5 rounded-2xl border mb-2 flex-row items-center justify-between`,
                           isSelected ? tw`bg-emerald-50/40 border-emerald-600` : tw`bg-slate-50/80 border-slate-100`,
                         ]}
                       >

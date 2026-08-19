@@ -3,7 +3,7 @@ import { catchAsync } from "../../utils/catchAsync.js";
 
 export class CustomerAddressesController {
   getProfile = catchAsync(async (req, res) => {
-    const profile = await customerAddressesService.getProfile(req.user?.phone);
+    const profile = await customerAddressesService.getProfile(req.user, req.query);
     res.json({
       success: true,
       data: profile,
@@ -11,7 +11,7 @@ export class CustomerAddressesController {
   });
 
   getAddresses = catchAsync(async (req, res) => {
-    const addresses = await customerAddressesService.getAddresses(req.user?.phone);
+    const addresses = await customerAddressesService.getAddresses(req.user, req.query);
     res.json({
       success: true,
       data: addresses,
@@ -27,24 +27,21 @@ export class CustomerAddressesController {
       });
     }
 
-    const address = await customerAddressesService.addAddress(req.user?.phone, {
-      street,
-      city,
-      state,
-      zipCode,
-    });
+    const address = await customerAddressesService.addAddress(req.user, req.body);
 
     res.status(201).json({
       success: true,
+      message: "Address saved successfully.",
       data: address,
     });
   });
 
   updateAddress = catchAsync(async (req, res) => {
     const { id } = req.params;
-    const address = await customerAddressesService.updateAddress(id, req.body);
+    const address = await customerAddressesService.updateAddress(id, req.body, req.user);
     res.json({
       success: true,
+      message: "Address updated successfully.",
       data: address,
     });
   });
@@ -54,7 +51,7 @@ export class CustomerAddressesController {
     await customerAddressesService.deleteAddress(id);
     res.json({
       success: true,
-      message: "Address deleted successfully",
+      message: "Address deleted successfully.",
     });
   });
 }

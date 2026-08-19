@@ -3,16 +3,23 @@ import { Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { productService } from '../../services/product.service';
+import { useAuthContext } from '../../context/AuthContext';
 import tw from 'twrnc';
 
 interface ProfileActivityGridProps {
+  onPressOrders?: () => void;
   onPressAddresses?: () => void;
 }
 
 /**
- * Single Responsibility: 4-Card quick activity matrix (Orders, My Address, Payments, Wishlist).
+ * Single Responsibility: 4-Card quick activity matrix (My Orders, My Address, Payments, Wishlist).
  */
-export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({ onPressAddresses }) => {
+export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({
+  onPressOrders,
+  onPressAddresses,
+}) => {
+  const { user } = useAuthContext();
+
   const { data: profile } = useQuery({
     queryKey: ['customer-profile'],
     queryFn: () => productService.fetchProfile(),
@@ -23,14 +30,22 @@ export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({ onPres
     queryFn: () => productService.fetchCustomerAddresses(),
   });
 
+  const { data: ordersList = [] } = useQuery({
+    queryKey: ['customer-orders', user?.id, user?.phone],
+    queryFn: () => productService.fetchMyOrders(user?.id, user?.phone),
+  });
+
+  const totalOrdersCount = ordersList.length > 0 ? ordersList.length : (profile?.ordersCount ?? user?.totalOrders ?? 0);
+
   return (
     <View style={tw`mb-4`}>
       <Text style={tw`text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1`}>
         Activity & Orders
       </Text>
       <View style={tw`flex-row flex-wrap justify-between`}>
-        {/* Orders */}
+        {/* 1. My Orders */}
         <TouchableOpacity
+          onPress={onPressOrders}
           style={tw`w-[48.5%] p-3.5 rounded-2xl bg-white border border-slate-100 mb-3 shadow-sm`}
           activeOpacity={0.7}
         >
@@ -40,15 +55,15 @@ export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({ onPres
             </View>
             <View style={tw`px-1.5 py-0.5 rounded-md bg-emerald-100`}>
               <Text style={tw`text-[9px] font-black text-emerald-800`}>
-                {profile?.ordersCount ?? 0} Orders
+                {totalOrdersCount} Orders
               </Text>
             </View>
           </View>
-          <Text style={tw`text-xs font-black text-slate-800`}>Your Orders</Text>
+          <Text style={tw`text-xs font-black text-slate-800`}>My Orders</Text>
           <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`}>Track & reorder items</Text>
         </TouchableOpacity>
 
-        {/* My Address */}
+        {/* 2. My Address */}
         <TouchableOpacity
           onPress={onPressAddresses}
           style={tw`w-[48.5%] p-3.5 rounded-2xl bg-white border border-slate-100 mb-3 shadow-sm`}
@@ -68,7 +83,7 @@ export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({ onPres
           <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`}>Saved home & offices</Text>
         </TouchableOpacity>
 
-        {/* Payment Methods */}
+        {/* 3. Payment Methods */}
         <TouchableOpacity
           style={tw`w-[48.5%] p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm`}
           activeOpacity={0.7}
@@ -77,10 +92,10 @@ export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({ onPres
             <Ionicons name="card-outline" size={17} color="#059669" />
           </View>
           <Text style={tw`text-xs font-black text-slate-800`}>Payments</Text>
-          <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`}>UPI, Cards & NetBanking</Text>
+          <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`}>UPI, Cards & COD</Text>
         </TouchableOpacity>
 
-        {/* Wishlist */}
+        {/* 4. Wishlist */}
         <TouchableOpacity
           style={tw`w-[48.5%] p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm`}
           activeOpacity={0.7}
