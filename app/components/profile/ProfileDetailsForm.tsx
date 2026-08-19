@@ -153,7 +153,7 @@ export const ProfileDetailsForm: React.FC<ProfileDetailsFormProps> = ({
           onPress={onSave}
           disabled={loading}
           style={[
-            tw`w-full py-3 rounded-xl flex-row justify-center items-center gap-1.5 mt-3 shadow-xs`,
+            tw`w-full py-3 rounded-xl flex-row justify-center items-center gap-1.5 mt-3`,
             { backgroundColor: theme.colors.primary },
           ]}
         >

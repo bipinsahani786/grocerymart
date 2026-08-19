@@ -20,12 +20,29 @@ export class CustomerStoresController {
   });
 
   getStores = catchAsync(async (req, res) => {
-    const { pincode } = req.query;
-    const stores = await customerStoresService.getStores(pincode);
+    const { pincode, userLat, userLng } = req.query;
+    const stores = await customerStoresService.getStores(pincode, userLat, userLng);
 
     res.json({
       success: true,
       data: stores,
+    });
+  });
+
+  getDeliveryConfig = catchAsync(async (req, res) => {
+    const { storeId, pincode, distanceKm, subtotal, userLat, userLng } = req.query;
+    const config = await customerStoresService.getDeliveryConfig({
+      storeId,
+      pincode,
+      distanceKm,
+      subtotal,
+      userLat,
+      userLng,
+    });
+
+    res.json({
+      success: true,
+      data: config,
     });
   });
 }

@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCart, StoreLocation } from '../context/CartContext';
+import { productService, Coupon } from '../services/product.service';
 import { CartHeader } from './cart/CartHeader';
 import { CartDeliveryBanner } from './cart/CartDeliveryBanner';
 import { CartItemList } from './cart/CartItemList';
@@ -14,6 +17,7 @@ import { CartCheckoutFooter } from './cart/CartCheckoutFooter';
 import { CheckoutAddressSection } from './cart/CheckoutAddressSection';
 import { CheckoutPaymentSection } from './cart/CheckoutPaymentSection';
 import { CheckoutSuccessSection } from './cart/CheckoutSuccessSection';
+import { useAuthContext } from '../context/AuthContext';
 import tw from 'twrnc';
 
 interface CartViewProps {
@@ -21,43 +25,9 @@ interface CartViewProps {
   onBack?: () => void;
 }
 
-// Stores catalog segmented by pincodes
-const STORES_DATABASE: Record<string, StoreLocation[]> = {
-  primary: [
-    {
-      id: 's1',
-      name: 'GroceryMart - Downtown Flagship',
-      address: 'Shop 14, Central Market, Connaught Place (10001)',
-      distance: '1.2 km away',
-      readyTime: 'Ready in 10 mins',
-    },
-    {
-      id: 's2',
-      name: 'GroceryMart - Green Park Express',
-      address: 'Plot 22, Main Market, Green Park (10016)',
-      distance: '2.8 km away',
-      readyTime: 'Ready in 15 mins',
-    },
-  ],
-  secondary: [
-    {
-      id: 's3',
-      name: 'GroceryMart - West Side Depot',
-      address: '88 Ninth Ave, New York (10011)',
-      distance: '3.5 km away',
-      readyTime: 'Ready in 20 mins',
-    },
-    {
-      id: 's4',
-      name: 'GroceryMart - Brooklyn Fresh Hub',
-      address: '300 Cadman Plaza, Brooklyn (11201)',
-      distance: '6.2 km away',
-      readyTime: 'Ready in 25 mins',
-    },
-  ],
-};
-
 export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
+  const insets = useSafeAreaInsets();
+  const { user } = useAuthContext();
   const {
     cart,
     addToCart,
@@ -72,6 +42,10 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
     setPincode,
     selectedAddress,
     setSelectedAddress,
+    deliveryConfig,
+    appliedCoupon,
+    appliedDiscount,
+    refreshDeliveryConfig,
   } = useCart();
 
   // Wizard steps: 'cart' -> 'address' -> 'payment' -> 'success'
@@ -79,20 +53,74 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
   const [selectedPayment, setSelectedPayment] = useState<'cod' | 'wallet' | 'upi' | 'card'>('cod');
   const [orderId, setOrderId] = useState('');
   const [finalSummary, setFinalSummary] = useState<any>(null);
-  
-  // Promo state variables to satisfy CartPromoCode props
-  const [discountAmount, setDiscountAmount] = useState(35);
-  const handleApplyPromo = (code: string) => {
-    // Simply sets discount for mock demonstration
-    setDiscountAmount(35);
-  };
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+  // Backend fetched coupons and stores
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
+  const [fetchedStores, setFetchedStores] = useState<StoreLocation[]>([]);
+
+  // Fetch available coupons from backend
+  useEffect(() => {
+    let isMounted = true;
+    const loadCoupons = async () => {
+      setIsLoadingCoupons(true);
+      try {
+        const data = await productService.fetchCoupons(selectedStore?.id, pincode);
+        if (isMounted) {
+          setCoupons(data);
+        }
+      } catch (err) {
+        console.warn('Failed to load coupons:', err);
+      } finally {
+        if (isMounted) setIsLoadingCoupons(false);
+      }
+    };
+
+    loadCoupons();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedStore?.id, pincode]);
+
+  // Fetch stores and sync live delivery configuration from backend
+  useEffect(() => {
+    let isMounted = true;
+    const loadStores = async () => {
+      try {
+        const stores = await productService.fetchStores(pincode);
+        if (isMounted && stores.length > 0) {
+          setFetchedStores(stores);
+          if (!selectedStore) {
+            setSelectedStore(stores[0]);
+          } else {
+            const matched = stores.find((s) => s.id === selectedStore.id);
+            if (matched) {
+              setSelectedStore(matched);
+            }
+          }
+        }
+        await refreshDeliveryConfig();
+      } catch (err) {
+        console.warn('Failed to load backend stores / delivery config:', err);
+      }
+    };
+
+    loadStores();
+    return () => {
+      isMounted = false;
+    };
+  }, [pincode, selectedStore?.id]);
 
   // Filter stores according to input pincode
   const getStoresForPincode = () => {
-    if (!pincode || pincode.trim().startsWith('1')) {
-      return STORES_DATABASE.primary;
+    if (fetchedStores.length > 0) {
+      return fetchedStores;
     }
-    return STORES_DATABASE.secondary;
+    if (selectedStore) {
+      return [selectedStore];
+    }
+    return [];
   };
 
   const activeStores = getStoresForPincode();
@@ -101,9 +129,46 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
     setCheckoutStep('address');
   };
 
-  const handlePlaceOrder = () => {
-    const mockOrderId = 'GM-' + Math.floor(100000 + Math.random() * 900000);
-    setOrderId(mockOrderId);
+  const handlePlaceOrder = async () => {
+    setIsPlacingOrder(true);
+    let finalOrderId = 'ORD-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+
+    try {
+      // Connect and save each & every detail directly into backend Order table with User ID
+      const orderPayload = {
+        customerId: user?.id,
+        userPhone: user?.phone,
+        userEmail: user?.email,
+        storeId: selectedStore?.id,
+        deliveryAddress: selectedAddress || (pincode ? `PIN: ${pincode}` : 'Store pickup point'),
+        fulfillmentMode,
+        items: cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          weight: item.weight,
+        })),
+        subtotal: pricing.subtotal,
+        discount: appliedDiscount,
+        discountReason: appliedCoupon?.code || '',
+        taxAmount: pricing.tax,
+        deliveryFee: fulfillmentMode === 'pickup' ? 0 : pricing.deliveryFee,
+        totalAmount: pricing.grandTotal,
+        paymentMethod: selectedPayment,
+      };
+
+      const response = await productService.createOrder(orderPayload);
+      if (response && response.data) {
+        finalOrderId = response.data.orderNumber || response.data.id || finalOrderId;
+      }
+    } catch (err) {
+      console.warn('Backend order placement sync notice:', err);
+    } finally {
+      setIsPlacingOrder(false);
+    }
+
+    setOrderId(finalOrderId);
 
     // Freeze details in memory before resetting cart
     setFinalSummary({
@@ -117,7 +182,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
           : (selectedStore?.address || 'Pickup Outlet'),
       paymentMethod:
         selectedPayment === 'cod'
-          ? 'Cash on Delivery (COD)'
+          ? (fulfillmentMode === 'delivery' ? 'Cash on Delivery (COD)' : 'Pay at Counter')
           : selectedPayment === 'wallet'
           ? 'Wallet Balance (Paid)'
           : selectedPayment === 'upi'
@@ -135,20 +200,38 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
     if (onShopMore) onShopMore();
   };
 
-  // Render a clean customized Header for checkout sub-wizard steps
-  const renderCheckoutHeader = (title: string, showBack = true, backStep: typeof checkoutStep = 'cart') => (
-    <View style={tw`pt-14 pb-4 px-5 bg-white border-b border-slate-100 flex-row items-center shadow-sm`}>
+  // Render a clean customized Header for checkout sub-wizard steps with rich green theme
+  const renderCheckoutHeader = (
+    title: string,
+    subtitle?: string,
+    showBack = true,
+    backStep: typeof checkoutStep = 'cart'
+  ) => (
+    <LinearGradient
+      colors={['#064E3B', '#047857', '#059669']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={[
+        tw`pb-4.5 px-5 flex-row items-center`,
+        { paddingTop: Math.max(insets.top, 14) + 8 },
+      ]}
+    >
       {showBack && (
         <TouchableOpacity
           onPress={() => setCheckoutStep(backStep)}
-          style={tw`w-10 h-10 rounded-full bg-slate-50 border border-slate-100 justify-center items-center mr-3`}
+          style={tw`w-9 h-9 rounded-full bg-white/20 border border-white/20 justify-center items-center mr-3`}
           activeOpacity={0.8}
         >
-          <Ionicons name="arrow-back" size={20} color="#1E293B" />
+          <Ionicons name="arrow-back" size={19} color="#FFFFFF" />
         </TouchableOpacity>
       )}
-      <Text style={tw`text-lg font-black text-slate-800`}>{title}</Text>
-    </View>
+      <View style={tw`flex-1`}>
+        <Text style={tw`text-lg font-black text-white tracking-tight`}>{title}</Text>
+        {subtitle ? (
+          <Text style={tw`text-[11px] font-bold text-emerald-100 mt-0.5`}>{subtitle}</Text>
+        ) : null}
+      </View>
+    </LinearGradient>
   );
 
   // ── STEP A: Main Cart Basket View ──
@@ -158,54 +241,49 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
     }
 
     return (
-      <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="dark" />
+      <View style={tw`flex-1 bg-slate-100/60`}>
+        <StatusBar style="light" translucent />
         <CartHeader totalItems={totalItems} onClear={clearCart} onBack={onBack} />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`pb-72`}>
+          {/* 1. Fulfillment Mode & Destination Strip + Free Delivery Meter */}
           <CartDeliveryBanner subtotal={pricing.subtotal} onChangeLocation={() => setCheckoutStep('address')} />
 
-          {/* ── Dynamic Address & Store Location Change Card ── */}
-          <TouchableOpacity
-            onPress={() => setCheckoutStep('address')}
-            activeOpacity={0.9}
-            style={tw`mx-4 mb-4 bg-white rounded-3xl p-4.5 border border-slate-100/80 shadow-sm flex-row justify-between items-center`}
-          >
-            <View style={tw`flex-row items-center gap-3.5 flex-1 pr-4`}>
-              <View style={tw`w-11 h-11 bg-emerald-50 rounded-2xl items-center justify-center`}>
-                <Ionicons
-                  name={fulfillmentMode === 'delivery' ? 'location' : 'storefront'}
-                  size={20}
-                  color="#059669"
-                />
-              </View>
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider`}>
-                  {fulfillmentMode === 'delivery' ? 'Delivering to Address' : 'Takeaway Counter Store'}
-                </Text>
-                <Text style={tw`text-xs font-black text-slate-800 mt-0.5`} numberOfLines={1}>
-                  {fulfillmentMode === 'delivery'
-                    ? (selectedAddress || (pincode ? `Delivery Area (PIN: ${pincode})` : 'Location not detected'))
-                    : (selectedStore?.name || 'Nearest Outlet')}
-                </Text>
-                <Text style={tw`text-[10px] text-slate-400 font-bold mt-0.5`} numberOfLines={1}>
-                  {fulfillmentMode === 'delivery'
-                    ? (selectedAddress
-                      ? selectedAddress
-                      : (pincode ? `PIN: ${pincode} • Tap to choose delivery address` : 'Tap to select or detect delivery address'))
-                    : (selectedStore?.address || 'Select a pickup outlet')}
-                </Text>
-              </View>
-            </View>
-            <View style={tw`px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100`}>
-              <Text style={tw`text-[9px] font-black text-emerald-700 uppercase tracking-wider`}>Change</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={tw`h-2.5 bg-slate-100/80`} />
 
-          <CartItemList items={cart} onAdd={addToCart} onRemove={removeFromCart} />
-          <CartPromoCode discountAmount={discountAmount} onApplyPromo={handleApplyPromo} />
+          {/* 2. Items List on Unified Clean Surface */}
+          <CartItemList
+            items={cart}
+            onAdd={addToCart}
+            onRemove={removeFromCart}
+            onAddMore={onShopMore}
+          />
+
+          <View style={tw`h-2.5 bg-slate-100/80`} />
+
+          {/* 3. Offers & Coupons 1-Tap Strip */}
+          <CartPromoCode coupons={coupons} isLoadingCoupons={isLoadingCoupons} />
+
+          <View style={tw`h-2.5 bg-slate-100/80`} />
+
+          {/* 4. Delivery Preferences / Pickup Guidance */}
           <CartDeliveryNotes />
+
+          <View style={tw`h-2.5 bg-slate-100/80`} />
+
+          {/* 5. Bill Summary Receipt Breakdown */}
           <CartBillSummary pricing={pricing} />
+
+          {/* 6. Trust & Cancellation Reassurance */}
+          <View style={tw`p-4 py-5 items-center justify-center bg-slate-50`}>
+            <View style={tw`flex-row items-center gap-1.5 mb-1`}>
+              <Ionicons name="shield-checkmark" size={14} color="#059669" />
+              <Text style={tw`text-[11px] font-black text-slate-700`}>100% Genuine & Fresh Products</Text>
+            </View>
+            <Text style={tw`text-[10px] text-slate-400 text-center font-medium px-4`}>
+              Cancellation policy: Orders can be cancelled until the store starts packing.
+            </Text>
+          </View>
         </ScrollView>
 
         <CartCheckoutFooter
@@ -221,8 +299,8 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
   if (checkoutStep === 'address') {
     return (
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="dark" />
-        {renderCheckoutHeader('Select Delivery/Store', true, 'cart')}
+        <StatusBar style="light" translucent />
+        {renderCheckoutHeader('Select Store / Address', 'Choose delivery location or pickup outlet', true, 'cart')}
         <CheckoutAddressSection
           fulfillmentMode={fulfillmentMode}
           selectedAddress={selectedAddress}
@@ -243,8 +321,8 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
   if (checkoutStep === 'payment') {
     return (
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="dark" />
-        {renderCheckoutHeader('Choose Payment', true, 'address')}
+        <StatusBar style="light" translucent />
+        {renderCheckoutHeader('Choose Payment', 'Select your preferred payment method', true, 'address')}
         <CheckoutPaymentSection
           fulfillmentMode={fulfillmentMode}
           selectedAddress={selectedAddress}
@@ -262,8 +340,8 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
   if (checkoutStep === 'success' && finalSummary) {
     return (
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="dark" />
-        {renderCheckoutHeader('Order Confirmed!', false)}
+        <StatusBar style="light" translucent />
+        {renderCheckoutHeader('Order Confirmed!', 'Receipt & delivery tracking', false)}
         <CheckoutSuccessSection
           orderId={orderId}
           finalSummary={finalSummary}

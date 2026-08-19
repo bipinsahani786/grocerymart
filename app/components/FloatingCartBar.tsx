@@ -104,7 +104,7 @@ export const FloatingCartBar: React.FC<FloatingCartBarProps> = ({
                 </Text>
               </View>
               <Text style={tw`text-[10px] font-medium text-white/80`}>
-                {pricing.isFreeDelivery ? '🎉 FREE Delivery applied' : '⚡ 12-15 Mins Delivery'}
+                {pricing.isFreeDelivery ? '🎉 FREE Delivery unlocked' : `⚡ Express Delivery: ₹${pricing.deliveryFee.toFixed(0)}`}
               </Text>
             </View>
           </View>

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Text, View, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../constants/theme';
 import tw from 'twrnc';
 
@@ -11,9 +13,12 @@ interface CartHeaderProps {
 }
 
 /**
- * Single Responsibility: Top cart header with navigation, active item counter, and clear basket action.
+ * Single Responsibility: Theme-adapted top cart header with green background,
+ * status bar insets, active item counter, and clear basket action.
  */
 export const CartHeader: React.FC<CartHeaderProps> = ({ totalItems, onClear, onBack }) => {
+  const insets = useSafeAreaInsets();
+
   const confirmClear = () => {
     Alert.alert(
       'Clear Cart',
@@ -26,21 +31,30 @@ export const CartHeader: React.FC<CartHeaderProps> = ({ totalItems, onClear, onB
   };
 
   return (
-    <View style={tw`pt-14 pb-4 px-5 bg-white border-b border-slate-100 flex-row justify-between items-center shadow-sm`}>
+    <LinearGradient
+      colors={['#064E3B', '#047857', '#059669']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={[
+        tw`pb-4.5 px-5 flex-row justify-between items-center`,
+        { paddingTop: Math.max(insets.top, 14) + 8 },
+      ]}
+    >
       <View style={tw`flex-row items-center gap-3`}>
         {onBack && (
           <TouchableOpacity
             onPress={onBack}
-            style={tw`w-9 h-9 rounded-full bg-slate-50 border border-slate-100 justify-center items-center`}
+            activeOpacity={0.8}
+            style={tw`w-9 h-9 rounded-full bg-white/20 border border-white/20 justify-center items-center`}
           >
-            <Ionicons name="arrow-back" size={19} color="#1E293B" />
+            <Ionicons name="arrow-back" size={19} color="#FFFFFF" />
           </TouchableOpacity>
         )}
         <View>
-          <Text style={[tw`text-xl font-black tracking-tight`, { color: theme.colors.text }]}>
+          <Text style={tw`text-xl font-black tracking-tight text-white`}>
             My Basket
           </Text>
-          <Text style={[tw`text-[11px] font-bold mt-0.5`, { color: theme.colors.textMuted }]}>
+          <Text style={tw`text-[11px] font-bold text-emerald-100 mt-0.5`}>
             {totalItems} {totalItems === 1 ? 'item' : 'items'} in your cart
           </Text>
         </View>
@@ -49,13 +63,13 @@ export const CartHeader: React.FC<CartHeaderProps> = ({ totalItems, onClear, onB
       {totalItems > 0 && (
         <TouchableOpacity
           onPress={confirmClear}
-          style={tw`px-3 py-1.5 rounded-full bg-rose-50 border border-rose-100/80 flex-row items-center gap-1`}
-          activeOpacity={0.7}
+          style={tw`px-3 py-1.5 rounded-full bg-white/20 border border-white/30 flex-row items-center gap-1`}
+          activeOpacity={0.75}
         >
-          <Ionicons name="trash-outline" size={13} color="#E11D48" />
-          <Text style={tw`text-[11px] font-bold text-rose-600`}>Clear</Text>
+          <Ionicons name="trash-outline" size={13} color="#FFFFFF" />
+          <Text style={tw`text-[11px] font-black text-white uppercase tracking-wider`}>Clear</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </LinearGradient>
   );
 };
