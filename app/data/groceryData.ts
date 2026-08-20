@@ -4,6 +4,7 @@ export interface Category {
   emoji?: string;
   slug?: string;
   image?: string | null;
+  imageUrl?: string | null;
   itemCount?: number;
 }
 
@@ -14,7 +15,10 @@ export interface Product {
   price: number;
   mrp?: number;
   weight: string;
-  emoji: string;
+  emoji?: string;
+  image?: string | null;
+  imageUrl?: string | null;
+  imageUrls?: string[];
   rating: number;
   description: string;
   outOfStock?: boolean;

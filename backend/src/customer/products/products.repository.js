@@ -89,6 +89,52 @@ export class CustomerProductsRepository {
    * Fetches active products for a store with category and inventory relations.
    */
   async findProductsByStore(storeId, category = "all", searchQuery = "") {
+    let categoryFilter = {};
+    if (category && category !== "all") {
+      const cleanCat = category.trim().toLowerCase();
+      const searchWords = cleanCat.split(/[-_\s&]+/).filter(w => w.length > 2);
+      
+      categoryFilter = {
+        OR: [
+          { categoryId: category },
+          {
+            category: {
+              OR: [
+                { name: { contains: cleanCat, mode: "insensitive" } },
+                ...searchWords.map((word) => ({
+                  name: { contains: word, mode: "insensitive" },
+                })),
+                ...(cleanCat.includes("fresh") || cleanCat.includes("fruit") || cleanCat.includes("veg")
+                  ? [
+                      { name: { contains: "fruit", mode: "insensitive" } },
+                      { name: { contains: "vegetable", mode: "insensitive" } },
+                    ]
+                  : []),
+                ...(cleanCat.includes("dairy") || cleanCat.includes("milk") || cleanCat.includes("egg")
+                  ? [
+                      { name: { contains: "dairy", mode: "insensitive" } },
+                      { name: { contains: "egg", mode: "insensitive" } },
+                    ]
+                  : []),
+                ...(cleanCat.includes("snack") || cleanCat.includes("namkeen")
+                  ? [
+                      { name: { contains: "snack", mode: "insensitive" } },
+                      { name: { contains: "namkeen", mode: "insensitive" } },
+                    ]
+                  : []),
+                ...(cleanCat.includes("clean") || cleanCat.includes("household")
+                  ? [
+                      { name: { contains: "clean", mode: "insensitive" } },
+                      { name: { contains: "household", mode: "insensitive" } },
+                    ]
+                  : []),
+              ],
+            },
+          },
+        ],
+      };
+    }
+
     return await prisma.product.findMany({
       where: {
         storeId,
@@ -103,18 +149,7 @@ export class CustomerProductsRepository {
               ],
             }
           : {}),
-        ...(category && category !== "all"
-          ? {
-              OR: [
-                { categoryId: category },
-                {
-                  category: {
-                    name: { contains: category, mode: "insensitive" },
-                  },
-                },
-              ],
-            }
-          : {}),
+        ...categoryFilter,
       },
       include: {
         category: true,

@@ -358,7 +358,7 @@ function MainApp() {
                     data={popularProducts.length > 0 ? popularProducts : allFilteredProducts.slice(0, 5)}
                     keyExtractor={(item) => `pop-${item.id}`}
                     renderItem={({ item }) => (
-                      <View style={[tw`ml-4`, { width: 160 }]}>
+                      <View style={[tw`ml-4`, { width: 172 }]}>
                         <ProductCard product={item} onPress={handleProductPress} />
                       </View>
                     )}
@@ -413,8 +413,8 @@ function MainApp() {
                   <>
                     <View style={tw`flex-row flex-wrap justify-between`}>
                       {displayedProducts.map((product) => (
-                        <View key={product.id} style={{ width: '23.8%', marginBottom: 8 }}>
-                          <ProductCard product={product} isMini={true} onPress={handleProductPress} />
+                        <View key={product.id} style={{ width: '48.5%', marginBottom: 12 }}>
+                          <ProductCard product={product} onPress={handleProductPress} />
                         </View>
                       ))}
                     </View>

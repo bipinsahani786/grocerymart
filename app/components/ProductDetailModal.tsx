@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ScrollView, Platform, Dimensions, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Product } from '../data/groceryData';
@@ -7,6 +7,7 @@ import { productService } from '../services/product.service';
 import { ProductCard } from './ProductCard';
 import { FloatingCartBar } from './FloatingCartBar';
 import { useCart } from '../context/CartContext';
+import { resolveImageUrl } from '../utils/image';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -32,6 +33,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const { cart, addToCart, removeFromCart, pincode } = useCart();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const scrollViewRef = useRef<ScrollView>(null);
+  const productImage = resolveImageUrl(product?.image || product?.imageUrl);
 
   // Scroll to top and reset tab when product ID changes
   useEffect(() => {
@@ -211,14 +213,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <Ionicons name="heart" size={21} color="#E11D48" />
               </TouchableOpacity>
 
-              {/* Central high resolution emoji */}
-              <Text style={{ fontSize: 135 }}>{product.emoji}</Text>
+              {/* Central real image or blank */}
+              {productImage ? (
+                <Image
+                  source={{ uri: productImage }}
+                  style={tw`w-full h-full`}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={tw`w-full h-full bg-slate-50`} />
+              )}
 
               {/* Floating detail tag overlays */}
               <View style={tw`absolute bottom-5 flex-row gap-2`}>
                 <View style={tw`px-3 py-1.5 rounded-full bg-white border border-slate-100 shadow-sm flex-row items-center gap-1`}>
                   <Ionicons name="star" size={12} color="#F59E0B" />
-                  <Text style={tw`text-[10px] font-black text-slate-800`}>{product.rating} (120+ reviews)</Text>
+                  <Text style={tw`text-[10px] font-black text-slate-800`}>{Number(product.rating || 4.5).toFixed(1)} (120+ reviews)</Text>
                 </View>
                 <View style={tw`px-3 py-1.5 rounded-full bg-white border border-slate-100 shadow-sm flex-row items-center gap-1`}>
                   <Ionicons name="shield-checkmark" size={12} color="#059669" />

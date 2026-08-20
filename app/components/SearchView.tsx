@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Keyboard, TextInput, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Keyboard, TextInput, Platform, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +12,7 @@ import { productService } from '../services/product.service';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCart } from '../context/CartContext';
+import { resolveImageUrl } from '../utils/image';
 import tw from 'twrnc';
 
 interface SearchViewProps {
@@ -275,9 +276,17 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
                     onPress={() => handleProductPress(product)}
                     style={tw`flex-row bg-white rounded-3xl p-4 border border-slate-200/80 items-center`}
                   >
-                    {/* Left side: Premium Backdrop with Large Emoji */}
-                    <View style={[tw`w-20 h-20 rounded-2xl items-center justify-center mr-4`, tw`${catTheme.bg}`]}>
-                      <Text style={{ fontSize: 38 }}>{product.emoji}</Text>
+                    {/* Left side: Premium Backdrop with Real Image or Blank */}
+                    <View style={[tw`w-20 h-20 rounded-2xl items-center justify-center mr-4 overflow-hidden border border-slate-100/80`, tw`${catTheme.bg}`]}>
+                      {resolveImageUrl(product.image || product.imageUrl) ? (
+                        <Image
+                          source={{ uri: resolveImageUrl(product.image || product.imageUrl)! }}
+                          style={tw`w-full h-full`}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <View style={tw`w-full h-full bg-slate-50`} />
+                      )}
                     </View>
 
                     {/* Center side: Product Details */}
@@ -299,7 +308,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
                       {/* Stars Rating and Reviews */}
                       <View style={tw`flex-row items-center mt-1.5`}>
                         <Ionicons name="star" size={11} color="#F59E0B" />
-                        <Text style={tw`text-[10px] font-black text-slate-700 ml-1`}>{product.rating}</Text>
+                        <Text style={tw`text-[10px] font-black text-slate-700 ml-1`}>{Number(product.rating || 4.5).toFixed(1)}</Text>
                         <Text style={tw`text-[10px] text-slate-400 font-bold ml-1.5`}>(120+ ratings)</Text>
                       </View>
                     </View>

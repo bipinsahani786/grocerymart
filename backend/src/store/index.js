@@ -16,11 +16,15 @@ import subscriptionsRoutes from "./subscriptions/subscriptions.routes.js";
 import purchasesRoutes from "./purchases/purchases.routes.js";
 
 import { dashboardController } from "./dashboard/dashboard.controller.js";
+import { uploadMemoryMiddleware } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
 // Apply auth verification middleware to all store panel endpoints
 router.use(verifyToken);
+
+// Mount upload endpoint for Store Manager (inventory & category images)
+router.post("/upload", uploadMemoryMiddleware.single("file"), dashboardController.uploadImage);
 
 // Mount feature-based sub-routers
 router.use("/dashboard", dashboardRoutes);

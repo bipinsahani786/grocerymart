@@ -72,19 +72,28 @@ async function main() {
   // 3. MASTER CATEGORIES
   // ──────────────────────────────────────────────
   console.log("\n📂 Seeding Master Categories...");
-  const masterCategoryNames = [
-    "Fruits & Vegetables", "Dairy & Eggs", "Bakery & Bread",
-    "Beverages", "Snacks & Namkeen", "Staples & Grains",
-    "Personal Care", "Household Cleaning", "Frozen Foods",
-    "Meat & Seafood", "Health & Wellness", "Baby Care",
+  const masterCategoriesData = [
+    { name: "Fruits & Vegetables", imageUrl: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=400" },
+    { name: "Dairy & Eggs", imageUrl: "https://images.unsplash.com/photo-1528750997573-59b89d56f4f7?auto=format&fit=crop&q=80&w=400" },
+    { name: "Bakery & Bread", imageUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400" },
+    { name: "Beverages", imageUrl: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&q=80&w=400" },
+    { name: "Snacks & Namkeen", imageUrl: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&q=80&w=400" },
+    { name: "Staples & Grains", imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400" },
+    { name: "Personal Care", imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=400" },
+    { name: "Household Cleaning", imageUrl: "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&q=80&w=400" },
+    { name: "Frozen Foods", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=400" },
+    { name: "Meat & Seafood", imageUrl: "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&q=80&w=400" },
+    { name: "Health & Wellness", imageUrl: "https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?auto=format&fit=crop&q=80&w=400" },
+    { name: "Baby Care", imageUrl: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&q=80&w=400" },
   ];
 
   const masterCatMap = {};
-  for (const name of masterCategoryNames) {
+  for (let i = 0; i < masterCategoriesData.length; i++) {
+    const { name, imageUrl } = masterCategoriesData[i];
     const cat = await prisma.masterCategory.upsert({
       where: { name },
-      update: {},
-      create: { name, sortOrder: masterCategoryNames.indexOf(name) },
+      update: { imageUrl, sortOrder: i },
+      create: { name, imageUrl, sortOrder: i },
     });
     masterCatMap[name] = cat.id;
     console.log(`   ✅ ${name}`);
@@ -96,37 +105,37 @@ async function main() {
   console.log("\n📦 Seeding Master Catalog Products...");
   const masterProducts = [
     // Fruits & Vegetables
-    { name: "Fresh Tomatoes", sku: "MP-VEG-001", barcode: "8901234567001", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "kg", basePrice: 40, mrp: 50, taxClass: "GST 5%" },
-    { name: "Onions", sku: "MP-VEG-002", barcode: "8901234567002", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "kg", basePrice: 30, mrp: 40, taxClass: "GST 5%" },
-    { name: "Potatoes", sku: "MP-VEG-003", barcode: "8901234567003", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "kg", basePrice: 25, mrp: 35, taxClass: "GST 5%" },
-    { name: "Bananas (Dozen)", sku: "MP-FRT-001", barcode: "8901234567004", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "dozen", basePrice: 50, mrp: 60, taxClass: "GST 5%" },
+    { name: "Fresh Tomatoes", sku: "MP-VEG-001", barcode: "8901234567001", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "kg", basePrice: 40, mrp: 50, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Onions", sku: "MP-VEG-002", barcode: "8901234567002", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "kg", basePrice: 30, mrp: 40, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Potatoes", sku: "MP-VEG-003", barcode: "8901234567003", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "kg", basePrice: 25, mrp: 35, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Bananas (Dozen)", sku: "MP-FRT-001", barcode: "8901234567004", brand: "Farm Fresh", categoryId: masterCatMap["Fruits & Vegetables"], unit: "dozen", basePrice: 50, mrp: 60, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&q=80&w=500"] },
     // Dairy
-    { name: "Amul Full Cream Milk 1L", sku: "MP-DAIRY-001", barcode: "8901050000018", brand: "Amul", categoryId: masterCatMap["Dairy & Eggs"], unit: "ltr", basePrice: 62, mrp: 66, taxClass: "GST 5%" },
-    { name: "Amul Butter 500g", sku: "MP-DAIRY-002", barcode: "8901050000025", brand: "Amul", categoryId: masterCatMap["Dairy & Eggs"], unit: "pack", basePrice: 240, mrp: 265, taxClass: "GST 12%" },
-    { name: "Eggs (Tray 30pcs)", sku: "MP-DAIRY-003", barcode: "8901234567008", brand: "Country Fresh", categoryId: masterCatMap["Dairy & Eggs"], unit: "tray", basePrice: 175, mrp: 200, taxClass: "GST 0%" },
+    { name: "Amul Full Cream Milk 1L", sku: "MP-DAIRY-001", barcode: "8901050000018", brand: "Amul", categoryId: masterCatMap["Dairy & Eggs"], unit: "ltr", basePrice: 62, mrp: 66, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Amul Butter 500g", sku: "MP-DAIRY-002", barcode: "8901050000025", brand: "Amul", categoryId: masterCatMap["Dairy & Eggs"], unit: "pack", basePrice: 240, mrp: 265, taxClass: "GST 12%", imageUrls: ["https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Eggs (Tray 30pcs)", sku: "MP-DAIRY-003", barcode: "8901234567008", brand: "Country Fresh", categoryId: masterCatMap["Dairy & Eggs"], unit: "tray", basePrice: 175, mrp: 200, taxClass: "GST 0%", imageUrls: ["https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&q=80&w=500"] },
     // Beverages
-    { name: "Bisleri Water 1L", sku: "MP-BEV-001", barcode: "8901234567010", brand: "Bisleri", categoryId: masterCatMap["Beverages"], unit: "pcs", basePrice: 18, mrp: 20, taxClass: "GST 18%" },
-    { name: "Coca Cola 600ml", sku: "MP-BEV-002", barcode: "8901234567011", brand: "Coca Cola", categoryId: masterCatMap["Beverages"], unit: "pcs", basePrice: 38, mrp: 40, taxClass: "GST 28%" },
-    { name: "Tata Tea Gold 500g", sku: "MP-BEV-003", barcode: "8901234567012", brand: "Tata", categoryId: masterCatMap["Beverages"], unit: "pack", basePrice: 210, mrp: 240, taxClass: "GST 5%" },
+    { name: "Bisleri Water 1L", sku: "MP-BEV-001", barcode: "8901234567010", brand: "Bisleri", categoryId: masterCatMap["Beverages"], unit: "pcs", basePrice: 18, mrp: 20, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1560023907-5f339617ea30?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Coca Cola 600ml", sku: "MP-BEV-002", barcode: "8901234567011", brand: "Coca Cola", categoryId: masterCatMap["Beverages"], unit: "pcs", basePrice: 38, mrp: 40, taxClass: "GST 28%", imageUrls: ["https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Tata Tea Gold 500g", sku: "MP-BEV-003", barcode: "8901234567012", brand: "Tata", categoryId: masterCatMap["Beverages"], unit: "pack", basePrice: 210, mrp: 240, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=500"] },
     // Snacks
-    { name: "Lay's Classic Salted 50g", sku: "MP-SNK-001", barcode: "8901234567013", brand: "Lay's", categoryId: masterCatMap["Snacks & Namkeen"], unit: "pcs", basePrice: 20, mrp: 20, taxClass: "GST 12%" },
-    { name: "Bikano Khatta Meetha 400g", sku: "MP-SNK-002", barcode: "8901234567014", brand: "Bikano", categoryId: masterCatMap["Snacks & Namkeen"], unit: "pack", basePrice: 80, mrp: 90, taxClass: "GST 12%" },
+    { name: "Lay's Classic Salted 50g", sku: "MP-SNK-001", barcode: "8901234567013", brand: "Lay's", categoryId: masterCatMap["Snacks & Namkeen"], unit: "pcs", basePrice: 20, mrp: 20, taxClass: "GST 12%", imageUrls: ["https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Bikano Khatta Meetha 400g", sku: "MP-SNK-002", barcode: "8901234567014", brand: "Bikano", categoryId: masterCatMap["Snacks & Namkeen"], unit: "pack", basePrice: 80, mrp: 90, taxClass: "GST 12%", imageUrls: ["https://images.unsplash.com/photo-1599490659213-e2b9527bd087?auto=format&fit=crop&q=80&w=500"] },
     // Staples
-    { name: "India Gate Basmati Rice 5kg", sku: "MP-STA-001", barcode: "8901234567015", brand: "India Gate", categoryId: masterCatMap["Staples & Grains"], unit: "pack", basePrice: 380, mrp: 420, taxClass: "GST 5%" },
-    { name: "Aashirvaad Atta 5kg", sku: "MP-STA-002", barcode: "8901234567016", brand: "Aashirvaad", categoryId: masterCatMap["Staples & Grains"], unit: "pack", basePrice: 230, mrp: 265, taxClass: "GST 0%" },
-    { name: "Toor Dal 1kg", sku: "MP-STA-003", barcode: "8901234567017", brand: "Local Brand", categoryId: masterCatMap["Staples & Grains"], unit: "kg", basePrice: 120, mrp: 140, taxClass: "GST 5%" },
+    { name: "India Gate Basmati Rice 5kg", sku: "MP-STA-001", barcode: "8901234567015", brand: "India Gate", categoryId: masterCatMap["Staples & Grains"], unit: "pack", basePrice: 380, mrp: 420, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Aashirvaad Atta 5kg", sku: "MP-STA-002", barcode: "8901234567016", brand: "Aashirvaad", categoryId: masterCatMap["Staples & Grains"], unit: "pack", basePrice: 230, mrp: 265, taxClass: "GST 0%", imageUrls: ["https://images.unsplash.com/photo-1607672632458-9eb56696346b?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Toor Dal 1kg", sku: "MP-STA-003", barcode: "8901234567017", brand: "Local Brand", categoryId: masterCatMap["Staples & Grains"], unit: "kg", basePrice: 120, mrp: 140, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1585994192701-f1a505c8574a?auto=format&fit=crop&q=80&w=500"] },
     // Personal Care
-    { name: "Dove Soap 100g", sku: "MP-PC-001", barcode: "8901234567020", brand: "Dove", categoryId: masterCatMap["Personal Care"], unit: "pcs", basePrice: 40, mrp: 45, taxClass: "GST 18%" },
-    { name: "Colgate Strong Teeth 200g", sku: "MP-PC-002", barcode: "8901234567021", brand: "Colgate", categoryId: masterCatMap["Personal Care"], unit: "pcs", basePrice: 85, mrp: 95, taxClass: "GST 18%" },
+    { name: "Dove Soap 100g", sku: "MP-PC-001", barcode: "8901234567020", brand: "Dove", categoryId: masterCatMap["Personal Care"], unit: "pcs", basePrice: 40, mrp: 45, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1607006342411-92fc2a4d33a5?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Colgate Strong Teeth 200g", sku: "MP-PC-002", barcode: "8901234567021", brand: "Colgate", categoryId: masterCatMap["Personal Care"], unit: "pcs", basePrice: 85, mrp: 95, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1559591937-e1032b4b455b?auto=format&fit=crop&q=80&w=500"] },
     // Household
-    { name: "Vim Dishwash Gel 500ml", sku: "MP-HH-001", barcode: "8901234567025", brand: "Vim", categoryId: masterCatMap["Household Cleaning"], unit: "pcs", basePrice: 75, mrp: 85, taxClass: "GST 18%" },
-    { name: "Ariel Matic 1kg", sku: "MP-HH-002", barcode: "8901234567026", brand: "Ariel", categoryId: masterCatMap["Household Cleaning"], unit: "pack", basePrice: 270, mrp: 310, taxClass: "GST 18%" },
+    { name: "Vim Dishwash Gel 500ml", sku: "MP-HH-001", barcode: "8901234567025", brand: "Vim", categoryId: masterCatMap["Household Cleaning"], unit: "pcs", basePrice: 75, mrp: 85, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Ariel Matic 1kg", sku: "MP-HH-002", barcode: "8901234567026", brand: "Ariel", categoryId: masterCatMap["Household Cleaning"], unit: "pack", basePrice: 270, mrp: 310, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&q=80&w=500"] },
   ];
 
   for (const prod of masterProducts) {
     await prisma.masterProduct.upsert({
       where: { sku: prod.sku },
-      update: {},
+      update: { imageUrls: prod.imageUrls },
       create: {
         name: prod.name,
         sku: prod.sku,
@@ -136,6 +145,7 @@ async function main() {
         unit: prod.unit,
         basePrice: prod.basePrice,
         mrp: prod.mrp,
+        imageUrls: prod.imageUrls,
         taxClassId: taxClassMap[prod.taxClass] || null,
         isActive: true,
       },
@@ -210,18 +220,22 @@ async function main() {
   // 7. STORE CATEGORIES (imported from master)
   // ──────────────────────────────────────────────
   console.log("\n📂 Seeding Store Categories...");
-  const storeCategoryNames = masterCategoryNames; // same as master
   const storeCatMap = {};
-  for (const name of storeCategoryNames) {
+  for (let i = 0; i < masterCategoriesData.length; i++) {
+    const { name, imageUrl } = masterCategoriesData[i];
     const existing = await prisma.category.findFirst({
       where: { storeId: store.id, name },
     });
     if (!existing) {
       const cat = await prisma.category.create({
-        data: { storeId: store.id, name, sortOrder: storeCategoryNames.indexOf(name) },
+        data: { storeId: store.id, name, imageUrl, sortOrder: i },
       });
       storeCatMap[name] = cat.id;
     } else {
+      await prisma.category.update({
+        where: { id: existing.id },
+        data: { imageUrl, sortOrder: i },
+      });
       storeCatMap[name] = existing.id;
     }
     console.log(`   ✅ ${name}`);
@@ -233,24 +247,25 @@ async function main() {
   console.log("\n📦 Seeding Store Products & Inventory...");
 
   const storeProducts = [
-    { name: "Fresh Tomatoes", barcode: "8901234567001", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "kg", basePrice: 40, mrp: 50, costPrice: 30, stock: 150, taxClass: "GST 5%" },
-    { name: "Onions", barcode: "8901234567002", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "kg", basePrice: 30, mrp: 40, costPrice: 20, stock: 200, taxClass: "GST 5%" },
-    { name: "Potatoes", barcode: "8901234567003", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "kg", basePrice: 25, mrp: 35, costPrice: 18, stock: 180, taxClass: "GST 5%" },
-    { name: "Bananas (Dozen)", barcode: "8901234567004", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "dozen", basePrice: 50, mrp: 60, costPrice: 40, stock: 50, taxClass: "GST 5%" },
-    { name: "Amul Full Cream Milk 1L", barcode: "8901050000018", brand: "Amul", catName: "Dairy & Eggs", unit: "ltr", basePrice: 62, mrp: 66, costPrice: 58, stock: 100, taxClass: "GST 5%" },
-    { name: "Amul Butter 500g", barcode: "8901050000025", brand: "Amul", catName: "Dairy & Eggs", unit: "pack", basePrice: 240, mrp: 265, costPrice: 220, stock: 40, taxClass: "GST 12%" },
-    { name: "Eggs (Tray 30pcs)", barcode: "8901234567008", brand: "Country Fresh", catName: "Dairy & Eggs", unit: "tray", basePrice: 175, mrp: 200, costPrice: 160, stock: 30, taxClass: "GST 0%" },
-    { name: "Bisleri Water 1L", barcode: "8901234567010", brand: "Bisleri", catName: "Beverages", unit: "pcs", basePrice: 18, mrp: 20, costPrice: 14, stock: 300, taxClass: "GST 18%" },
-    { name: "Coca Cola 600ml", barcode: "8901234567011", brand: "Coca Cola", catName: "Beverages", unit: "pcs", basePrice: 38, mrp: 40, costPrice: 32, stock: 120, taxClass: "GST 28%" },
-    { name: "Tata Tea Gold 500g", barcode: "8901234567012", brand: "Tata", catName: "Beverages", unit: "pack", basePrice: 210, mrp: 240, costPrice: 190, stock: 60, taxClass: "GST 5%" },
-    { name: "Lay's Classic Salted 50g", barcode: "8901234567013", brand: "Lay's", catName: "Snacks & Namkeen", unit: "pcs", basePrice: 20, mrp: 20, costPrice: 16, stock: 200, taxClass: "GST 12%" },
-    { name: "India Gate Basmati Rice 5kg", barcode: "8901234567015", brand: "India Gate", catName: "Staples & Grains", unit: "pack", basePrice: 380, mrp: 420, costPrice: 340, stock: 80, taxClass: "GST 5%" },
-    { name: "Aashirvaad Atta 5kg", barcode: "8901234567016", brand: "Aashirvaad", catName: "Staples & Grains", unit: "pack", basePrice: 230, mrp: 265, costPrice: 210, stock: 90, taxClass: "GST 0%" },
-    { name: "Toor Dal 1kg", barcode: "8901234567017", brand: "Local Brand", catName: "Staples & Grains", unit: "kg", basePrice: 120, mrp: 140, costPrice: 100, stock: 120, taxClass: "GST 5%" },
-    { name: "Dove Soap 100g", barcode: "8901234567020", brand: "Dove", catName: "Personal Care", unit: "pcs", basePrice: 40, mrp: 45, costPrice: 32, stock: 80, taxClass: "GST 18%" },
-    { name: "Colgate Strong Teeth 200g", barcode: "8901234567021", brand: "Colgate", catName: "Personal Care", unit: "pcs", basePrice: 85, mrp: 95, costPrice: 70, stock: 60, taxClass: "GST 18%" },
-    { name: "Vim Dishwash Gel 500ml", barcode: "8901234567025", brand: "Vim", catName: "Household Cleaning", unit: "pcs", basePrice: 75, mrp: 85, costPrice: 60, stock: 70, taxClass: "GST 18%" },
-    { name: "Ariel Matic 1kg", barcode: "8901234567026", brand: "Ariel", catName: "Household Cleaning", unit: "pack", basePrice: 270, mrp: 310, costPrice: 240, stock: 45, taxClass: "GST 18%" },
+    { name: "Fresh Tomatoes", barcode: "8901234567001", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "kg", basePrice: 40, mrp: 50, costPrice: 30, stock: 150, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Onions", barcode: "8901234567002", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "kg", basePrice: 30, mrp: 40, costPrice: 20, stock: 200, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Potatoes", barcode: "8901234567003", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "kg", basePrice: 25, mrp: 35, costPrice: 18, stock: 180, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Bananas (Dozen)", barcode: "8901234567004", brand: "Farm Fresh", catName: "Fruits & Vegetables", unit: "dozen", basePrice: 50, mrp: 60, costPrice: 40, stock: 50, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Amul Full Cream Milk 1L", barcode: "8901050000018", brand: "Amul", catName: "Dairy & Eggs", unit: "ltr", basePrice: 62, mrp: 66, costPrice: 58, stock: 100, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Amul Butter 500g", barcode: "8901050000025", brand: "Amul", catName: "Dairy & Eggs", unit: "pack", basePrice: 240, mrp: 265, costPrice: 220, stock: 40, taxClass: "GST 12%", imageUrls: ["https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Eggs (Tray 30pcs)", barcode: "8901234567008", brand: "Country Fresh", catName: "Dairy & Eggs", unit: "tray", basePrice: 175, mrp: 200, costPrice: 160, stock: 30, taxClass: "GST 0%", imageUrls: ["https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Bisleri Water 1L", barcode: "8901234567010", brand: "Bisleri", catName: "Beverages", unit: "pcs", basePrice: 18, mrp: 20, costPrice: 14, stock: 300, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1560023907-5f339617ea30?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Coca Cola 600ml", barcode: "8901234567011", brand: "Coca Cola", catName: "Beverages", unit: "pcs", basePrice: 38, mrp: 40, costPrice: 32, stock: 120, taxClass: "GST 28%", imageUrls: ["https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Tata Tea Gold 500g", barcode: "8901234567012", brand: "Tata", catName: "Beverages", unit: "pack", basePrice: 210, mrp: 240, costPrice: 190, stock: 60, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Lay's Classic Salted 50g", barcode: "8901234567013", brand: "Lay's", catName: "Snacks & Namkeen", unit: "pcs", basePrice: 20, mrp: 20, costPrice: 16, stock: 200, taxClass: "GST 12%", imageUrls: ["https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Bikano Khatta Meetha 400g", barcode: "8901234567014", brand: "Bikano", catName: "Snacks & Namkeen", unit: "pack", basePrice: 80, mrp: 90, costPrice: 80, stock: 90, taxClass: "GST 12%", imageUrls: ["https://images.unsplash.com/photo-1599490659213-e2b9527bd087?auto=format&fit=crop&q=80&w=500"] },
+    { name: "India Gate Basmati Rice 5kg", barcode: "8901234567015", brand: "India Gate", catName: "Staples & Grains", unit: "pack", basePrice: 380, mrp: 420, costPrice: 340, stock: 80, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Aashirvaad Atta 5kg", barcode: "8901234567016", brand: "Aashirvaad", catName: "Staples & Grains", unit: "pack", basePrice: 230, mrp: 265, costPrice: 210, stock: 90, taxClass: "GST 0%", imageUrls: ["https://images.unsplash.com/photo-1607672632458-9eb56696346b?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Toor Dal 1kg", barcode: "8901234567017", brand: "Local Brand", catName: "Staples & Grains", unit: "kg", basePrice: 120, mrp: 140, costPrice: 100, stock: 120, taxClass: "GST 5%", imageUrls: ["https://images.unsplash.com/photo-1585994192701-f1a505c8574a?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Dove Soap 100g", barcode: "8901234567020", brand: "Dove", catName: "Personal Care", unit: "pcs", basePrice: 40, mrp: 45, costPrice: 32, stock: 80, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1607006342411-92fc2a4d33a5?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Colgate Strong Teeth 200g", barcode: "8901234567021", brand: "Colgate", catName: "Personal Care", unit: "pcs", basePrice: 85, mrp: 95, costPrice: 70, stock: 60, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1559591937-e1032b4b455b?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Vim Dishwash Gel 500ml", barcode: "8901234567025", brand: "Vim", catName: "Household Cleaning", unit: "pcs", basePrice: 75, mrp: 85, costPrice: 60, stock: 70, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&q=80&w=500"] },
+    { name: "Ariel Matic 1kg", barcode: "8901234567026", brand: "Ariel", catName: "Household Cleaning", unit: "pack", basePrice: 270, mrp: 310, costPrice: 240, stock: 45, taxClass: "GST 18%", imageUrls: ["https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&q=80&w=500"] },
   ];
 
   for (const p of storeProducts) {
