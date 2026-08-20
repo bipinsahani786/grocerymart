@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { Text, View, TouchableOpacity, ScrollView, Platform, Animated } from 'react-native';
+import { Text, View, TouchableOpacity, ScrollView, Platform, Animated, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Product } from '../data/groceryData';
 import { productService } from '../services/product.service';
 import { useCart } from '../context/CartContext';
+import { resolveImageUrl } from '../utils/image';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -156,6 +157,7 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
         {matchingProducts.map((product) => {
           const inCartItem = cart.find((i) => i.id === product.id);
           const inCartQty = inCartItem?.quantity || 0;
+          const prodImg = resolveImageUrl(product.imageUrls?.[0] || product.image || product.imageUrl);
 
           return (
             <View
@@ -167,8 +169,16 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
                 style={tw`flex-row items-center gap-2.5 flex-1 mr-2`}
                 activeOpacity={0.7}
               >
-                <View style={tw`w-10 h-10 rounded-2xl bg-slate-50 items-center justify-center border border-slate-100`}>
-                  <Text style={tw`text-xl`}>{product.emoji}</Text>
+                <View style={tw`w-10 h-10 rounded-2xl bg-slate-50 items-center justify-center border border-slate-100 overflow-hidden`}>
+                  {prodImg ? (
+                    <Image
+                      source={{ uri: prodImg }}
+                      style={tw`w-full h-full`}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View style={tw`w-full h-full bg-slate-50`} />
+                  )}
                 </View>
                 <View style={tw`flex-1`}>
                   <Text style={tw`text-xs font-black text-slate-900`} numberOfLines={1}>

@@ -1,5 +1,30 @@
 import { customerProductsRepository } from "./products.repository.js";
 
+const DEFAULT_CATEGORY_IMAGES = {
+  "fruits & vegetables": "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=400",
+  "dairy & eggs": "https://images.unsplash.com/photo-1528750997573-59b89d56f4f7?auto=format&fit=crop&q=80&w=400",
+  "bakery & bread": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400",
+  "beverages": "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&q=80&w=400",
+  "snacks & namkeen": "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&q=80&w=400",
+  "staples & grains": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400",
+  "personal care": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=400",
+  "household cleaning": "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&q=80&w=400",
+  "frozen foods": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=400",
+  "meat & seafood": "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&q=80&w=400",
+  "health & wellness": "https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?auto=format&fit=crop&q=80&w=400",
+  "baby care": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&q=80&w=400",
+};
+
+function matchCategoryImage(name = "") {
+  const lower = name.toLowerCase();
+  for (const [key, url] of Object.entries(DEFAULT_CATEGORY_IMAGES)) {
+    if (lower.includes(key) || key.includes(lower)) {
+      return url;
+    }
+  }
+  return null;
+}
+
 export class CustomerProductsService {
   /**
    * Fetches real categories from the database and returns structured metadata for the customer app.
@@ -19,22 +44,6 @@ export class CustomerProductsService {
     const resolvedStoreId = store ? store.id : null;
     const dbCategories = await customerProductsRepository.findCategoriesByStore(resolvedStoreId);
 
-    const getCategoryEmoji = (name = "") => {
-      const lower = name.toLowerCase();
-      if (lower.includes("fruit") || lower.includes("vegetable") || lower.includes("fresh")) return "🍎";
-      if (lower.includes("dairy") || lower.includes("milk") || lower.includes("egg") || lower.includes("cheese")) return "🥛";
-      if (lower.includes("snack") || lower.includes("munch") || lower.includes("biscuit") || lower.includes("chips")) return "🍿";
-      if (lower.includes("beverage") || lower.includes("drink") || lower.includes("tea") || lower.includes("coffee") || lower.includes("juice")) return "🧃";
-      if (lower.includes("bakery") || lower.includes("bread") || lower.includes("cake")) return "🍞";
-      if (lower.includes("staple") || lower.includes("grain") || lower.includes("atta") || lower.includes("rice") || lower.includes("dal")) return "🌾";
-      if (lower.includes("clean") || lower.includes("household") || lower.includes("detergent") || lower.includes("wash")) return "🧼";
-      if (lower.includes("meat") || lower.includes("fish") || lower.includes("chicken")) return "🍗";
-      if (lower.includes("personal") || lower.includes("beauty") || lower.includes("care")) return "🧴";
-      if (lower.includes("baby")) return "👶";
-      if (lower.includes("pet")) return "🐾";
-      return "📦";
-    };
-
     const totalProductCount = dbCategories.reduce((acc, c) => acc + (c._count?.products || 0), 0);
 
     const formatted = [
@@ -42,18 +51,22 @@ export class CustomerProductsService {
         id: "all",
         name: "All",
         slug: "all",
-        emoji: "🛍️",
+        image: null,
+        imageUrl: null,
         itemCount: totalProductCount,
       },
-      ...dbCategories.map((cat) => ({
-        id: cat.slug || cat.id,
-        dbId: cat.id,
-        name: cat.name,
-        slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-"),
-        emoji: getCategoryEmoji(cat.name),
-        image: cat.image || null,
-        itemCount: cat._count?.products || 0,
-      })),
+      ...dbCategories.map((cat) => {
+        const catImage = cat.imageUrl || cat.image || matchCategoryImage(cat.name);
+        return {
+          id: cat.slug || cat.id,
+          dbId: cat.id,
+          name: cat.name,
+          slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-"),
+          image: catImage,
+          imageUrl: catImage,
+          itemCount: cat._count?.products || 0,
+        };
+      }),
     ];
 
     return formatted;
@@ -81,62 +94,61 @@ export class CustomerProductsService {
       const totalStock = (prod.inventory || []).reduce((acc, inv) => acc + (inv.quantity || 0), 0);
       const isOutOfStock = totalStock <= 0;
 
-      // Assign matching UI emoji & category mappings
-      let emoji = "📦";
       let appCategory = "packaged";
       const catName = prod.category ? prod.category.name.toLowerCase() : "";
 
       if (catName.includes("fruit") || catName.includes("vegetable") || prod.name.includes("Apple") || prod.name.includes("Banana") || prod.name.includes("Potato") || prod.name.includes("Tomato")) {
         appCategory = "fresh";
-        if (prod.name.includes("Apple")) emoji = "🍎";
-        else if (prod.name.includes("Banana")) emoji = "🍌";
-        else if (prod.name.includes("Tomato")) emoji = "🍅";
-        else if (prod.name.includes("Potato")) emoji = "🥔";
-        else emoji = "🥬";
       } else if (catName.includes("dairy") || catName.includes("milk") || catName.includes("egg") || prod.name.includes("Milk") || prod.name.includes("Paneer") || prod.name.includes("Egg") || prod.name.includes("Butter")) {
         appCategory = "dairy";
-        if (prod.name.includes("Milk")) emoji = "🥛";
-        else if (prod.name.includes("Paneer") || prod.name.includes("Cheese")) emoji = "🧀";
-        else if (prod.name.includes("Butter")) emoji = "🧈";
-        else if (prod.name.includes("Egg")) emoji = "🥚";
-        else emoji = "🍦";
       } else if (catName.includes("beverage") || catName.includes("drink") || catName.includes("tea") || catName.includes("coffee") || prod.name.includes("Juice") || prod.name.includes("Tea") || prod.name.includes("Coffee")) {
         appCategory = "beverages";
-        if (prod.name.includes("Tea")) emoji = "🫖";
-        else if (prod.name.includes("Coffee")) emoji = "☕";
-        else if (prod.name.includes("Juice") || prod.name.includes("Tropicana")) emoji = "🧃";
-        else emoji = "🥤";
       } else if (catName.includes("snack") || catName.includes("biscuit") || catName.includes("noodle") || prod.name.includes("Maggi") || prod.name.includes("Oreo") || prod.name.includes("Chips")) {
         appCategory = "snacks";
-        if (prod.name.includes("Chips") || prod.name.includes("Lays")) emoji = "🥔";
-        else if (prod.name.includes("Maggi") || prod.name.includes("Noodle")) emoji = "🍜";
-        else if (prod.name.includes("Biscuit") || prod.name.includes("Oreo") || prod.name.includes("Good Day")) emoji = "🍪";
-        else emoji = "🍿";
       } else if (catName.includes("household") || catName.includes("clean") || catName.includes("detergent") || prod.name.includes("Surf") || prod.name.includes("Vim") || prod.name.includes("Ariel")) {
         appCategory = "household";
-        if (prod.name.includes("Vim") || prod.name.includes("Dish")) emoji = "🧼";
-        else if (prod.name.includes("Ariel") || prod.name.includes("Wash")) emoji = "🧺";
-        else emoji = "🧹";
       } else if (catName.includes("staple") || catName.includes("grain") || prod.name.includes("Rice") || prod.name.includes("Atta")) {
         appCategory = "bakery";
-        if (prod.name.includes("Rice")) emoji = "🌾";
-        else if (prod.name.includes("Atta")) emoji = "🌾";
-        else if (prod.name.includes("Dal")) emoji = "🫘";
-        else emoji = "🍞";
       }
+
+      // Strictly use the actual image stored in backend database / Cloudflare R2
+      const actualImage = (prod.imageUrls && Array.isArray(prod.imageUrls) && prod.imageUrls.length > 0)
+        ? prod.imageUrls[0]
+        : (prod.imageUrl || null);
 
       return {
         id: prod.id,
         name: prod.name,
+        brand: prod.brand || null,
+        description: prod.description || null,
         price: prod.basePrice,
-        mrp: prod.mrp || prod.basePrice * 1.25,
+        mrp: prod.mrp || null,
+        unit: prod.unit,
         weight: prod.unit,
-        emoji: emoji,
-        rating: 4.6 + (Math.floor(Math.random() * 4) / 10),
-        description: prod.description || `Fresh and hygienic premium ${prod.name}`,
+        sku: prod.sku || null,
+        barcode: prod.barcode || null,
+        hsnCode: prod.hsnCode || null,
+        productType: prod.productType || "simple",
         category: appCategory,
+        categoryName: prod.category?.name || "General",
+        categoryId: prod.categoryId,
+        image: actualImage,
+        imageUrl: actualImage,
+        imageUrls: (Array.isArray(prod.imageUrls) && prod.imageUrls.length > 0) ? prod.imageUrls : (actualImage ? [actualImage] : []),
+        rating: Number((4.6 + (Math.floor(Math.random() * 4) * 0.1)).toFixed(1)),
         outOfStock: isOutOfStock,
-        storeName: store.name,
+        stock: totalStock,
+        storeName: prod.store?.name || store.name,
+        storeId: prod.storeId || store.id,
+        availableForDelivery: prod.availableForDelivery !== false,
+        availableForClickCollect: prod.availableForClickCollect !== false,
+        variants: (prod.variants || []).map((v) => ({
+          id: v.id,
+          name: v.name,
+          price: v.price,
+          mrp: v.mrp || null,
+          imageUrl: v.imageUrl || null,
+        })),
       };
     });
   }

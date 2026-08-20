@@ -1,9 +1,11 @@
 import React from 'react';
-import { Text, ScrollView, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Text, ScrollView, TouchableOpacity, View, ActivityIndicator, Image } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { productService } from '../services/product.service';
 import { useCart } from '../context/CartContext';
 import { Category } from '../data/groceryData';
+import { resolveImageUrl } from '../utils/image';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -58,7 +60,6 @@ export const CategoryList: React.FC<CategoryListProps> = ({
           </View>
         ) : categories.length === 0 ? (
           <View style={tw`flex-row items-center py-2 px-4 bg-slate-100/90 rounded-2xl border border-slate-200/80 mx-2 gap-2`}>
-            <Text style={tw`text-sm`}>🛍️</Text>
             <Text style={tw`text-xs font-bold text-slate-600`}>No categories found</Text>
           </View>
         ) : (
@@ -69,12 +70,13 @@ export const CategoryList: React.FC<CategoryListProps> = ({
             const bgStyle = isSelected ? colors.activeBg : colors.bg;
             const borderStyle = isSelected ? 'transparent' : 'rgba(229, 231, 235, 0.7)';
             const textColor = isSelected ? colors.activeText : colors.text;
+            const catImage = resolveImageUrl(category.image || category.imageUrl);
 
             return (
               <TouchableOpacity
                 key={category.id || index}
                 style={[
-                  tw`items-center justify-center mx-1.5 py-2 px-3.5 rounded-2xl border min-w-[76px] shadow-sm`,
+                  tw`items-center justify-center mx-1.5 py-2 px-3 rounded-2xl border min-w-[78px] shadow-sm`,
                   { 
                     backgroundColor: bgStyle, 
                     borderColor: borderStyle,
@@ -87,14 +89,29 @@ export const CategoryList: React.FC<CategoryListProps> = ({
               >
                 <View
                   style={[
-                    tw`w-10 h-10 rounded-full items-center justify-center mb-1 bg-white shadow-sm`,
+                    tw`w-14 h-14 rounded-2xl items-center justify-center mb-1.5 bg-white shadow-sm overflow-hidden border border-slate-100/80`,
                   ]}
                 >
-                  <Text style={tw`text-[18px]`}>{category.emoji || '🛍️'}</Text>
+                  {category.id === 'all' ? (
+                    <View style={tw`w-full h-full items-center justify-center bg-emerald-50`}>
+                      <Ionicons name="apps" size={26} color="#059669" />
+                    </View>
+                  ) : catImage ? (
+                    <Image
+                      source={{ uri: catImage }}
+                      style={tw`w-full h-full`}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    /* Clean fallback if no image */
+                    <View style={tw`w-full h-full bg-slate-100/60 items-center justify-center`}>
+                      <Ionicons name="bag-handle-outline" size={22} color="#94A3B8" />
+                    </View>
+                  )}
                 </View>
                 <Text
                   style={[
-                    tw`text-[10px] font-black tracking-wider uppercase`,
+                    tw`text-[11px] font-black tracking-wider uppercase`,
                     { color: textColor }
                   ]}
                   numberOfLines={1}

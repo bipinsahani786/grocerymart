@@ -10,6 +10,7 @@ import { ProfileWalletHub } from './profile/ProfileWalletHub';
 import { ProfileActivityGrid } from './profile/ProfileActivityGrid';
 import { ProfileAddressesModal } from './profile/ProfileAddressesModal';
 import { ProfileOrdersModal } from './profile/ProfileOrdersModal';
+import { ProfileSavedItemsModal } from './profile/ProfileSavedItemsModal';
 import { ProfileDetailsForm } from './profile/ProfileDetailsForm';
 import { ProfileOffersSection } from './profile/ProfileOffersSection';
 import { ProfileSettingsSection } from './profile/ProfileSettingsSection';
@@ -46,13 +47,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isAddressesModalOpen, setIsAddressesModalOpen] = React.useState(false);
   const [isOrdersModalOpen, setIsOrdersModalOpen] = React.useState(false);
+  const [isSavedItemsModalOpen, setIsSavedItemsModalOpen] = React.useState(false);
 
   const handleLogoutAction = async () => {
     await logout();
     router.replace('/login');
   };
 
-  const isAnyModalOpen = isAddressesModalOpen || isOrdersModalOpen;
+  const isAnyModalOpen = isAddressesModalOpen || isOrdersModalOpen || isSavedItemsModalOpen;
 
   return (
     <View style={tw`flex-1 bg-slate-50`}>
@@ -137,6 +139,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
           <ProfileActivityGrid
             onPressOrders={() => setIsOrdersModalOpen(true)}
             onPressAddresses={() => setIsAddressesModalOpen(true)}
+            onPressSavedItems={() => setIsSavedItemsModalOpen(true)}
           />
 
           {/* Personal Information Form */}
@@ -178,6 +181,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
       <ProfileAddressesModal
         visible={isAddressesModalOpen}
         onClose={() => setIsAddressesModalOpen(false)}
+      />
+
+      {/* ── Saved Items / Wishlist Modal Sheet ── */}
+      <ProfileSavedItemsModal
+        visible={isSavedItemsModalOpen}
+        onClose={() => setIsSavedItemsModalOpen(false)}
       />
     </View>
   );

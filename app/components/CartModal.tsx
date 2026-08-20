@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Modal, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCart } from '../context/CartContext';
 import { CustomCurvedNavBar, TabKey } from './CustomCurvedNavBar';
+import { resolveImageUrl } from '../utils/image';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -128,8 +129,16 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                         ]}
                       >
                         <View style={tw`flex-row items-center gap-3`}>
-                          <View style={tw`w-12 h-12 rounded-xl bg-slate-50 justify-center items-center`}>
-                            <Text style={tw`text-2xl`}>{item.emoji}</Text>
+                          <View style={tw`w-12 h-12 rounded-xl bg-slate-50 justify-center items-center overflow-hidden border border-slate-100`}>
+                            {resolveImageUrl(item.imageUrls?.[0] || item.image || item.imageUrl) ? (
+                              <Image
+                                source={{ uri: resolveImageUrl(item.imageUrls?.[0] || item.image || item.imageUrl)! }}
+                                style={tw`w-full h-full`}
+                                resizeMode="contain"
+                              />
+                            ) : (
+                              <View style={tw`w-full h-full bg-slate-50`} />
+                            )}
                           </View>
                           <View>
                             <Text style={[tw`text-sm font-black`, { color: theme.colors.text }]}>

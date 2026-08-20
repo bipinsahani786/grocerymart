@@ -9,10 +9,16 @@ import storesRoutes from "./stores/stores.routes.js";
 import managersRoutes from "./managers/managers.routes.js";
 import taxesRoutes from "./taxes/taxes.routes.js";
 import catalogRoutes from "./catalog/catalog.routes.js";
+import { uploadMemoryMiddleware } from "../middleware/upload.middleware.js";
+import { catalogController } from "./catalog/catalog.controller.js";
+
 const router = express.Router();
 
 // All admin routes require JWT authentication + admin role verification
 router.use(verifyToken, verifyAdmin);
+
+// General Admin upload endpoint
+router.post("/upload", uploadMemoryMiddleware.single("file"), catalogController.uploadImage);
 
 // Mount feature-based sub-routers
 router.use("/dashboard", dashboardRoutes);

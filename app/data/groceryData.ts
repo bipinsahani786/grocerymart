@@ -1,24 +1,50 @@
 export interface Category {
   id: string;
+  dbId?: string;
   name: string;
   emoji?: string;
   slug?: string;
   image?: string | null;
+  imageUrl?: string | null;
   itemCount?: number;
+}
+
+export interface ProductVariantData {
+  id: string;
+  name: string;
+  price: number;
+  mrp?: number | null;
+  imageUrl?: string | null;
 }
 
 export interface Product {
   id: string;
   name: string;
+  brand?: string | null;
+  description?: string | null;
   category: string;
+  categoryName?: string;
+  categoryId?: string;
   price: number;
-  mrp?: number;
+  mrp?: number | null;
+  unit?: string;
   weight: string;
-  emoji: string;
+  sku?: string | null;
+  barcode?: string | null;
+  hsnCode?: string | null;
+  productType?: string;
+  emoji?: string;
+  image?: string | null;
+  imageUrl?: string | null;
+  imageUrls?: string[];
   rating: number;
-  description: string;
   outOfStock?: boolean;
+  stock?: number;
   storeName?: string;
+  storeId?: string;
+  availableForDelivery?: boolean;
+  availableForClickCollect?: boolean;
+  variants?: ProductVariantData[];
 }
 
 export interface Offer {

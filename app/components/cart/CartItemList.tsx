@@ -1,6 +1,7 @@
 import React from 'react';
-import { Text, View, TouchableOpacity } from 'react-native';
+import { Text, View, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { resolveImageUrl } from '../../utils/image';
 import { theme } from '../../constants/theme';
 import tw from 'twrnc';
 
@@ -9,7 +10,10 @@ interface CartItemData {
   name: string;
   price: number;
   weight: string;
-  emoji: string;
+  emoji?: string;
+  image?: string | null;
+  imageUrl?: string | null;
+  imageUrls?: string[];
   quantity: number;
 }
 
@@ -43,6 +47,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({ items, onAdd, onRemo
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const itemSubtotal = (item.price * item.quantity).toFixed(0);
+          const itemImage = resolveImageUrl(item.imageUrls?.[0] || item.image || item.imageUrl);
 
           return (
             <View
@@ -54,8 +59,16 @@ export const CartItemList: React.FC<CartItemListProps> = ({ items, onAdd, onRemo
             >
               {/* Left Side: Thumbnail & Title */}
               <View style={tw`flex-row items-center gap-3 flex-1 mr-3`}>
-                <View style={tw`w-12 h-12 rounded-2xl bg-emerald-50/50 border border-slate-100 justify-center items-center`}>
-                  <Text style={{ fontSize: 24 }}>{item.emoji || '🛒'}</Text>
+                <View style={tw`w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 justify-center items-center overflow-hidden`}>
+                  {itemImage ? (
+                    <Image
+                      source={{ uri: itemImage }}
+                      style={tw`w-full h-full`}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View style={tw`w-full h-full bg-slate-50`} />
+                  )}
                 </View>
                 <View style={tw`flex-1`}>
                   <Text style={tw`text-xs font-black text-slate-900 leading-4`} numberOfLines={1}>

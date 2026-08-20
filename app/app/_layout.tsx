@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { LogBox } from 'react-native';
 import { AuthProvider, useAuthContext } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
+import { SavedItemsProvider } from '../context/SavedItemsContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
 
@@ -52,9 +53,11 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CartProvider>
-          <InitialLayout />
-        </CartProvider>
+        <SavedItemsProvider>
+          <CartProvider>
+            <InitialLayout />
+          </CartProvider>
+        </SavedItemsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
