@@ -27,12 +27,13 @@ export interface CartItem {
   emoji?: string;
   image?: string | null;
   imageUrl?: string | null;
+  imageUrls?: string[];
   quantity: number;
 }
 
 export interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: { id: string; name: string; price: number; weight: string; emoji?: string; image?: string | null; imageUrl?: string | null }) => void;
+  addToCart: (product: { id: string; name: string; price: number; weight: string; emoji?: string; image?: string | null; imageUrl?: string | null; imageUrls?: string[] }) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
   totalItems: number;

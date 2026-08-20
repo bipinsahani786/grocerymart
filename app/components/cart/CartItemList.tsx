@@ -13,6 +13,7 @@ interface CartItemData {
   emoji?: string;
   image?: string | null;
   imageUrl?: string | null;
+  imageUrls?: string[];
   quantity: number;
 }
 
@@ -46,7 +47,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({ items, onAdd, onRemo
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const itemSubtotal = (item.price * item.quantity).toFixed(0);
-          const itemImage = resolveImageUrl(item.image || item.imageUrl);
+          const itemImage = resolveImageUrl(item.imageUrls?.[0] || item.image || item.imageUrl);
 
           return (
             <View

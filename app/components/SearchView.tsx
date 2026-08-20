@@ -278,9 +278,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onBack, initialQuery = '
                   >
                     {/* Left side: Premium Backdrop with Real Image or Blank */}
                     <View style={[tw`w-20 h-20 rounded-2xl items-center justify-center mr-4 overflow-hidden border border-slate-100/80`, tw`${catTheme.bg}`]}>
-                      {resolveImageUrl(product.image || product.imageUrl) ? (
+                      {resolveImageUrl(product.imageUrls?.[0] || product.image || product.imageUrl) ? (
                         <Image
-                          source={{ uri: resolveImageUrl(product.image || product.imageUrl)! }}
+                          source={{ uri: resolveImageUrl(product.imageUrls?.[0] || product.image || product.imageUrl)! }}
                           style={tw`w-full h-full`}
                           resizeMode="contain"
                         />

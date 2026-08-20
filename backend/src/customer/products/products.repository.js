@@ -154,6 +154,15 @@ export class CustomerProductsRepository {
       include: {
         category: true,
         inventory: true,
+        variants: true,
+        store: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            phone: true,
+          },
+        },
       },
       orderBy: {
         salesCount: "desc",

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCart } from '../context/CartContext';
 import { CustomCurvedNavBar, TabKey } from './CustomCurvedNavBar';
+import { resolveImageUrl } from '../utils/image';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -129,9 +130,9 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                       >
                         <View style={tw`flex-row items-center gap-3`}>
                           <View style={tw`w-12 h-12 rounded-xl bg-slate-50 justify-center items-center overflow-hidden border border-slate-100`}>
-                            {item.image || item.imageUrl ? (
+                            {resolveImageUrl(item.imageUrls?.[0] || item.image || item.imageUrl) ? (
                               <Image
-                                source={{ uri: (item.image || item.imageUrl)! }}
+                                source={{ uri: resolveImageUrl(item.imageUrls?.[0] || item.image || item.imageUrl)! }}
                                 style={tw`w-full h-full`}
                                 resizeMode="contain"
                               />

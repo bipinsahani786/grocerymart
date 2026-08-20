@@ -4,11 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { productService } from '../../services/product.service';
 import { useAuthContext } from '../../context/AuthContext';
+import { useSavedItems } from '../../context/SavedItemsContext';
 import tw from 'twrnc';
 
 interface ProfileActivityGridProps {
   onPressOrders?: () => void;
   onPressAddresses?: () => void;
+  onPressSavedItems?: () => void;
 }
 
 /**
@@ -17,8 +19,10 @@ interface ProfileActivityGridProps {
 export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({
   onPressOrders,
   onPressAddresses,
+  onPressSavedItems,
 }) => {
   const { user } = useAuthContext();
+  const { totalSavedCount } = useSavedItems();
 
   const { data: profile } = useQuery({
     queryKey: ['customer-profile'],
@@ -95,8 +99,9 @@ export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({
           <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`}>UPI, Cards & COD</Text>
         </TouchableOpacity>
 
-        {/* 4. Wishlist */}
+        {/* 4. Saved Items */}
         <TouchableOpacity
+          onPress={onPressSavedItems}
           style={tw`w-[48.5%] p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm`}
           activeOpacity={0.7}
         >
@@ -106,7 +111,7 @@ export const ProfileActivityGrid: React.FC<ProfileActivityGridProps> = ({
             </View>
             <View style={tw`px-1.5 py-0.5 rounded-md bg-rose-100`}>
               <Text style={tw`text-[9px] font-black text-rose-800`}>
-                {profile?.savedItemsCount ?? 8} Items
+                {totalSavedCount} Items
               </Text>
             </View>
           </View>

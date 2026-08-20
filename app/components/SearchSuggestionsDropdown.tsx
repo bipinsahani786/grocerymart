@@ -157,7 +157,7 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
         {matchingProducts.map((product) => {
           const inCartItem = cart.find((i) => i.id === product.id);
           const inCartQty = inCartItem?.quantity || 0;
-          const prodImg = resolveImageUrl(product.image || product.imageUrl);
+          const prodImg = resolveImageUrl(product.imageUrls?.[0] || product.image || product.imageUrl);
 
           return (
             <View

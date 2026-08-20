@@ -5,6 +5,7 @@ import { productService } from '../services/product.service';
 import { useCart } from '../context/CartContext';
 import { Category } from '../data/groceryData';
 import { resolveImageUrl } from '../utils/image';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -91,15 +92,21 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                     tw`w-14 h-14 rounded-2xl items-center justify-center mb-1.5 bg-white shadow-sm overflow-hidden border border-slate-100/80`,
                   ]}
                 >
-                  {catImage ? (
+                  {category.id === 'all' ? (
+                    <View style={tw`w-full h-full items-center justify-center bg-emerald-50`}>
+                      <Ionicons name="apps" size={26} color="#059669" />
+                    </View>
+                  ) : catImage ? (
                     <Image
                       source={{ uri: catImage }}
                       style={tw`w-full h-full`}
                       resizeMode="cover"
                     />
                   ) : (
-                    /* Blank container if no image */
-                    <View style={tw`w-full h-full bg-slate-100/50`} />
+                    /* Clean fallback if no image */
+                    <View style={tw`w-full h-full bg-slate-100/60 items-center justify-center`}>
+                      <Ionicons name="bag-handle-outline" size={22} color="#94A3B8" />
+                    </View>
                   )}
                 </View>
                 <Text

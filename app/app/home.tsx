@@ -30,8 +30,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useAuthContext } from '../context/AuthContext';
 import { productService } from '../services/product.service';
-import { Product } from '../data/groceryData';
+import { Product, Category } from '../data/groceryData';
 import { useCart } from '../context/CartContext';
+import { FlashDealsSection } from '../components/home/FlashDealsSection';
+import { BudgetStoreSection } from '../components/home/BudgetStoreSection';
+import { BrandStorefrontSection } from '../components/home/BrandStorefrontSection';
+import { TrustBadgesSection } from '../components/home/TrustBadgesSection';
+import { VipPerksBanner } from '../components/home/VipPerksBanner';
+import { TestimonialsSection } from '../components/home/TestimonialsSection';
 import tw from 'twrnc';
 
 /**
@@ -106,7 +112,7 @@ function MainApp() {
           return ['home'];
         });
       }
-      
+
       // Scroll to top and focus home search bar input
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       requestAnimationFrame(() => {
@@ -137,7 +143,7 @@ function MainApp() {
     setIsSearchFocused(false);
     Keyboard.dismiss();
     searchInputRef.current?.blur();
-    
+
     // Explicitly transition to the dedicated search view tab
     setTabStack((prev) => [...prev.filter(t => t !== 'search'), 'search']);
   };
@@ -149,7 +155,7 @@ function MainApp() {
     setIsSearchFocused(false);
     Keyboard.dismiss();
     searchInputRef.current?.blur();
-    
+
     if (tabStack.length > 1) {
       setTabStack((prev) => prev.slice(0, prev.length - 1));
       return true;
@@ -183,8 +189,8 @@ function MainApp() {
   // Note: Search results are updated on explicit submission (Enter press / suggestion select) rather than typing.
 
   // Derive active pincode based on fulfillment mode details
-  const activePincode = fulfillmentMode === 'delivery' 
-    ? pincode 
+  const activePincode = fulfillmentMode === 'delivery'
+    ? pincode
     : (selectedStore?.address ? pincode : undefined);
   const activeStoreId = selectedStore?.id;
 
@@ -192,9 +198,9 @@ function MainApp() {
   const { data: allFilteredProducts = [], isLoading } = useQuery({
     queryKey: ['products', selectedCategory, debouncedSearchQuery, activePincode, activeStoreId],
     queryFn: () =>
-      productService.fetchProducts({ 
-        category: selectedCategory, 
-        search: debouncedSearchQuery, 
+      productService.fetchProducts({
+        category: selectedCategory,
+        search: debouncedSearchQuery,
         pincode: activePincode,
         storeId: activeStoreId,
       }),
@@ -208,11 +214,26 @@ function MainApp() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Query categories for exact display name mapping
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ['customer-categories', activePincode, activeStoreId],
+    queryFn: () => productService.fetchCategories({ pincode: activePincode, storeId: activeStoreId }),
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const selectedCategoryObj = categories.find(
+    (c) => c.id === selectedCategory || c.slug === selectedCategory || c.dbId === selectedCategory || (c.name && c.name.toLowerCase() === selectedCategory.toLowerCase())
+  );
+
+  const selectedCategoryName = selectedCategory === 'all'
+    ? 'All Groceries'
+    : (selectedCategoryObj?.name || (selectedCategory.length > 20 ? 'Selected Category' : selectedCategory.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())));
+
   // Infinite Scroll Pagination
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
-  const itemsPerPage = 12;
+  const itemsPerPage = 16;
 
   // Reset pagination when category or search changes
   useEffect(() => {
@@ -239,7 +260,7 @@ function MainApp() {
     <View style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}>
       <StatusBar style="light" translucent />
       <View style={[tw`flex-1 relative`, { backgroundColor: theme.colors.background }]}>
-        
+
         {/* ── Active Tab View Rendering (Instant zero-flash switching with LIFO history stack) ── */}
         {activeTab === 'profile' ? (
           <ProfileView onBack={handleBack} />
@@ -338,9 +359,17 @@ function MainApp() {
                 />
               </View>
 
-              {/* Featured Popular Section */}
+              {/* 1. Flash Steal Deals with Countdown Timer (Shown on All Groceries) */}
               {selectedCategory === 'all' && !searchQuery && (
-                <View style={tw`mb-5`}>
+                <FlashDealsSection
+                  products={allFilteredProducts}
+                  onProductPress={handleProductPress}
+                />
+              )}
+
+              {/* 2. Featured Popular Trending Section */}
+              {selectedCategory === 'all' && !searchQuery && (
+                <View style={tw`mb-6`}>
                   <View style={tw`flex-row justify-between items-center px-4 mb-2`}>
                     <View style={tw`flex-row items-center gap-1.5`}>
                       <Text style={tw`text-base`}>🔥</Text>
@@ -355,7 +384,7 @@ function MainApp() {
                   <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    data={popularProducts.length > 0 ? popularProducts : allFilteredProducts.slice(0, 5)}
+                    data={popularProducts.length > 0 ? popularProducts : allFilteredProducts.slice(0, 6)}
                     keyExtractor={(item) => `pop-${item.id}`}
                     renderItem={({ item }) => (
                       <View style={[tw`ml-4`, { width: 172 }]}>
@@ -367,14 +396,33 @@ function MainApp() {
                 </View>
               )}
 
-              {/* Main Products Grid */}
-              <View style={tw`px-4`}>
+              {/* 3. Budget Store Corner (Under ₹49, Under ₹99, Under ₹199) */}
+              {selectedCategory === 'all' && !searchQuery && (
+                <BudgetStoreSection
+                  products={allFilteredProducts}
+                  onProductPress={handleProductPress}
+                />
+              )}
+
+              {/* 4. Brand Storefront (Shop by Top Brands) */}
+              {selectedCategory === 'all' && !searchQuery && (
+                <BrandStorefrontSection
+                  products={allFilteredProducts}
+                  onSelectBrand={(b) => {
+                    setSearchQuery(b);
+                    setDebouncedSearchQuery(b);
+                  }}
+                />
+              )}
+
+              {/* 5. Main Products Grid (4 Cards Per Row) */}
+              <View style={tw`px-4 mb-6`}>
                 <View style={tw`flex-row justify-between items-center mb-3`}>
                   <View>
                     <Text style={[tw`text-sm font-black uppercase tracking-wider`, { color: theme.colors.text }]}>
                       {searchQuery.trim().length > 0
                         ? `Search: "${searchQuery}"`
-                        : (selectedCategory === 'all' ? 'All Groceries' : `${selectedCategory}`)}
+                        : selectedCategoryName}
                     </Text>
                     <Text style={[tw`text-[10px] font-bold mt-0.5`, { color: theme.colors.textMuted }]}>
                       Showing {displayedProducts.length} of {allFilteredProducts.length} items
@@ -413,8 +461,8 @@ function MainApp() {
                   <>
                     <View style={tw`flex-row flex-wrap justify-between`}>
                       {displayedProducts.map((product) => (
-                        <View key={product.id} style={{ width: '48.5%', marginBottom: 12 }}>
-                          <ProductCard product={product} onPress={handleProductPress} />
+                        <View key={product.id} style={{ width: '23.5%', marginBottom: 10 }}>
+                          <ProductCard product={product} isMini={true} onPress={handleProductPress} />
                         </View>
                       ))}
                     </View>
@@ -448,7 +496,16 @@ function MainApp() {
                 )}
               </View>
 
-              {/* Branded Trust & Customer Care Footer */}
+              {/* 6. GroceryMart VIP Pass Banner */}
+              <VipPerksBanner />
+
+              {/* 7. The GroceryMart Trust & Quality Promise */}
+              <TrustBadgesSection />
+
+              {/* 8. Shoppers Testimonials & Reviews */}
+              <TestimonialsSection />
+
+              {/* 9. Branded Customer Care & Safety Footer */}
               <Footer />
             </ScrollView>
           </>
