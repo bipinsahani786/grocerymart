@@ -67,7 +67,7 @@ export const CustomCurvedNavBar: React.FC<CustomCurvedNavBarProps> = ({
     if (Platform.OS === 'android') {
       try {
         NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
-      } catch (_) {
+      } catch {
         // Fallback for environments without navigation bar controls
       }
     }
@@ -96,7 +96,7 @@ export const CustomCurvedNavBar: React.FC<CustomCurvedNavBarProps> = ({
         }),
       ]),
     ]).start();
-  }, [activeIndex]);
+  }, [activeIndex, animatedIndex, bubbleScale]);
 
   const barBgColor = isDark ? '#18181B' : '#FFFFFF';
   const activeColor = isDark ? '#3B82F6' : theme.colors.primary;

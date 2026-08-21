@@ -37,7 +37,7 @@ function InitialLayout() {
     } else if (user && currentSegment === 'login') {
       router.replace('/home');
     }
-  }, [user, isLoading, segments]);
+  }, [user, isLoading, segments, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

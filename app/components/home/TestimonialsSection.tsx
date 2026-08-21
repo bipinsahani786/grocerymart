@@ -79,7 +79,7 @@ export const TestimonialsSection: React.FC = () => {
 
             {/* Comment */}
             <Text style={tw`text-[10px] font-medium text-slate-600 leading-4 mb-2`}>
-              "{r.comment}"
+              {`"${r.comment}"`}
             </Text>
 
             {/* Badge */}

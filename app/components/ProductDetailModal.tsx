@@ -48,7 +48,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       setActiveImageIndex(0);
       setSelectedVariantId(product.variants && product.variants.length > 0 ? product.variants[0].id : null);
     }
-  }, [product?.id]);
+  }, [product]);
 
   const { data: categoryProducts = [] } = useQuery<Product[]>({
     queryKey: ['products', product?.category, pincode],

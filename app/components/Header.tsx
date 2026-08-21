@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View, TouchableOpacity, TextInput, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import { Text, View, TouchableOpacity, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,7 +22,7 @@ interface HeaderProps {
   onToggleLogin: () => void;
   isSticky?: boolean;
   onCartPress?: () => void;
-  searchInputRef?: React.RefObject<TextInput | null>;
+  searchInputRef?: any;
 }
 
 interface AddressItem {
@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [isAddressesModalOpen, setIsAddressesModalOpen] = useState(false);
 
   // Fetch real saved addresses from database
-  const { data: savedAddresses = [] } = useQuery<AddressItem[]>({
+  const { data: savedAddresses = [] } = useQuery({
     queryKey: ['customer-addresses'],
     queryFn: () => productService.fetchCustomerAddresses(),
   });
@@ -73,12 +73,14 @@ export const Header: React.FC<HeaderProps> = ({
       const isLocationEnabled = await Location.hasServicesEnabledAsync();
       if (!isLocationEnabled) {
         setLocationError('Failed to detect location');
+        setGpsLoading(false);
         return;
       }
 
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setLocationError('Failed to detect location');
+        setLocationError('Permission to access location was denied');
+        setGpsLoading(false);
         return;
       }
 
@@ -179,6 +181,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (fulfillmentMode === 'delivery' && !gpsAddress && !selectedAddress) {
       handleFetchGpsLocation();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fulfillmentMode]);
 
   const { data: storesList = [] } = useQuery({
@@ -210,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({
         }
       }
     }
-  }, [storesList, selectedStore?.id]);
+  }, [storesList, selectedStore, setSelectedStore]);
 
   return (
     <LinearGradient

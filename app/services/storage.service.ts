@@ -12,7 +12,8 @@ export interface IStorageService {
  * Decouples state stores from the low-level AsyncStorage library.
  */
 export class AsyncStorageService implements IStorageService {
-  async getItem<T = string>(key: string): Promise<T | null> {
+  async getItem<T = string>(key?: string): Promise<T | null> {
+    if (!key || typeof key !== 'string') return null;
     try {
       const value = await AsyncStorage.getItem(key);
       if (value === null) return null;
@@ -28,6 +29,7 @@ export class AsyncStorageService implements IStorageService {
   }
 
   async setItem(key: string, value: any): Promise<void> {
+    if (!key || typeof key !== 'string') return;
     try {
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
       await AsyncStorage.setItem(key, stringValue);
@@ -37,6 +39,7 @@ export class AsyncStorageService implements IStorageService {
   }
 
   async removeItem(key: string): Promise<void> {
+    if (!key || typeof key !== 'string') return;
     try {
       await AsyncStorage.removeItem(key);
     } catch (error) {
@@ -56,6 +59,8 @@ export class AsyncStorageService implements IStorageService {
 export const STORAGE_KEYS = {
   AUTH_USER: '@auth_user',
   AUTH_TOKEN: '@auth_token',
+  USER_PROFILE: '@auth_user',
 };
 
 export const storageService = new AsyncStorageService();
+

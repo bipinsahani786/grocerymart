@@ -5,6 +5,7 @@ import tw from 'twrnc';
 
 interface ProfileSettingsSectionProps {
   onLogout: () => void;
+  onPressSupport?: () => void;
   userPhone?: string;
 }
 
@@ -13,6 +14,7 @@ interface ProfileSettingsSectionProps {
  */
 export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = ({
   onLogout,
+  onPressSupport,
   userPhone = '+91 98765 43210',
 }) => {
   const [orderNotifications, setOrderNotifications] = useState(true);
@@ -58,14 +60,18 @@ export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = ({
         </View>
 
         {/* Help & Support */}
-        <TouchableOpacity style={tw`flex-row items-center justify-between p-3 border-b border-slate-50`}>
+        <TouchableOpacity
+          onPress={onPressSupport}
+          activeOpacity={0.8}
+          style={tw`flex-row items-center justify-between p-3 border-b border-slate-50`}
+        >
           <View style={tw`flex-row items-center gap-3`}>
             <View style={tw`w-8 h-8 rounded-xl bg-emerald-50 items-center justify-center`}>
               <Ionicons name="headset-outline" size={17} color="#059669" />
             </View>
             <View>
               <Text style={tw`text-xs font-black text-slate-800`}>Customer Support 24/7</Text>
-              <Text style={tw`text-[10px] font-medium text-slate-400`}>Chat with our grocery care team</Text>
+              <Text style={tw`text-[10px] font-medium text-slate-400`}>Raise tickets & chat with support team</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
@@ -98,16 +104,15 @@ export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = ({
           </View>
           <View>
             <Text style={tw`text-sm font-black text-rose-600 tracking-tight`}>
-              Sign Out
+              Sign Out Account
             </Text>
-            <Text style={tw`text-[10px] font-medium text-slate-400 mt-0.5`}>
-              {userPhone} • Tap to switch account
+            <Text style={tw`text-[10px] font-medium text-slate-400`}>
+              {userPhone}
             </Text>
           </View>
         </View>
-
-        <View style={tw`w-8 h-8 rounded-full bg-rose-50/70 items-center justify-center`}>
-          <Ionicons name="log-out-outline" size={16} color="#E11D48" />
+        <View style={tw`w-7 h-7 rounded-full bg-rose-50 items-center justify-center`}>
+          <Ionicons name="log-out-outline" size={14} color="#E11D48" />
         </View>
       </TouchableOpacity>
     </View>

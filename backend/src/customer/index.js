@@ -5,6 +5,7 @@ import storesRoutes from "./stores/stores.routes.js";
 import addressesRoutes from "./addresses/addresses.routes.js";
 import offersRoutes from "./offers/offers.routes.js";
 import ordersRoutes from "./orders/orders.routes.js";
+import supportRoutes from "./support/support.routes.js";
 
 const router = express.Router();
 
@@ -26,5 +27,8 @@ router.use("/", addressesRoutes);
 // /api/customer/offers & /api/customer/coupons
 router.use("/offers", offersRoutes);
 router.use("/coupons", offersRoutes);
+
+// /api/customer/support (Support tickets, messages, help desk)
+router.use("/support", supportRoutes);
 
 export default router;

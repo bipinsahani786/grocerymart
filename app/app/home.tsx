@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Text,
   View,
@@ -79,7 +79,7 @@ function MainApp() {
       duration: 200,
       useNativeDriver: true,
     }).start();
-  }, [isCategorySticky]);
+  }, [isCategorySticky, fadeAnim]);
 
   // Reset sticky category state when switching active tabs to prevent duplicate rendering
   useEffect(() => {
@@ -87,7 +87,7 @@ function MainApp() {
       setIsCategorySticky(false);
       fadeAnim.setValue(0);
     }
-  }, [activeTab]);
+  }, [activeTab, fadeAnim]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -98,39 +98,29 @@ function MainApp() {
     if (tab !== 'search') {
       Keyboard.dismiss();
       searchInputRef.current?.blur();
-      setIsSearchFocused(false);
     }
 
-    if (tab === 'search') {
-      // Switch active tab back to home if not already on it
-      if (activeTab !== 'home') {
-        setTabStack((prev) => {
-          const homeIndex = prev.indexOf('home');
-          if (homeIndex !== -1) {
-            return prev.slice(0, homeIndex + 1);
-          }
-          return ['home'];
-        });
-      }
-
-      // Scroll to top and focus home search bar input
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      requestAnimationFrame(() => {
-        searchInputRef.current?.focus();
-      });
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 100);
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 250);
+    if (tab === 'profile' && !isLoggedIn) {
+      router.push('/login');
       return;
     }
 
-    if (tab === activeTab) {
+    // Direct root reset if clicking the active tab
+    if (activeTab === tab) {
       if (tab === 'home') {
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        setSelectedCategory('ALL');
       }
+      return;
+    }
+
+    // Tab transitions
+    if (tab === 'home') {
+      setTabStack(['home']);
+      return;
+    }
+
+    if (tab === 'search') {
+      setTabStack((prev) => [...prev.filter(t => t !== 'search'), 'search']);
       return;
     }
     // Push new tab onto stack
@@ -148,7 +138,7 @@ function MainApp() {
     setTabStack((prev) => [...prev.filter(t => t !== 'search'), 'search']);
   };
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     // Reset search states when navigating back to home catalog
     setSearchQuery('');
     setDebouncedSearchQuery('');
@@ -161,7 +151,7 @@ function MainApp() {
       return true;
     }
     return false;
-  };
+  }, [tabStack]);
 
   // Hardware / System back button listener
   useEffect(() => {
@@ -175,7 +165,7 @@ function MainApp() {
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
-  }, [tabStack]);
+  }, [tabStack, handleBack]);
 
   const handleScroll = (event: any) => {
     const y = event.nativeEvent.contentOffset.y;
@@ -461,8 +451,8 @@ function MainApp() {
                   <>
                     <View style={tw`flex-row flex-wrap justify-between`}>
                       {displayedProducts.map((product) => (
-                        <View key={product.id} style={{ width: '23.5%', marginBottom: 10 }}>
-                          <ProductCard product={product} isMini={true} onPress={handleProductPress} />
+                        <View key={product.id} style={{ width: '23.6%', marginBottom: 8 }}>
+                          <ProductCard product={product} onPress={handleProductPress} />
                         </View>
                       ))}
                     </View>

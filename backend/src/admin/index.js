@@ -9,6 +9,7 @@ import storesRoutes from "./stores/stores.routes.js";
 import managersRoutes from "./managers/managers.routes.js";
 import taxesRoutes from "./taxes/taxes.routes.js";
 import catalogRoutes from "./catalog/catalog.routes.js";
+import supportRoutes from "./support/support.routes.js";
 import { uploadMemoryMiddleware } from "../middleware/upload.middleware.js";
 import { catalogController } from "./catalog/catalog.controller.js";
 
@@ -27,9 +28,9 @@ router.use("/stores", storesRoutes);
 router.use("/managers", managersRoutes);
 router.use("/taxes", taxesRoutes);
 router.use("/catalog", catalogRoutes);
+router.use("/support", supportRoutes);
 
 router.use("/settings", settingsRoutes);
 router.use("/logs/transactions", ledgerRoutes);
 
 export default router;
-

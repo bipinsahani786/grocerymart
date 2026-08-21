@@ -64,7 +64,7 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
     }
   }, [visible]);
 
-  const { data: addresses = [], isLoading, refetch } = useQuery<AddressItem[]>({
+  const { data: addresses = [], isLoading } = useQuery<AddressItem[]>({
     queryKey: ['customer-addresses'],
     queryFn: () => productService.fetchCustomerAddresses(),
     enabled: visible,

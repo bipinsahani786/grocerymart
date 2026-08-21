@@ -1,35 +1,25 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Product } from '../data/groceryData';
-import { useCart } from '../context/CartContext';
-import { useSavedItems } from '../context/SavedItemsContext';
-import { resolveImageUrl } from '../utils/image';
+import { Product } from '../../data/groceryData';
+import { useCart } from '../../context/CartContext';
+import { resolveImageUrl } from '../../utils/image';
 import tw from 'twrnc';
 
-interface ProductCardProps {
+interface SearchGridCardProps {
   product: Product;
-  width?: number | string;
-  isMini?: boolean;
-  onPress?: (product: Product) => void;
+  onPress: (product: Product) => void;
 }
 
 /**
- * Modern Quick-Commerce Card (Matching exact 4-per-row standard across Home and Search)
- * - 174px Height, subtle rounded-md corners
- * - Square image showcase with discount badge & wishlist heart
- * - 1-2 line product name, price/mrp block, and ADD / Stepper action
+ * 4-Per-Row Direct Grid Card (174px height, subtle rounded-md corners, instant ADD stepper)
  */
-export const ProductCard: React.FC<ProductCardProps> = ({ product, width, onPress }) => {
-  const { cart, addToCart, removeFromCart } = useCart();
-  const { isSaved, toggleSaveItem } = useSavedItems();
-
-  const cartItem = cart?.find((item) => item.id === product?.id);
-  const quantity = cartItem ? cartItem.quantity : 0;
-  const itemIsSaved = isSaved ? isSaved(product?.id || '') : false;
-
+export const SearchGridCard: React.FC<SearchGridCardProps> = ({ product, onPress }) => {
+  const { cart = [], addToCart, removeFromCart } = useCart();
+  const cartItem = cart?.find((i) => i.id === product?.id);
+  const qty = cartItem?.quantity || 0;
   const imageSource = resolveImageUrl(product?.imageUrls?.[0] || product?.image || product?.imageUrl);
-  
+
   const sellingPrice = Number(product?.price) || 0;
   const mrp = Number(product?.originalPrice) || Math.round(sellingPrice * 1.25);
   const discountPercent = mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
@@ -38,12 +28,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, onPres
     <View
       style={[
         tw`w-full bg-white rounded-md border border-slate-200/90 p-1.5 justify-between shadow-sm`,
-        width ? { width: width as any } : tw`w-full`,
         { height: 174 },
       ]}
     >
       <TouchableOpacity
-        onPress={() => onPress && onPress(product)}
+        onPress={() => onPress(product)}
         activeOpacity={0.85}
         style={tw`w-full flex-1 justify-between`}
       >
@@ -54,19 +43,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, onPres
               <Text style={tw`text-[6.5px] font-black text-white`}>{discountPercent}%</Text>
             </View>
           )}
-
-          {/* Wishlist Heart */}
-          <TouchableOpacity
-            onPress={() => toggleSaveItem(product)}
-            activeOpacity={0.7}
-            style={tw`absolute top-0.5 right-0.5 w-4.5 h-4.5 rounded-full bg-white/90 items-center justify-center z-10 shadow-sm`}
-          >
-            <Ionicons
-              name={itemIsSaved ? 'heart' : 'heart-outline'}
-              size={10}
-              color={itemIsSaved ? '#E11D48' : '#94A3B8'}
-            />
-          </TouchableOpacity>
 
           {imageSource ? (
             <Image
@@ -106,12 +82,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, onPres
           )}
         </View>
 
-        {quantity > 0 ? (
+        {qty > 0 ? (
           <View style={tw`w-full flex-row items-center justify-between bg-emerald-700 rounded-sm px-1 py-0.8 shadow-sm`}>
             <TouchableOpacity onPress={() => removeFromCart(product.id)} style={tw`p-0.2`}>
               <Ionicons name="remove" size={9} color="#FFFFFF" />
             </TouchableOpacity>
-            <Text style={tw`text-[9px] font-black text-white px-0.5`}>{quantity}</Text>
+            <Text style={tw`text-[9px] font-black text-white px-0.5`}>{qty}</Text>
             <TouchableOpacity
               onPress={() =>
                 addToCart({
@@ -128,10 +104,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, width, onPres
             >
               <Ionicons name="add" size={9} color="#FFFFFF" />
             </TouchableOpacity>
-          </View>
-        ) : product?.outOfStock ? (
-          <View style={tw`bg-slate-100 px-2 py-0.8 rounded-sm border border-slate-200 items-center justify-center`}>
-            <Text style={tw`text-[7.5px] font-bold text-slate-400 uppercase`}>OUT</Text>
           </View>
         ) : (
           <TouchableOpacity

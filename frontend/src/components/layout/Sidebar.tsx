@@ -20,6 +20,7 @@ import {
   FolderTree,
   ShoppingBag,
   Percent,
+  LifeBuoy,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -210,6 +211,18 @@ export const superadminMenuGroups = [
         icon: UserCog,
         permission: "view_dashboard",
         subtitle: "View, add, edit and suspend store manager access profiles",
+      },
+    ],
+  },
+  {
+    title: "HELPDESK",
+    items: [
+      {
+        name: "Support Tickets",
+        href: "/superadmin/support",
+        icon: LifeBuoy,
+        permission: "view_dashboard",
+        subtitle: "Customer support tickets, live resolution chat and complaint logs",
       },
     ],
   },

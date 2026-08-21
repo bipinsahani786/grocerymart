@@ -27,6 +27,7 @@ export interface Product {
   categoryId?: string;
   price: number;
   mrp?: number | null;
+  originalPrice?: number | null;
   unit?: string;
   weight: string;
   sku?: string | null;

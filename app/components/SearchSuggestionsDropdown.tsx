@@ -52,7 +52,7 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [opacityAnim, translateYAnim, scaleAnim]);
 
   // Fetch real matching products from database
   const { data: matchingProducts = [] } = useQuery<Product[]>({
@@ -95,7 +95,7 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
               <Ionicons name="search" size={13} color="#94A3B8" />
             </View>
             <Text style={tw`text-xs font-bold text-slate-600`} numberOfLines={1}>
-              No items matching "{query}"
+              {`No items matching "${query}"`}
             </Text>
           </View>
           <TouchableOpacity

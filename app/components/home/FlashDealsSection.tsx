@@ -34,19 +34,20 @@ export const FlashDealsSection: React.FC<FlashDealsSectionProps> = ({ products, 
   const pad = (n: number) => String(n).padStart(2, '0');
 
   return (
-    <View style={tw`mb-6 bg-rose-50/60 py-3.5 border-y border-rose-100/70`}>
+    <View style={tw`mb-6 bg-rose-50/70 py-4 border-t border-b border-rose-100`}>
       {/* Header with Timer */}
       <View style={tw`flex-row justify-between items-center px-4 mb-3`}>
         <View style={tw`flex-row items-center gap-2`}>
-          <View style={tw`bg-rose-500 px-2 py-0.5 rounded-lg`}>
-            <Text style={tw`text-[10px] font-black text-white uppercase tracking-wider`}>⚡ FLASH DEALS</Text>
+          <View style={tw`bg-rose-600 px-2.5 py-1 rounded-lg flex-row items-center gap-1 shadow-sm`}>
+            <Ionicons name="flash" size={11} color="#FFFFFF" />
+            <Text style={tw`text-[10px] font-black text-white uppercase tracking-wider`}>FLASH DEALS</Text>
           </View>
-          <Text style={[tw`text-xs font-black text-slate-800`]}>Limited Time Steals</Text>
+          <Text style={tw`text-xs font-black text-slate-800 tracking-tight`}>Limited Steals</Text>
         </View>
 
         {/* Countdown Timer Pill */}
         <View style={tw`flex-row items-center gap-1 bg-white px-2.5 py-1 rounded-full border border-rose-200 shadow-sm`}>
-          <Ionicons name="time-outline" size={12} color="#E11D48" />
+          <Ionicons name="timer-outline" size={12} color="#E11D48" />
           <Text style={tw`text-[10px] font-black text-rose-600 font-mono`}>
             {pad(timeLeft.hours)}:{pad(timeLeft.minutes)}:{pad(timeLeft.seconds)}
           </Text>
@@ -60,7 +61,7 @@ export const FlashDealsSection: React.FC<FlashDealsSectionProps> = ({ products, 
         contentContainerStyle={tw`px-4`}
       >
         {dealProducts.map((product) => (
-          <View key={`flash-${product.id}`} style={[tw`mr-2.5`, { width: 110 }]}>
+          <View key={`flash-${product.id}`} style={[tw`mr-3`, { width: 142 }]}>
             <ProductCard product={product} isMini={true} onPress={onProductPress} />
           </View>
         ))}

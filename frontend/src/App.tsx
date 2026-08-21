@@ -17,6 +17,7 @@ const StoreManagers = lazy(() => import('@/features/superadmin/managers/pages/St
 const TaxManagementPage = lazy(() => import('@/features/superadmin/taxes/pages/TaxManagementPage'));
 const CategoryManagementPage = lazy(() => import('@/features/superadmin/catalog/pages/CategoryManagementPage'));
 const MasterCatalogPage = lazy(() => import('@/features/superadmin/catalog/pages/MasterCatalogPage'));
+const SupportTicketsPage = lazy(() => import('@/features/superadmin/support/SupportTicketsPage'));
 const StoreManagerDashboard = lazy(() => import('@/features/store/dashboard/pages/StoreManagerDashboardPage'));
 const StorePosPage = lazy(() => import('@/features/store/pos/pages/StorePosPage'));
 const StoreOrdersPage = lazy(() => import('@/features/store/orders/pages/StoreOrdersPage'));
@@ -145,6 +146,7 @@ function App() {
             <Route path="/superadmin/taxes" element={<SuperadminRoute><TaxManagementPage /></SuperadminRoute>} />
             <Route path="/superadmin/catalog/categories" element={<SuperadminRoute><CategoryManagementPage /></SuperadminRoute>} />
             <Route path="/superadmin/catalog/products" element={<SuperadminRoute><MasterCatalogPage /></SuperadminRoute>} />
+            <Route path="/superadmin/support" element={<SuperadminRoute><SupportTicketsPage /></SuperadminRoute>} />
             <Route path="/superadmin/profile" element={<SuperadminRoute><ProfilePage /></SuperadminRoute>} />
             <Route path="/store/dashboard" element={<StoreManagerRoute><StoreManagerDashboard /></StoreManagerRoute>} />
             <Route path="/store/pos" element={<StoreManagerRoute><StorePosPage /></StoreManagerRoute>} />

@@ -49,7 +49,7 @@ export const FloatingCartBar: React.FC<FloatingCartBarProps> = ({
         useNativeDriver: true,
       }).start();
     }
-  }, [shouldShow]);
+  }, [shouldShow, translateY, scaleAnim]);
 
   if (!shouldShow) return null;
 

@@ -108,6 +108,8 @@ model User {
   orders         Order[]        @relation("CustomerOrders")
   staffOrders    Order[]        @relation("StaffOrders")
   shifts         StaffShift[]
+  supportTickets SupportTicket[]
+  ticketMessages TicketMessage[]
 
   addresses      Address[]
   deliveryProfile DeliveryPartner?
@@ -474,6 +476,7 @@ model Order {
   bill            Bill?
   deliveryAssignment DeliveryAssignment?
   statusHistory   OrderStatusHistory[]
+  supportTickets  SupportTicket[]
 
   @@map("orders")
   @@index([storeId])
@@ -806,3 +809,76 @@ model StoreSubscriptionPlan {
 
   @@map("store_subscription_plans")
 }
+
+// ─── CUSTOMER SUPPORT TICKETS & HELPDESK ──────────────────────────────────
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketCategory {
+  DELIVERY
+  MISSING_ITEMS
+  QUALITY
+  REFUND
+  PAYMENT
+  APP_ISSUE
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MessageSenderRole {
+  CUSTOMER
+  SUPER_ADMIN
+  SYSTEM
+}
+
+model SupportTicket {
+  id             String          @id @default(uuid())
+  ticketNumber   String          @unique @map("ticket_number") // e.g., TKT-10023
+  userId         String          @map("user_id")
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId        String?         @map("order_id")
+  order          Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  storeId        String?         @map("store_id")
+  category       TicketCategory  @default(OTHER)
+  priority       TicketPriority  @default(MEDIUM)
+  status         TicketStatus    @default(OPEN)
+  subject        String
+  description    String
+  resolutionNote String?         @map("resolution_note")
+  resolvedAt     DateTime?       @map("resolved_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  messages       TicketMessage[]
+
+  @@map("support_tickets")
+  @@index([userId])
+  @@index([status])
+  @@index([orderId])
+}
+
+model TicketMessage {
+  id          String            @id @default(uuid())
+  ticketId    String            @map("ticket_id")
+  ticket      SupportTicket     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId    String            @map("sender_id")
+  sender      User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderRole  MessageSenderRole @default(CUSTOMER) @map("sender_role")
+  message     String
+  attachments String[]          @default([])
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@map("ticket_messages")
+  @@index([ticketId])
+}
+
