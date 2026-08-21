@@ -2,7 +2,10 @@ import React from 'react';
 import { View, ScrollView, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { theme } from '../constants/theme';
 import { useProfile } from '../hooks/useProfile';
 import { ProfileHeader } from './profile/ProfileHeader';
 import { ProfileVipCard } from './profile/ProfileVipCard';
@@ -14,6 +17,7 @@ import { ProfileSavedItemsModal } from './profile/ProfileSavedItemsModal';
 import { ProfileDetailsForm } from './profile/ProfileDetailsForm';
 import { ProfileOffersSection } from './profile/ProfileOffersSection';
 import { ProfileSettingsSection } from './profile/ProfileSettingsSection';
+import { ContactSupportModal } from './support/ContactSupportModal';
 import { Footer } from './Footer';
 import tw from 'twrnc';
 
@@ -23,10 +27,11 @@ interface ProfileViewProps {
 
 /**
  * Single Responsibility Orchestrator:
- * Full-page continuous scrollable profile view integrating modular section components.
+ * Full-page continuous scrollable profile view with matching gradient status bar.
  */
 export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     user,
     name,
@@ -44,33 +49,38 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
   } = useProfile();
 
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const [isScrolled, setIsScrolled] = React.useState(false);
   const [isAddressesModalOpen, setIsAddressesModalOpen] = React.useState(false);
   const [isOrdersModalOpen, setIsOrdersModalOpen] = React.useState(false);
   const [isSavedItemsModalOpen, setIsSavedItemsModalOpen] = React.useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = React.useState(false);
 
   const handleLogoutAction = async () => {
     await logout();
     router.replace('/login');
   };
 
-  const isAnyModalOpen = isAddressesModalOpen || isOrdersModalOpen || isSavedItemsModalOpen;
-
   return (
     <View style={tw`flex-1 bg-slate-50`}>
-      <StatusBar style={isAnyModalOpen ? 'light' : (isScrolled ? 'dark' : 'light')} animated />
+      {/* ── Fixed Status Bar Color (Pure White Icons on Green, Never changes on scroll) ── */}
+      <StatusBar style="light" backgroundColor={theme.colors.primary} translucent />
 
-      {/* ── Continuous Full-Page Scrollable View (Header + Content together) ── */}
+      {/* ── Fixed Thin Gradient Top Header Bar ── */}
+      <LinearGradient
+        colors={[theme.colors.primary, theme.colors.primaryDark || '#047857']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[
+          tw`z-30`,
+          { height: insets.top },
+        ]}
+      />
+
+      {/* ── Continuous Full-Page Scrollable View ── */}
       <ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         style={tw`flex-1`}
         contentContainerStyle={[tw`pb-36`, { paddingBottom: 120 }]}
-        onScroll={(e) => {
-          const offsetY = e.nativeEvent.contentOffset.y;
-          setIsScrolled(offsetY > 100);
-        }}
-        scrollEventThrottle={16}
       >
         {/* ── 1. Top Gradient Profile Header ── */}
         <ProfileHeader
@@ -80,7 +90,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
           onBack={onBack}
         />
 
-        {/* ── 2. Body Container (Overlapping curve gracefully) ── */}
+        {/* ── 2. Body Container ── */}
         <View style={tw`px-4 -mt-6`}>
           {/* VIP Plus Membership Card */}
           <ProfileVipCard />
@@ -163,6 +173,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
           {/* Preferences, Support & Pro Logout CTA */}
           <ProfileSettingsSection
             onLogout={handleLogoutAction}
+            onPressSupport={() => setIsSupportModalOpen(true)}
             userPhone={user?.phone || '+91 98765 43210'}
           />
 
@@ -187,6 +198,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
       <ProfileSavedItemsModal
         visible={isSavedItemsModalOpen}
         onClose={() => setIsSavedItemsModalOpen(false)}
+      />
+
+      {/* ── 24x7 Customer Support Modal ── */}
+      <ContactSupportModal
+        visible={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
       />
     </View>
   );

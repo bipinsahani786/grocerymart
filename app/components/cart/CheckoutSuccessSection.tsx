@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Platform, Clipboard } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../constants/theme';
 import tw from 'twrnc';

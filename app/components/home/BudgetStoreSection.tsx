@@ -21,7 +21,7 @@ export const BudgetStoreSection: React.FC<BudgetStoreSectionProps> = ({ products
 
   const filtered = products
     .filter((p) => p.price <= activeTier)
-    .slice(0, 8);
+    .slice(0, 6);
 
   if (filtered.length === 0) return null;
 
@@ -33,7 +33,7 @@ export const BudgetStoreSection: React.FC<BudgetStoreSectionProps> = ({ products
           <View style={tw`flex-row items-center gap-1.5`}>
             <Text style={tw`text-sm`}>💰</Text>
             <Text style={[tw`text-sm font-black tracking-tight`, { color: theme.colors.text }]}>
-              Budget Corner
+              Budget Store
             </Text>
           </View>
           <Text style={tw`text-[10px] font-bold text-slate-400 mt-0.5`}>
@@ -50,11 +50,11 @@ export const BudgetStoreSection: React.FC<BudgetStoreSectionProps> = ({ products
             <TouchableOpacity
               key={tier.max}
               onPress={() => setActiveTier(tier.max)}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               style={[
                 tw`px-3 py-1.5 rounded-full border shadow-sm`,
                 isSelected
-                  ? tw`bg-emerald-600 border-emerald-600`
+                  ? tw`bg-emerald-700 border-emerald-700`
                   : tw`bg-white border-slate-200`,
               ]}
             >
@@ -71,10 +71,10 @@ export const BudgetStoreSection: React.FC<BudgetStoreSectionProps> = ({ products
         })}
       </View>
 
-      {/* 4 Cards Per Row Grid */}
+      {/* 3 Cards Per Row Grid */}
       <View style={tw`flex-row flex-wrap justify-between`}>
         {filtered.map((product) => (
-          <View key={`budget-${product.id}`} style={{ width: '23.5%', marginBottom: 10 }}>
+          <View key={`budget-${product.id}`} style={{ width: '31.8%', marginBottom: 10 }}>
             <ProductCard product={product} isMini={true} onPress={onProductPress} />
           </View>
         ))}

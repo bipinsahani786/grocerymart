@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,7 +42,6 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
     setPincode,
     selectedAddress,
     setSelectedAddress,
-    deliveryConfig,
     appliedCoupon,
     appliedDiscount,
     refreshDeliveryConfig,
@@ -110,7 +109,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
     return () => {
       isMounted = false;
     };
-  }, [pincode, selectedStore?.id]);
+  }, [pincode, selectedStore, setSelectedStore, refreshDeliveryConfig]);
 
   // Filter stores according to input pincode
   const getStoresForPincode = () => {
@@ -331,6 +330,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
           setSelectedPayment={setSelectedPayment}
           totalAmount={pricing.grandTotal}
           onPlaceOrder={handlePlaceOrder}
+          isPlacingOrder={isPlacingOrder}
         />
       </View>
     );

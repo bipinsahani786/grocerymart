@@ -7,12 +7,12 @@ import {
   Modal,
   ScrollView,
   RefreshControl,
-  Clipboard,
   Alert,
   TextInput,
   Platform,
   StatusBar as RNStatusBar,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -175,7 +175,7 @@ export const ProfileOrdersModal: React.FC<ProfileOrdersModalProps> = ({ visible,
         hour: '2-digit',
         minute: '2-digit',
       });
-    } catch (_) {
+    } catch {
       return dateString;
     }
   };

@@ -24,7 +24,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   return (
     <LinearGradient
       colors={[theme.colors.primary, theme.colors.primaryDark || '#047857']}
-      style={tw`pt-14 pb-16 px-6 rounded-b-[36px] shadow-lg`}
+      style={tw`pt-4 pb-16 px-6 rounded-b-[36px] shadow-lg`}
     >
       <View style={tw`flex-row justify-between items-center mb-5`}>
         {onBack ? (

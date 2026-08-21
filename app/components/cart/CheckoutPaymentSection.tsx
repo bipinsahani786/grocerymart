@@ -14,6 +14,7 @@ interface CheckoutPaymentSectionProps {
   setSelectedPayment: (pay: 'cod' | 'wallet' | 'upi' | 'card') => void;
   totalAmount: number;
   onPlaceOrder: () => void;
+  isPlacingOrder?: boolean;
 }
 
 export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
@@ -24,6 +25,7 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
   setSelectedPayment,
   totalAmount,
   onPlaceOrder,
+  isPlacingOrder = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { pricing } = useCart();
@@ -187,11 +189,22 @@ export const CheckoutPaymentSection: React.FC<CheckoutPaymentSectionProps> = ({
         </View>
         <TouchableOpacity
           onPress={onPlaceOrder}
+          disabled={isPlacingOrder}
           activeOpacity={0.88}
-          style={[tw`px-6 py-3.5 rounded-2xl flex-row items-center gap-1.5`, { backgroundColor: theme.colors.primary }]}
+          style={[
+            tw`px-6 py-3.5 rounded-2xl flex-row items-center gap-1.5`,
+            { backgroundColor: theme.colors.primary },
+            isPlacingOrder && tw`opacity-70`,
+          ]}
         >
-          <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Place Order</Text>
-          <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
+          {isPlacingOrder ? (
+            <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Placing Order...</Text>
+          ) : (
+            <>
+              <Text style={tw`text-xs font-black text-white uppercase tracking-wider`}>Place Order</Text>
+              <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>

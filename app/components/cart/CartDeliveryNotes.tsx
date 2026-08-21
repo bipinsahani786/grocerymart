@@ -33,7 +33,9 @@ export const CartDeliveryNotes: React.FC = () => {
             <Ionicons name="qr-code-outline" size={16} color="#2563EB" />
           </View>
           <View style={tw`flex-1`}>
-            <Text style={tw`text-xs font-black text-slate-900`}>Express Counter Pickup</Text>
+            <Text style={tw`text-xs font-black text-slate-900`}>
+              {selectedStore?.name ? `Express Pickup: ${selectedStore.name}` : 'Express Counter Pickup'}
+            </Text>
             <Text style={tw`text-[10px] font-medium text-slate-500 mt-0.5`}>
               Show your order ID at <Text style={tw`font-bold text-blue-700`}>Takeaway Counter #1</Text>
             </Text>

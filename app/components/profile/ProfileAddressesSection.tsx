@@ -117,6 +117,16 @@ export const ProfileAddressesSection: React.FC = () => {
             </View>
             <View style={tw`flex-1`}>
               <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1`}>
+                State
+              </Text>
+              <TextInput
+                style={tw`bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2 text-xs text-slate-800 font-medium`}
+                value={state}
+                onChangeText={setState}
+              />
+            </View>
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1`}>
                 Pincode
               </Text>
               <TextInput
