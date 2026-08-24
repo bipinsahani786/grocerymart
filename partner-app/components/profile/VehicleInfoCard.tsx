@@ -40,7 +40,7 @@ export const VehicleInfoCard: React.FC = () => {
             <Text style={{ fontSize: 12, color: Colors.textSecondary }}>Vehicle Type</Text>
           </View>
           <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.text }}>
-            Electric Smart Bike ({user?.vehicleNumber})
+            Delivery Bike ({user?.vehicleNumber || 'KA-01-EQ-4921'})
           </Text>
         </View>
 
@@ -55,11 +55,11 @@ export const VehicleInfoCard: React.FC = () => {
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="battery-charging" size={16} color={Colors.primaryLight} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 12, color: Colors.textSecondary }}>Battery Level</Text>
+            <Ionicons name="shield-checkmark" size={16} color={Colors.primary} style={{ marginRight: 8 }} />
+            <Text style={{ fontSize: 12, color: Colors.textSecondary }}>Vehicle Inspection</Text>
           </View>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primaryLight }}>
-            {batteryLevel}% (Est. 48 km range)
+          <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primary }}>
+            Active & Verified
           </Text>
         </View>
 

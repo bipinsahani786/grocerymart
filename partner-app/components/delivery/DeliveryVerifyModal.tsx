@@ -53,7 +53,7 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backgroundColor: Colors.overlay,
           justifyContent: 'flex-end',
         }}
       >
@@ -99,7 +99,7 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: cashCollectedCheck ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.15)',
+                backgroundColor: cashCollectedCheck ? Colors.primaryBg : Colors.amberLight,
                 borderColor: cashCollectedCheck ? Colors.primary : Colors.amber,
                 borderWidth: 1.5,
                 borderRadius: 12,
@@ -140,7 +140,7 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
                 Ask Customer for 4-Digit Delivery OTP
               </Text>
               <TouchableOpacity onPress={handleAutoFill}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.primaryLight }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.primaryDark }}>
                   Auto-fill ({order.otp})
                 </Text>
               </TouchableOpacity>
@@ -194,8 +194,8 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
               shadowRadius: 8,
             }}
           >
-            <Ionicons name="checkmark-circle" size={20} color={Colors.textDark} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.textDark }}>
+            <Ionicons name="checkmark-circle" size={20} color={Colors.white} style={{ marginRight: 8 }} />
+            <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.white }}>
               VERIFY & COMPLETE ORDER
             </Text>
           </TouchableOpacity>

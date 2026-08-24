@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+import tw from 'twrnc';
 
 interface QuickActionGridProps {
   onDepositCash?: () => void;
@@ -17,92 +18,72 @@ export const QuickActionGrid: React.FC<QuickActionGridProps> = ({
   const actions: {
     id: string;
     title: string;
-    subtitle: string;
     icon: keyof typeof Ionicons.glyphMap;
     color: string;
+    bg: string;
     onPress?: () => void;
   }[] = [
     {
-      id: 'hotspots',
-      title: 'Store Hotspots',
-      subtitle: '3 high surge hubs',
-      icon: 'map',
-      color: Colors.amber,
-      onPress: onOpenHotspots,
-    },
-    {
       id: 'cash_deposit',
       title: 'Deposit Cash',
-      subtitle: 'Nearby CDM / Hub',
-      icon: 'cash',
-      color: Colors.primary,
+      icon: 'wallet-outline',
+      color: Colors.primaryDark,
+      bg: Colors.primaryBg,
       onPress: onDepositCash,
     },
     {
-      id: 'ev_stations',
-      title: 'EV Swap Stations',
-      subtitle: '2 stations (0.5 km)',
-      icon: 'battery-charging',
-      color: Colors.blue,
+      id: 'store_hubs',
+      title: 'Store Hubs',
+      icon: 'storefront-outline',
+      color: Colors.blueDark,
+      bg: Colors.blueLight,
+      onPress: onOpenHotspots,
+    },
+    {
+      id: 'hotspots',
+      title: 'Hotspots',
+      icon: 'flame-outline',
+      color: Colors.amberDark,
+      bg: Colors.amberLight,
       onPress: onOpenHotspots,
     },
     {
       id: 'support',
-      title: 'Partner Support',
-      subtitle: 'Instant call / chat',
-      icon: 'headset',
-      color: Colors.purple,
+      title: 'Captain Help',
+      icon: 'headset-outline',
+      color: Colors.purpleDark,
+      bg: Colors.purpleLight,
       onPress: onOpenSupport,
     },
   ];
 
   return (
-    <View style={{ marginBottom: 24 }}>
-      <Text
-        style={{
-          fontSize: 14,
-          fontWeight: '700',
-          color: Colors.text,
-          marginBottom: 12,
-          letterSpacing: 0.3,
-        }}
-      >
-        QUICK TOOLS & SERVICES
+    <View style={tw`mb-4`}>
+      <Text style={[tw`text-xs font-black uppercase tracking-wider mb-2.5 px-0.5`, { color: Colors.textSecondary }]}>
+        Station Quick Tools
       </Text>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+      <View style={tw`flex-row justify-between gap-2`}>
         {actions.map((act) => (
           <TouchableOpacity
             key={act.id}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={act.onPress}
-            style={{
-              width: '48.3%',
-              backgroundColor: Colors.surfaceCard,
-              borderColor: Colors.border,
-              borderWidth: 1,
-              borderRadius: 14,
-              padding: 12,
-            }}
+            style={[
+              tw`flex-1 p-3 rounded-2xl items-center shadow-sm`,
+              { backgroundColor: Colors.surface },
+            ]}
           >
             <View
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                backgroundColor: `${act.color}20`,
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginBottom: 8,
-              }}
+              style={[
+                tw`w-10 h-10 rounded-xl justify-center items-center mb-1.5`,
+                { backgroundColor: act.bg },
+              ]}
             >
               <Ionicons name={act.icon} size={20} color={act.color} />
             </View>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.text }}>
+            <Text style={[tw`text-[11px] font-extrabold text-center`, { color: Colors.text }]}>
               {act.title}
-            </Text>
-            <Text style={{ fontSize: 11, color: Colors.textSecondary, marginTop: 2 }}>
-              {act.subtitle}
             </Text>
           </TouchableOpacity>
         ))}

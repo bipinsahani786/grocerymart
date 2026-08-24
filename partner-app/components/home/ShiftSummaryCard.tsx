@@ -14,101 +14,93 @@ export const ShiftSummaryCard: React.FC<ShiftSummaryCardProps> = ({ onViewWallet
   const { earningsSummary } = useDeliveryContext();
   const { formattedShiftTime } = useDutyContext();
 
+  const dailyTarget = 1500;
+  const progressPercent = Math.min(100, Math.round((earningsSummary.todayTotal / dailyTarget) * 100));
+
   return (
     <View
       style={[
-        tw`rounded-2xl p-4 border mb-4 shadow-sm`,
-        { backgroundColor: Colors.surface, borderColor: Colors.border },
+        tw`rounded-2xl p-4.5 mb-3.5 shadow-sm`,
+        { backgroundColor: Colors.surface },
       ]}
     >
-      {/* Top row: Earnings & Details link */}
-      <View style={tw`flex-row justify-between items-start`}>
+      {/* Earnings Hero Row */}
+      <View style={tw`flex-row justify-between items-center mb-3`}>
         <View>
-          <Text style={[tw`text-xs font-semibold`, { color: Colors.textSecondary }]}>
-            {"TODAY'S EARNINGS"}
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
+            Today's Earnings
           </Text>
-          <Text style={[tw`text-3xl font-black mt-0.5`, { color: Colors.text }]}>
+          <Text style={[tw`text-2xl font-black mt-0.5 tracking-tight`, { color: Colors.text }]}>
             ₹{earningsSummary.todayTotal}
           </Text>
         </View>
 
         <TouchableOpacity
+          activeOpacity={0.8}
           onPress={onViewWallet}
           style={[
-            tw`flex-row items-center border px-2.5 py-1.5 rounded-lg`,
-            { backgroundColor: Colors.primaryBg, borderColor: Colors.primary },
+            tw`flex-row items-center px-3 py-1.5 rounded-full`,
+            { backgroundColor: Colors.primaryBg },
           ]}
         >
-          <Text style={[tw`text-xs font-bold mr-1`, { color: Colors.primaryDark }]}>
-            Wallet
+          <Ionicons name="flash" size={13} color={Colors.primaryDark} style={tw`mr-1`} />
+          <Text style={[tw`text-xs font-black`, { color: Colors.primaryDark }]}>
+            Withdraw
           </Text>
-          <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
         </TouchableOpacity>
       </View>
 
-      {/* Metrics Row: Trips, Online Time, Floating Cash */}
-      <View
-        style={[
-          tw`flex-row rounded-xl p-3 mt-3.5 justify-between border`,
-          { backgroundColor: Colors.surfaceLight, borderColor: Colors.borderLight },
-        ]}
-      >
-        <View style={tw`items-center flex-1`}>
-          <View style={tw`flex-row items-center`}>
-            <Ionicons name="bicycle" size={14} color={Colors.primary} style={tw`mr-1`} />
-            <Text style={[tw`text-base font-black`, { color: Colors.text }]}>
-              {earningsSummary.tripsCount}
-            </Text>
-          </View>
-          <Text style={[tw`text-[11px] mt-0.5`, { color: Colors.textSecondary }]}>
-            Trips Done
+      {/* Target Progress Bar */}
+      <View style={tw`mb-3.5`}>
+        <View style={tw`flex-row justify-between items-center mb-1`}>
+          <Text style={[tw`text-[11px] font-semibold`, { color: Colors.textSecondary }]}>
+            Target: ₹{dailyTarget}
+          </Text>
+          <Text style={[tw`text-[11px] font-bold`, { color: Colors.primaryDark }]}>
+            {progressPercent}%
           </Text>
         </View>
-
-        <View style={[tw`w-[1px]`, { backgroundColor: Colors.border }]} />
-
-        <View style={tw`items-center flex-1`}>
-          <View style={tw`flex-row items-center`}>
-            <Ionicons name="time-outline" size={14} color={Colors.amber} style={tw`mr-1`} />
-            <Text style={[tw`text-base font-black`, { color: Colors.text }]}>
-              {formattedShiftTime}
-            </Text>
-          </View>
-          <Text style={[tw`text-[11px] mt-0.5`, { color: Colors.textSecondary }]}>
-            Shift Time
-          </Text>
-        </View>
-
-        <View style={[tw`w-[1px]`, { backgroundColor: Colors.border }]} />
-
-        <View style={tw`items-center flex-1`}>
-          <View style={tw`flex-row items-center`}>
-            <Ionicons name="cash-outline" size={14} color={Colors.blue} style={tw`mr-1`} />
-            <Text style={[tw`text-base font-black`, { color: Colors.text }]}>
-              ₹{earningsSummary.cashCollected}
-            </Text>
-          </View>
-          <Text style={[tw`text-[11px] mt-0.5`, { color: Colors.textSecondary }]}>
-            Cash in Hand
-          </Text>
+        <View style={[tw`h-1.5 rounded-full overflow-hidden`, { backgroundColor: Colors.surfaceLight }]}>
+          <View
+            style={[
+              tw`h-full rounded-full`,
+              { width: `${progressPercent}%`, backgroundColor: Colors.primary },
+            ]}
+          />
         </View>
       </View>
 
-      {/* Breakdown chips */}
-      <View style={[tw`flex-row flex-wrap gap-2 mt-3 pt-2.5 border-t`, { borderTopColor: Colors.border }]}>
-        <View style={tw`flex-row items-center`}>
-          <Text style={[tw`text-[11px]`, { color: Colors.textMuted }]}>Base Pay: </Text>
-          <Text style={[tw`text-[11px] font-bold`, { color: Colors.text }]}>₹{earningsSummary.basePay}</Text>
+      {/* Native Metrics Strip */}
+      <View style={[tw`flex-row justify-between pt-3 border-t`, { borderTopColor: Colors.borderLight }]}>
+        <View style={tw`items-center flex-1`}>
+          <Text style={[tw`text-sm font-black`, { color: Colors.text }]}>
+            {earningsSummary.tripsCount}
+          </Text>
+          <Text style={[tw`text-[10px] font-semibold`, { color: Colors.textSecondary }]}>
+            Trips
+          </Text>
         </View>
-        <Text style={{ color: Colors.textMuted }}>•</Text>
-        <View style={tw`flex-row items-center`}>
-          <Text style={[tw`text-[11px]`, { color: Colors.textMuted }]}>Surge: </Text>
-          <Text style={[tw`text-[11px] font-bold`, { color: Colors.amberDark }]}>+₹{earningsSummary.surgeBonus}</Text>
+
+        <View style={[tw`w-[1px]`, { backgroundColor: Colors.borderLight }]} />
+
+        <View style={tw`items-center flex-1`}>
+          <Text style={[tw`text-sm font-black`, { color: Colors.text }]}>
+            {formattedShiftTime}
+          </Text>
+          <Text style={[tw`text-[10px] font-semibold`, { color: Colors.textSecondary }]}>
+            Shift
+          </Text>
         </View>
-        <Text style={{ color: Colors.textMuted }}>•</Text>
-        <View style={tw`flex-row items-center`}>
-          <Text style={[tw`text-[11px]`, { color: Colors.textMuted }]}>Tips: </Text>
-          <Text style={[tw`text-[11px] font-bold`, { color: Colors.primaryDark }]}>+₹{earningsSummary.tips}</Text>
+
+        <View style={[tw`w-[1px]`, { backgroundColor: Colors.borderLight }]} />
+
+        <View style={tw`items-center flex-1`}>
+          <Text style={[tw`text-sm font-black`, { color: Colors.text }]}>
+            ₹{earningsSummary.cashCollected}
+          </Text>
+          <Text style={[tw`text-[10px] font-semibold`, { color: Colors.textSecondary }]}>
+            Cash in Hand
+          </Text>
         </View>
       </View>
     </View>

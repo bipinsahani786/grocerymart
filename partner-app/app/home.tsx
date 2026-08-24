@@ -5,10 +5,13 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
 import { useDeliveryContext } from '../context/DeliveryContext';
+import { useDutyContext } from '../context/DutyContext';
 import { DeliveryOrder } from '../constants/mockData';
 import { Colors } from '../constants/theme';
 import tw from 'twrnc';
@@ -17,11 +20,8 @@ import tw from 'twrnc';
 import { PartnerHeader } from '../components/common/PartnerHeader';
 import { CustomPartnerNavBar, PartnerTab } from '../components/common/CustomPartnerNavBar';
 
-// Home Tab Components
-import { ShiftSummaryCard } from '../components/home/ShiftSummaryCard';
-import { HighDemandBanner } from '../components/home/HighDemandBanner';
-import { ActiveTaskCard } from '../components/home/ActiveTaskCard';
-import { QuickActionGrid } from '../components/home/QuickActionGrid';
+// Redesigned Home Cockpit
+import { HomeCockpitView } from '../components/home/HomeCockpitView';
 
 // Delivery Flow Components
 import { IncomingOrderModal } from '../components/delivery/IncomingOrderModal';
@@ -42,19 +42,17 @@ import { OrderHistoryItem } from '../components/orders/OrderHistoryItem';
 import { OrderDetailModal } from '../components/orders/OrderDetailModal';
 
 // Profile Tab Components
-import { ProfileHeader } from '../components/profile/ProfileHeader';
-import { DocumentStatusCard } from '../components/profile/DocumentStatusCard';
-import { VehicleInfoCard } from '../components/profile/VehicleInfoCard';
+import { ProfileScreenView } from '../components/profile/ProfileScreenView';
 import { SupportHelpModal } from '../components/profile/SupportHelpModal';
 import { SettingsModal } from '../components/profile/SettingsModal';
 
 export default function PartnerHomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { logout } = useAuthContext();
   const {
     activeOrder,
     orderHistory,
-    triggerIncomingOrderSimulation,
   } = useDeliveryContext();
 
   const [activeTab, setActiveTab] = useState<PartnerTab>('home');
@@ -90,33 +88,35 @@ export default function PartnerHomeScreen() {
 
   return (
     <View style={[tw`flex-1`, { backgroundColor: Colors.background }]}>
-      {/* Top App Header */}
+      <StatusBar style="light" translucent backgroundColor="#10B981" />
+      {/* Top App Header with Rider Profile snippet, Battery Telemetry and Duty Switch */}
       <PartnerHeader
         onOpenSOS={() => setShowSupportModal(true)}
         onOpenNotifications={() => {}}
         onOpenWallet={() => setActiveTab('earnings')}
       />
 
-      {/* Main Tab Content */}
+      {/* Main Content Area */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={tw`p-4 pb-6`}
+        contentContainerStyle={[
+          tw`p-4`,
+          {
+            paddingBottom: 95 + Math.max(insets.bottom, 12),
+          },
+        ]}
       >
-        {/* TAB 1: DASHBOARD */}
+        {/* TAB 1: UNIFIED HOME RADAR COCKPIT */}
         {activeTab === 'home' && (
-          <View>
-            <ShiftSummaryCard onViewWallet={() => setActiveTab('earnings')} />
-            <ActiveTaskCard onOpenActiveTask={() => setActiveTab('active')} />
-            <HighDemandBanner />
-            <QuickActionGrid
-              onDepositCash={() => setShowWithdrawModal(true)}
-              onOpenSupport={() => setShowSupportModal(true)}
-              onOpenHotspots={() => {}}
-            />
-          </View>
+          <HomeCockpitView
+            onViewWallet={() => setActiveTab('earnings')}
+            onOpenActiveTask={() => setActiveTab('active')}
+            onDepositCash={() => setShowWithdrawModal(true)}
+            onOpenSupport={() => setShowSupportModal(true)}
+          />
         )}
 
-        {/* TAB 2: ACTIVE DELIVERY TASK */}
+        {/* TAB 2: ACTIVE DELIVERY TASK JOURNEY */}
         {activeTab === 'active' && (
           <View>
             {activeOrder ? (
@@ -159,7 +159,7 @@ export default function PartnerHomeScreen() {
             ) : (
               <View
                 style={[
-                  tw`rounded-2xl p-6 border items-center mt-5 shadow-sm`,
+                  tw`rounded-3xl p-6 border items-center mt-5 shadow-sm`,
                   { backgroundColor: Colors.surface, borderColor: Colors.border },
                 ]}
               >
@@ -184,15 +184,15 @@ export default function PartnerHomeScreen() {
                 </Text>
                 <TouchableOpacity
                   activeOpacity={0.85}
-                  onPress={triggerIncomingOrderSimulation}
+                  onPress={() => setActiveTab('home')}
                   style={[
-                    tw`py-3 px-5 rounded-xl flex-row items-center shadow-md`,
+                    tw`py-3 px-6 rounded-xl flex-row items-center shadow-md`,
                     { backgroundColor: Colors.primary },
                   ]}
                 >
-                  <Ionicons name="notifications" size={16} color={Colors.white} style={tw`mr-1.5`} />
+                  <Ionicons name="arrow-back" size={16} color={Colors.white} style={tw`mr-1.5`} />
                   <Text style={[tw`text-xs font-black`, { color: Colors.white }]}>
-                    Trigger Sample Delivery Request
+                    Back to Dashboard Radar
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -200,19 +200,37 @@ export default function PartnerHomeScreen() {
           </View>
         )}
 
-        {/* TAB 3: TRIPS & HISTORY */}
+        {/* TAB 3: TRIPS & HISTORY (Redesigned Cockpit) */}
         {activeTab === 'trips' && (
-          <View>
-            <View style={tw`flex-row justify-between items-center mb-2.5`}>
-              <Text style={[tw`text-lg font-black`, { color: Colors.text }]}>Trip History</Text>
-              <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>
-                {orderHistory.length} Total Deliveries
-              </Text>
+          <View style={tw`pb-4`}>
+            {/* Quick Trip Performance Strip */}
+            <View style={tw`flex-row justify-between items-center py-2.5 px-1 mb-3 border-b border-slate-200`}>
+              <View style={tw`items-center flex-1`}>
+                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Today Trips</Text>
+                <Text style={tw`text-base font-black text-slate-900 mt-0.5`}>14 Done</Text>
+              </View>
+              <View style={tw`w-[1px] bg-slate-200 h-6`} />
+              <View style={tw`items-center flex-1`}>
+                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Earned</Text>
+                <Text style={tw`text-base font-black text-emerald-600 mt-0.5`}>₹1,240</Text>
+              </View>
+              <View style={tw`w-[1px] bg-slate-200 h-6`} />
+              <View style={tw`items-center flex-1`}>
+                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Distance</Text>
+                <Text style={tw`text-base font-black text-slate-900 mt-0.5`}>48.2 km</Text>
+              </View>
+              <View style={tw`w-[1px] bg-slate-200 h-6`} />
+              <View style={tw`items-center flex-1`}>
+                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Success</Text>
+                <Text style={tw`text-base font-black text-emerald-600 mt-0.5`}>100%</Text>
+              </View>
             </View>
 
+            {/* Filter Tabs */}
             <OrderFilterTabs selectedFilter={tripFilter} onSelect={setTripFilter} />
 
-            <View style={tw`mt-1.5`}>
+            {/* Flat Route Timeline Trips List */}
+            <View style={tw`mt-1`}>
               {filteredTrips.map((order) => (
                 <OrderHistoryItem
                   key={order.id}
@@ -224,52 +242,21 @@ export default function PartnerHomeScreen() {
           </View>
         )}
 
-        {/* TAB 4: EARNINGS & WALLET */}
+        {/* TAB 4: EARNINGS & WALLET (Unified Cockpit) */}
         {activeTab === 'earnings' && (
           <View>
             <EarningsOverviewCard onOpenWithdraw={() => setShowWithdrawModal(true)} />
-            <IncentiveProgress />
           </View>
         )}
 
-        {/* TAB 5: PROFILE & SETTINGS */}
+        {/* TAB 5: PROFILE & SETTINGS (Redesigned Native Inset Layout) */}
         {activeTab === 'profile' && (
-          <View>
-            <ProfileHeader />
-            <VehicleInfoCard />
-            <DocumentStatusCard />
-
-            {/* Support & Settings action list */}
-            <View style={tw`gap-2 mt-1 mb-5`}>
-              <TouchableOpacity
-                onPress={() => setShowSupportModal(true)}
-                style={[
-                  tw`flex-row items-center border rounded-xl p-3.5 shadow-sm`,
-                  { backgroundColor: Colors.surface, borderColor: Colors.border },
-                ]}
-              >
-                <Ionicons name="headset-outline" size={20} color={Colors.primary} style={tw`mr-3`} />
-                <Text style={[tw`flex-1 text-xs font-bold`, { color: Colors.text }]}>
-                  24x7 Partner Support & Emergency
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setShowSettingsModal(true)}
-                style={[
-                  tw`flex-row items-center border rounded-xl p-3.5 shadow-sm`,
-                  { backgroundColor: Colors.surface, borderColor: Colors.border },
-                ]}
-              >
-                <Ionicons name="settings-outline" size={20} color={Colors.blue} style={tw`mr-3`} />
-                <Text style={[tw`flex-1 text-xs font-bold`, { color: Colors.text }]}>
-                  Preferences & Settings
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ProfileScreenView
+            onOpenSupport={() => setShowSupportModal(true)}
+            onOpenSettings={() => setShowSettingsModal(true)}
+            onOpenWallet={() => setActiveTab('earnings')}
+            onLogout={handleLogout}
+          />
         )}
       </ScrollView>
 

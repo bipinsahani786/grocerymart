@@ -19,7 +19,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.85)',
+          backgroundColor: Colors.overlay,
           justifyContent: 'flex-end',
         }}
       >
@@ -51,7 +51,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                backgroundColor: Colors.surfaceCard,
+                backgroundColor: Colors.surfaceLight,
                 padding: 12,
                 borderRadius: 12,
               }}
@@ -68,7 +68,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                 value={soundAlerts}
                 onValueChange={setSoundAlerts}
                 thumbColor={soundAlerts ? Colors.primary : Colors.textMuted}
-                trackColor={{ false: Colors.border, true: 'rgba(16, 185, 129, 0.4)' }}
+                trackColor={{ false: Colors.border, true: Colors.primaryGlow }}
               />
             </View>
 
@@ -77,7 +77,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                backgroundColor: Colors.surfaceCard,
+                backgroundColor: Colors.surfaceLight,
                 padding: 12,
                 borderRadius: 12,
               }}
@@ -94,7 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                 value={highAccuracyGps}
                 onValueChange={setHighAccuracyGps}
                 thumbColor={highAccuracyGps ? Colors.primary : Colors.textMuted}
-                trackColor={{ false: Colors.border, true: 'rgba(16, 185, 129, 0.4)' }}
+                trackColor={{ false: Colors.border, true: Colors.primaryGlow }}
               />
             </View>
 
@@ -103,7 +103,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                backgroundColor: Colors.surfaceCard,
+                backgroundColor: Colors.surfaceLight,
                 padding: 12,
                 borderRadius: 12,
               }}
@@ -120,7 +120,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                 value={autoAccept}
                 onValueChange={setAutoAccept}
                 thumbColor={autoAccept ? Colors.primary : Colors.textMuted}
-                trackColor={{ false: Colors.border, true: 'rgba(16, 185, 129, 0.4)' }}
+                trackColor={{ false: Colors.border, true: Colors.primaryGlow }}
               />
             </View>
           </View>
@@ -135,7 +135,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
             activeOpacity={0.85}
             onPress={onLogout}
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              backgroundColor: Colors.dangerLight,
               borderColor: Colors.danger,
               borderWidth: 1.5,
               borderRadius: 14,

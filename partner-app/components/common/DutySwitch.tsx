@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { useDutyContext } from '../../context/DutyContext';
+import tw from 'twrnc';
 
 export const DutySwitch: React.FC = () => {
   const { isOnline, toggleDuty } = useDutyContext();
@@ -11,46 +12,41 @@ export const DutySwitch: React.FC = () => {
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={toggleDuty}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: isOnline ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100, 116, 139, 0.2)',
-        borderColor: isOnline ? Colors.primary : Colors.border,
-        borderWidth: 1.5,
-        borderRadius: 24,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-      }}
+      style={[
+        tw`flex-row items-center px-3 py-1.5 rounded-full border shadow-sm`,
+        {
+          backgroundColor: isOnline ? '#FFFFFF' : 'rgba(255, 255, 255, 0.2)',
+          borderColor: isOnline ? '#FFFFFF' : 'rgba(255, 255, 255, 0.35)',
+        },
+      ]}
     >
+      {/* Status Dot */}
       <View
-        style={{
-          width: 10,
-          height: 10,
-          borderRadius: 5,
-          backgroundColor: isOnline ? Colors.primary : Colors.danger,
-          marginRight: 8,
-          shadowColor: isOnline ? Colors.primary : Colors.danger,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.8,
-          shadowRadius: 4,
-        }}
+        style={[
+          tw`w-2.5 h-2.5 rounded-full mr-1.5`,
+          {
+            backgroundColor: isOnline ? '#10B981' : '#E5E7EB',
+          },
+        ]}
       />
+
+      {/* Label */}
       <Text
-        style={{
-          fontSize: 13,
-          fontWeight: '700',
-          color: isOnline ? Colors.primaryLight : Colors.textSecondary,
-          letterSpacing: 0.5,
-        }}
+        style={[
+          tw`text-xs font-black tracking-wider mr-1.5`,
+          { color: isOnline ? '#047857' : '#FFFFFF' },
+        ]}
       >
-        {isOnline ? 'ON DUTY' : 'OFF DUTY'}
+        {isOnline ? 'ONLINE' : 'GO ONLINE'}
       </Text>
+
+      {/* Action Icon */}
       <Ionicons
-        name={isOnline ? 'radio-button-on' : 'power'}
+        name={isOnline ? 'checkmark-circle' : 'power'}
         size={14}
-        color={isOnline ? Colors.primary : Colors.textMuted}
-        style={{ marginLeft: 6 }}
+        color={isOnline ? '#047857' : '#FFFFFF'}
       />
     </TouchableOpacity>
   );
 };
+

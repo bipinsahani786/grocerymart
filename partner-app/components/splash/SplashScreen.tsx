@@ -12,21 +12,17 @@ import tw from 'twrnc';
 export const SplashScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, isLoading } = useAuthContext();
+  const { user, isKycCompleted, isLoading } = useAuthContext();
 
   useEffect(() => {
     if (isLoading) return;
 
     const timer = setTimeout(() => {
-      if (user) {
-        router.replace('/home');
-      } else {
-        router.replace('/login');
-      }
-    }, 2200);
+      router.replace('/login');
+    }, 2000);
 
     return () => clearTimeout(timer);
-  }, [user, isLoading, router]);
+  }, [isLoading, router]);
 
   return (
     <LinearGradient

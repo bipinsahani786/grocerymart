@@ -37,7 +37,7 @@ export function PosNewCustomerModal({
         <div className="space-y-1">
           <label className="text-xs font-bold text-muted-foreground uppercase">Customer Name *</label>
           <Input
-            placeholder="e.g. Bipin Sahani"
+            placeholder="e.g. Sahil"
             value={newCustForm.name}
             onChange={(e) => setNewCustForm((p) => ({ ...p, name: e.target.value }))}
             required

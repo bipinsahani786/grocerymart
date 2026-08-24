@@ -39,7 +39,7 @@ export const NavigationMapView: React.FC<NavigationMapViewProps> = ({
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: isStoreRoute ? 'rgba(59, 130, 246, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+            backgroundColor: isStoreRoute ? Colors.blueLight : Colors.primaryBg,
             justifyContent: 'center',
             alignItems: 'center',
             marginRight: 12,
@@ -66,7 +66,7 @@ export const NavigationMapView: React.FC<NavigationMapViewProps> = ({
       <View
         style={{
           height: 180,
-          backgroundColor: '#0F172A',
+          backgroundColor: Colors.surfaceLight,
           borderColor: Colors.border,
           borderWidth: 1,
           position: 'relative',
@@ -85,7 +85,7 @@ export const NavigationMapView: React.FC<NavigationMapViewProps> = ({
             bottom: 0,
             opacity: 0.15,
             borderWidth: 1,
-            borderColor: '#38BDF8',
+            borderColor: Colors.border,
           }}
         />
 
@@ -136,7 +136,7 @@ export const NavigationMapView: React.FC<NavigationMapViewProps> = ({
               shadowRadius: 6,
             }}
           >
-            <Ionicons name="bicycle" size={16} color={Colors.textDark} />
+            <Ionicons name="bicycle" size={16} color={Colors.white} />
           </View>
 
           {/* Destination Pin */}
@@ -163,7 +163,7 @@ export const NavigationMapView: React.FC<NavigationMapViewProps> = ({
             position: 'absolute',
             top: 10,
             left: 10,
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backgroundColor: Colors.surface,
             paddingHorizontal: 8,
             paddingVertical: 4,
             borderRadius: 8,

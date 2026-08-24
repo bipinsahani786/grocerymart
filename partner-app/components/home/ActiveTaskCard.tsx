@@ -5,221 +5,153 @@ import { Colors } from '../../constants/theme';
 import { useDeliveryContext } from '../../context/DeliveryContext';
 import { useDutyContext } from '../../context/DutyContext';
 import { StatusBadge } from '../common/StatusBadge';
+import tw from 'twrnc';
 
 interface ActiveTaskCardProps {
-  onOpenActiveTask: () => void;
+  onOpenActiveTask?: () => void;
 }
 
 export const ActiveTaskCard: React.FC<ActiveTaskCardProps> = ({ onOpenActiveTask }) => {
-  const { isOnline, toggleDuty } = useDutyContext();
   const { activeOrder, triggerIncomingOrderSimulation } = useDeliveryContext();
+  const { isOnline, toggleDuty, currentHub } = useDutyContext();
 
+  // State 1: OFF DUTY
   if (!isOnline) {
     return (
       <View
-        style={{
-          backgroundColor: Colors.surfaceCard,
-          borderRadius: 16,
-          padding: 20,
-          borderWidth: 1,
-          borderColor: Colors.border,
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
+        style={[
+          tw`rounded-2xl p-4 mb-3.5 shadow-sm items-center`,
+          { backgroundColor: Colors.surface },
+        ]}
       >
-        <View
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: 'rgba(100, 116, 139, 0.2)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
-        >
-          <Ionicons name="power" size={24} color={Colors.textSecondary} />
-        </View>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.text }}>
-          You Are Currently Off Duty
+        <Ionicons name="power" size={24} color={Colors.textMuted} style={tw`mb-2`} />
+        <Text style={[tw`text-sm font-black`, { color: Colors.text }]}>
+          You Are Currently Offline
         </Text>
-        <Text
-          style={{
-            fontSize: 12,
-            color: Colors.textSecondary,
-            textAlign: 'center',
-            marginTop: 4,
-            marginBottom: 16,
-          }}
-        >
-          Go online to start receiving instant grocery delivery requests in your zone.
+        <Text style={[tw`text-[11px] text-center mt-0.5 mb-3`, { color: Colors.textSecondary }]}>
+          Go online to start receiving instant grocery orders in your zone.
         </Text>
         <TouchableOpacity
+          activeOpacity={0.85}
           onPress={toggleDuty}
-          style={{
-            backgroundColor: Colors.primary,
-            paddingVertical: 12,
-            paddingHorizontal: 28,
-            borderRadius: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
+          style={[
+            tw`flex-row items-center px-5 py-2.5 rounded-xl shadow-sm`,
+            { backgroundColor: Colors.primary },
+          ]}
         >
-          <Ionicons name="radio-button-on" size={16} color={Colors.textDark} style={{ marginRight: 8 }} />
-          <Text style={{ fontSize: 14, fontWeight: '800', color: Colors.textDark }}>
-            GO ONLINE NOW
+          <Ionicons name="radio-button-on" size={14} color={Colors.white} style={tw`mr-1.5`} />
+          <Text style={[tw`text-xs font-black tracking-wide`, { color: Colors.white }]}>
+            GO ONLINE
           </Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  // State 2: ACTIVE ORDER IN PROGRESS
   if (activeOrder) {
     return (
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onOpenActiveTask}
-        style={{
-          backgroundColor: Colors.surfaceCard,
-          borderRadius: 16,
-          padding: 16,
-          borderWidth: 1.5,
-          borderColor: Colors.primary,
-          marginBottom: 16,
-        }}
+        style={[
+          tw`rounded-2xl p-4 mb-3.5 shadow-sm`,
+          { backgroundColor: Colors.surface },
+        ]}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: Colors.primary,
-                marginRight: 8,
-              }}
-            />
-            <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.primaryLight }}>
-              ACTIVE TRIP: {activeOrder.orderNumber}
+        {/* Top Header */}
+        <View style={tw`flex-row justify-between items-center mb-2.5`}>
+          <View style={tw`flex-row items-center`}>
+            <View style={[tw`w-2 h-2 rounded-full mr-2`, { backgroundColor: Colors.primary }]} />
+            <Text style={[tw`text-xs font-black`, { color: Colors.primaryDark }]}>
+              ACTIVE ORDER #{activeOrder.orderNumber}
             </Text>
           </View>
           <StatusBadge status={activeOrder.status} />
         </View>
 
-        {/* Route info */}
-        <View style={{ marginTop: 12, backgroundColor: Colors.surfaceLight, borderRadius: 10, padding: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Ionicons name="storefront" size={16} color={Colors.blue} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.text }} numberOfLines={1}>
+        {/* Route Snapshot */}
+        <View style={tw`py-1`}>
+          <View style={tw`flex-row items-center mb-1.5`}>
+            <Ionicons name="storefront" size={13} color={Colors.blue} style={tw`mr-2`} />
+            <Text style={[tw`text-xs font-bold flex-1`, { color: Colors.text }]} numberOfLines={1}>
               {activeOrder.storeName}
             </Text>
+            <Text style={[tw`text-[10px]`, { color: Colors.textSecondary }]}>
+              {activeOrder.storeDistanceKm} km
+            </Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="location" size={16} color={Colors.primary} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.text }} numberOfLines={1}>
+
+          <View style={tw`flex-row items-center`}>
+            <Ionicons name="location" size={13} color={Colors.primary} style={tw`mr-2`} />
+            <Text style={[tw`text-xs font-bold flex-1`, { color: Colors.text }]} numberOfLines={1}>
               {activeOrder.customerAddress}
+            </Text>
+            <Text style={[tw`text-[10px]`, { color: Colors.textSecondary }]}>
+              {activeOrder.customerDistanceKm} km
             </Text>
           </View>
         </View>
 
-        {/* Footer info: payout and continue button */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 12,
-          }}
-        >
-          <View>
-            <Text style={{ fontSize: 11, color: Colors.textMuted }}>Trip Payout</Text>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: Colors.primary }}>
-              ₹{activeOrder.totalPayout}
-            </Text>
-          </View>
+        {/* Footer */}
+        <View style={[tw`flex-row justify-between items-center pt-2.5 mt-2 border-t`, { borderTopColor: Colors.borderLight }]}>
+          <Text style={[tw`text-xs font-black`, { color: Colors.primaryDark }]}>
+            Earn: ₹{activeOrder.totalPayout}
+          </Text>
 
-          <View
-            style={{
-              backgroundColor: Colors.primary,
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 10,
-            }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: '800', color: Colors.textDark, marginRight: 6 }}>
-              Continue Order
+          <View style={tw`flex-row items-center`}>
+            <Text style={[tw`text-xs font-bold mr-1`, { color: Colors.primary }]}>
+              View Route
             </Text>
-            <Ionicons name="arrow-forward" size={14} color={Colors.textDark} />
+            <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
           </View>
         </View>
       </TouchableOpacity>
     );
   }
 
-  // Idle state: waiting for order
+  // State 3: IDLE ON DUTY (Radar Live Search Mode)
   return (
     <View
-      style={{
-        backgroundColor: Colors.surfaceCard,
-        borderRadius: 16,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        alignItems: 'center',
-        marginBottom: 16,
-      }}
+      style={[
+        tw`rounded-2xl p-4 mb-3.5 shadow-sm`,
+        { backgroundColor: Colors.surface },
+      ]}
     >
-      <View
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 26,
-          backgroundColor: 'rgba(16, 185, 129, 0.15)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: 12,
-        }}
-      >
-        <Ionicons name="radio" size={28} color={Colors.primary} />
+      <View style={tw`flex-row items-center justify-between`}>
+        <View style={tw`flex-row items-center flex-1 mr-2`}>
+          <View
+            style={[
+              tw`w-9 h-9 rounded-xl justify-center items-center mr-3`,
+              { backgroundColor: Colors.primaryBg },
+            ]}
+          >
+            <Ionicons name="radio" size={20} color={Colors.primaryDark} />
+          </View>
+          <View style={tw`flex-1`}>
+            <Text style={[tw`text-xs font-black`, { color: Colors.text }]}>
+              Looking for Nearby Orders...
+            </Text>
+            <Text style={[tw`text-[10px] mt-0.5`, { color: Colors.textSecondary }]} numberOfLines={1}>
+              Stationed at {currentHub}
+            </Text>
+          </View>
+        </View>
+
+        {/* Action Trigger */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={triggerIncomingOrderSimulation}
+          style={[
+            tw`px-3 py-1.5 rounded-lg border`,
+            { backgroundColor: Colors.surfaceLight, borderColor: Colors.border },
+          ]}
+        >
+          <Text style={[tw`text-[11px] font-bold`, { color: Colors.primaryDark }]}>
+            Test Order
+          </Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.text }}>
-        Looking for Nearby Orders...
-      </Text>
-      <Text
-        style={{
-          fontSize: 12,
-          color: Colors.textSecondary,
-          textAlign: 'center',
-          marginTop: 4,
-          marginBottom: 16,
-        }}
-      >
-        You are in the high priority queue for Koramangala Hub #04. Stay close to the store for faster assignments.
-      </Text>
-
-      {/* Simulator Action Button */}
-      <TouchableOpacity
-        onPress={triggerIncomingOrderSimulation}
-        activeOpacity={0.85}
-        style={{
-          backgroundColor: Colors.surfaceLight,
-          borderColor: Colors.primary,
-          borderWidth: 1.5,
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          borderRadius: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-        }}
-      >
-        <Ionicons name="notifications-circle" size={18} color={Colors.primary} style={{ marginRight: 8 }} />
-        <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.primaryLight }}>
-          Test Simulated Delivery Alert
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 };

@@ -33,7 +33,7 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
                 width: 40,
                 height: 40,
                 borderRadius: 20,
-                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                backgroundColor: Colors.primaryBg,
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginRight: 10,
@@ -58,7 +58,7 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
                 width: 38,
                 height: 38,
                 borderRadius: 19,
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                backgroundColor: Colors.blueLight,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}
@@ -71,7 +71,7 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
                 width: 38,
                 height: 38,
                 borderRadius: 19,
-                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                backgroundColor: Colors.primaryBg,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}
@@ -90,7 +90,7 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
             marginTop: 12,
           }}
         >
-          <Text style={{ fontSize: 11, color: Colors.primaryLight, fontWeight: '700', marginBottom: 2 }}>
+          <Text style={{ fontSize: 11, color: Colors.primaryDark, fontWeight: '700', marginBottom: 2 }}>
             DELIVERY DESTINATION
           </Text>
           <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.text }}>
@@ -102,7 +102,7 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
         {order.deliveryNotes && (
           <View
             style={{
-              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              backgroundColor: Colors.amberLight,
               borderColor: Colors.amber,
               borderWidth: 1,
               borderRadius: 10,
@@ -112,8 +112,8 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
               alignItems: 'center',
             }}
           >
-            <Ionicons name="information-circle" size={18} color={Colors.amber} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 12, color: Colors.amber, flex: 1 }}>
+            <Ionicons name="information-circle" size={18} color={Colors.amberDark} style={{ marginRight: 8 }} />
+            <Text style={{ fontSize: 12, color: Colors.amberDark, flex: 1 }}>
               Note: {order.deliveryNotes}
             </Text>
           </View>
@@ -148,7 +148,7 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
               style={{
                 fontSize: 18,
                 fontWeight: '900',
-                color: order.paymentMode === 'PREPAID' ? Colors.primaryLight : Colors.amber,
+                color: order.paymentMode === 'PREPAID' ? Colors.primaryDark : Colors.amberDark,
               }}
             >
               {order.paymentMode === 'PREPAID' ? '₹0.00' : `₹${order.totalAmount}`}
@@ -174,8 +174,8 @@ export const CustomerDropSection: React.FC<CustomerDropSectionProps> = ({
           shadowRadius: 8,
         }}
       >
-        <Ionicons name="checkmark-done-circle" size={22} color={Colors.textDark} style={{ marginRight: 8 }} />
-        <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.textDark }}>
+        <Ionicons name="checkmark-done-circle" size={22} color={Colors.white} style={{ marginRight: 8 }} />
+        <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.white }}>
           ARRIVED AT DOORSTEP & VERIFY OTP
         </Text>
       </TouchableOpacity>

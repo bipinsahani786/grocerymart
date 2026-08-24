@@ -46,6 +46,7 @@ export const Colors = {
   black: '#000000',
   offline: '#6B7280',
   offlineBg: '#E5E7EB',
+  overlay: 'rgba(0, 0, 0, 0.5)',
 
   // Splash Screen specific
   splashGradientStart: '#0f9b0f',

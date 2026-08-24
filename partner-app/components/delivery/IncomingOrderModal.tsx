@@ -33,7 +33,7 @@ export const IncomingOrderModal: React.FC = () => {
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backgroundColor: Colors.overlay,
           justifyContent: 'flex-end',
         }}
       >
@@ -63,7 +63,7 @@ export const IncomingOrderModal: React.FC = () => {
                   width: 32,
                   height: 32,
                   borderRadius: 16,
-                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                  backgroundColor: Colors.primaryBg,
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginRight: 8,
@@ -79,7 +79,7 @@ export const IncomingOrderModal: React.FC = () => {
             {/* Countdown Badge */}
             <View
               style={{
-                backgroundColor: secondsRemaining < 15 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                backgroundColor: secondsRemaining < 15 ? Colors.dangerLight : Colors.amberLight,
                 borderColor: secondsRemaining < 15 ? Colors.danger : Colors.amber,
                 borderWidth: 1.5,
                 borderRadius: 20,
@@ -92,14 +92,14 @@ export const IncomingOrderModal: React.FC = () => {
               <Ionicons
                 name="timer-outline"
                 size={14}
-                color={secondsRemaining < 15 ? Colors.danger : Colors.amber}
+                color={secondsRemaining < 15 ? Colors.danger : Colors.amberDark}
                 style={{ marginRight: 4 }}
               />
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: '800',
-                  color: secondsRemaining < 15 ? Colors.danger : Colors.amber,
+                  color: secondsRemaining < 15 ? Colors.danger : Colors.amberDark,
                 }}
               >
                 {secondsRemaining}s
@@ -110,7 +110,7 @@ export const IncomingOrderModal: React.FC = () => {
           {/* Payout Hero Card */}
           <View
             style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              backgroundColor: Colors.primaryBg,
               borderColor: Colors.primary,
               borderWidth: 1.5,
               borderRadius: 16,
@@ -119,7 +119,7 @@ export const IncomingOrderModal: React.FC = () => {
               marginBottom: 16,
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primaryLight }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primaryDark }}>
               ESTIMATED TRIP EARNING
             </Text>
             <Text style={{ fontSize: 36, fontWeight: '900', color: Colors.text, marginVertical: 2 }}>
@@ -130,10 +130,10 @@ export const IncomingOrderModal: React.FC = () => {
               <Text style={{ fontSize: 11, color: Colors.textSecondary }}>
                 Base: ₹{incomingOrder.payoutEarnings}
               </Text>
-              <Text style={{ fontSize: 11, color: Colors.amber, fontWeight: '700' }}>
+              <Text style={{ fontSize: 11, color: Colors.amberDark, fontWeight: '700' }}>
                 Surge: +₹{incomingOrder.surgeBonus}
               </Text>
-              <Text style={{ fontSize: 11, color: Colors.primaryLight, fontWeight: '700' }}>
+              <Text style={{ fontSize: 11, color: Colors.primaryDark, fontWeight: '700' }}>
                 Tip: +₹{incomingOrder.tipAmount}
               </Text>
             </View>
@@ -219,7 +219,7 @@ export const IncomingOrderModal: React.FC = () => {
               onPress={rejectIncomingOrder}
               style={{
                 flex: 1,
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                backgroundColor: Colors.dangerLight,
                 borderColor: Colors.danger,
                 borderWidth: 1.5,
                 borderRadius: 14,
@@ -249,8 +249,8 @@ export const IncomingOrderModal: React.FC = () => {
                 shadowRadius: 8,
               }}
             >
-              <Ionicons name="checkmark-circle" size={20} color={Colors.textDark} style={{ marginRight: 8 }} />
-              <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.textDark }}>
+              <Ionicons name="checkmark-circle" size={20} color={Colors.white} style={{ marginRight: 8 }} />
+              <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.white }}>
                 ACCEPT TRIP
               </Text>
             </TouchableOpacity>

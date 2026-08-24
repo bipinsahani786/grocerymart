@@ -44,14 +44,14 @@ export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order })
           marginBottom: 16,
         }}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: 18,
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                backgroundColor: Colors.blueLight,
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginRight: 10,
@@ -74,7 +74,7 @@ export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order })
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              backgroundColor: Colors.primaryBg,
               justifyContent: 'center',
               alignItems: 'center',
             }}
@@ -143,13 +143,13 @@ export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order })
             <TouchableOpacity
               onPress={handleScanAll}
               style={{
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                backgroundColor: Colors.primaryBg,
                 paddingHorizontal: 8,
                 paddingVertical: 4,
                 borderRadius: 6,
               }}
             >
-              <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.primaryLight }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.primaryDark }}>
                 Verify All
               </Text>
             </TouchableOpacity>
@@ -166,7 +166,7 @@ export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order })
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  backgroundColor: item.scanned ? 'rgba(16, 185, 129, 0.08)' : Colors.surfaceLight,
+                  backgroundColor: item.scanned ? Colors.primaryBg : Colors.surfaceLight,
                   borderColor: item.scanned ? Colors.primary : Colors.border,
                   borderWidth: 1,
                   borderRadius: 10,
@@ -174,61 +174,67 @@ export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order })
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <Ionicons
-                    name={item.scanned ? 'checkbox' : 'square-outline'}
-                    size={20}
-                    color={item.scanned ? Colors.primary : Colors.textMuted}
-                    style={{ marginRight: 10 }}
-                  />
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
                         fontSize: 13,
                         fontWeight: '600',
-                        color: Colors.text,
+                        color: item.scanned ? Colors.text : Colors.textSecondary,
                         textDecorationLine: item.scanned ? 'line-through' : 'none',
                       }}
                     >
-                      {item.name}
-                    </Text>
-                    <Text style={{ fontSize: 11, color: Colors.textSecondary }}>
-                      Qty: {item.quantity} ({item.unit}) • ₹{item.price}
+                      {item.quantity}x {item.name}
                     </Text>
                   </View>
+                </View>
+
+                <View
+                  style={{
+                    backgroundColor: item.scanned ? Colors.primary : Colors.border,
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: Colors.white }}>
+                    {item.scanned ? 'READY' : 'SCAN'}
+                  </Text>
                 </View>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Bag & Picked Up Confirmation */}
+          {/* Complete Pickup Button */}
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handlePickedUp}
             style={{
-              backgroundColor: allScanned ? Colors.primary : Colors.surfaceLight,
-              borderColor: allScanned ? Colors.primary : Colors.border,
-              borderWidth: 1,
+              backgroundColor: allScanned ? Colors.primary : Colors.border,
               borderRadius: 14,
-              paddingVertical: 14,
+              paddingVertical: 15,
               alignItems: 'center',
               flexDirection: 'row',
               justifyContent: 'center',
+              shadowColor: Colors.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: allScanned ? 0.4 : 0,
+              shadowRadius: 8,
             }}
           >
             <Ionicons
               name="bag-check"
-              size={18}
-              color={allScanned ? Colors.textDark : Colors.textSecondary}
+              size={20}
+              color={allScanned ? Colors.white : Colors.textMuted}
               style={{ marginRight: 8 }}
             />
             <Text
               style={{
-                fontSize: 15,
-                fontWeight: '800',
-                color: allScanned ? Colors.textDark : Colors.textSecondary,
+                fontSize: 16,
+                fontWeight: '900',
+                color: allScanned ? Colors.white : Colors.textMuted,
               }}
             >
-              CONFIRM PICKUP & START DELIVERY
+              {allScanned ? 'CONFIRM PICKUP & START TRIP' : 'VERIFY ALL ITEMS TO PROCEED'}
             </Text>
           </TouchableOpacity>
         </View>

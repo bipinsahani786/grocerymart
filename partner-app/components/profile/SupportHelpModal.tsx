@@ -27,7 +27,7 @@ export const SupportHelpModal: React.FC<SupportHelpModalProps> = ({ visible, onC
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.85)',
+          backgroundColor: Colors.overlay,
           justifyContent: 'flex-end',
         }}
       >
@@ -63,7 +63,7 @@ export const SupportHelpModal: React.FC<SupportHelpModalProps> = ({ visible, onC
             <TouchableOpacity
               activeOpacity={0.85}
               style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                backgroundColor: Colors.dangerLight,
                 borderColor: Colors.danger,
                 borderWidth: 1.5,
                 borderRadius: 14,
@@ -192,7 +192,7 @@ export const SupportHelpModal: React.FC<SupportHelpModalProps> = ({ visible, onC
                     marginTop: 10,
                   }}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: Colors.textDark }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: Colors.white }}>
                     Submit Message
                   </Text>
                 </TouchableOpacity>

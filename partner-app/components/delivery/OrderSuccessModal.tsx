@@ -19,7 +19,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backgroundColor: Colors.overlay,
           justifyContent: 'center',
           alignItems: 'center',
           padding: 24,
@@ -43,7 +43,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
               width: 72,
               height: 72,
               borderRadius: 36,
-              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              backgroundColor: Colors.primaryBg,
               justifyContent: 'center',
               alignItems: 'center',
               marginBottom: 16,
@@ -64,7 +64,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
           {/* Payout badge */}
           <View
             style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              backgroundColor: Colors.primaryBg,
               borderColor: Colors.primary,
               borderWidth: 1.5,
               borderRadius: 16,
@@ -75,7 +75,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
               width: '100%',
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primaryLight }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primaryDark }}>
               ADDED TO YOUR WALLET
             </Text>
             <Text style={{ fontSize: 32, fontWeight: '900', color: Colors.text, marginTop: 2 }}>
@@ -98,7 +98,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
               alignItems: 'center',
             }}
           >
-            <Text style={{ fontSize: 15, fontWeight: '900', color: Colors.textDark }}>
+            <Text style={{ fontSize: 15, fontWeight: '900', color: Colors.white }}>
               BACK TO DASHBOARD
             </Text>
           </TouchableOpacity>

@@ -42,7 +42,7 @@ export const WalletPayoutModal: React.FC<WalletPayoutModalProps> = ({ visible, o
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.85)',
+          backgroundColor: Colors.overlay,
           justifyContent: 'flex-end',
         }}
       >
@@ -61,10 +61,10 @@ export const WalletPayoutModal: React.FC<WalletPayoutModalProps> = ({ visible, o
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <View>
               <Text style={{ fontSize: 18, fontWeight: '800', color: Colors.text }}>
-                Instant Bank Payout
+                Withdraw to Bank
               </Text>
               <Text style={{ fontSize: 12, color: Colors.textSecondary }}>
-                Available Balance: ₹{earningsSummary.walletBalance}
+                Instant payout via IMPS to your registered account
               </Text>
             </View>
 
@@ -73,17 +73,17 @@ export const WalletPayoutModal: React.FC<WalletPayoutModalProps> = ({ visible, o
             </TouchableOpacity>
           </View>
 
-          {/* Bank Destination Card */}
+          {/* Account info card */}
           <View
             style={{
+              flexDirection: 'row',
+              alignItems: 'center',
               backgroundColor: Colors.surfaceCard,
-              borderRadius: 14,
-              padding: 14,
+              padding: 12,
+              borderRadius: 12,
               borderWidth: 1,
               borderColor: Colors.border,
               marginBottom: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
             }}
           >
             <View
@@ -91,7 +91,7 @@ export const WalletPayoutModal: React.FC<WalletPayoutModalProps> = ({ visible, o
                 width: 36,
                 height: 36,
                 borderRadius: 18,
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                backgroundColor: Colors.blueLight,
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginRight: 10,
@@ -158,7 +158,7 @@ export const WalletPayoutModal: React.FC<WalletPayoutModalProps> = ({ visible, o
                     borderColor: Colors.border,
                   }}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.primaryLight }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.primaryDark }}>
                     {chip === 'All' ? 'Transfer All' : `₹${chip}`}
                   </Text>
                 </TouchableOpacity>
@@ -187,8 +187,8 @@ export const WalletPayoutModal: React.FC<WalletPayoutModalProps> = ({ visible, o
               alignItems: 'center',
             }}
           >
-            <Text style={{ fontSize: 15, fontWeight: '900', color: Colors.textDark }}>
-              CONFIRM INSTANT TRANSFER (₹0 FEES)
+            <Text style={{ fontSize: 15, fontWeight: '800', color: Colors.white }}>
+              TRANSFER TO BANK NOW
             </Text>
           </TouchableOpacity>
         </View>
