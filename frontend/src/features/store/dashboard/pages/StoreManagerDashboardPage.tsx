@@ -301,7 +301,7 @@ export default function StoreManagerDashboardPage() {
                 <span
                   className={`text-[11px] font-semibold ${isDark ? "text-white" : "text-slate-700"}`}
                 >
-                  Supervisor: {user?.name || "Bipin Sahani"}
+                  Supervisor: {user?.name || "Sahil"}
                 </span>
               </div>
               <Badge className="bg-emerald-500 text-white font-extrabold text-[8px] px-2.5 py-0.5 tracking-wider uppercase border-none animate-pulse">
