@@ -1,0 +1,109 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/theme';
+
+interface OrderSuccessModalProps {
+  visible: boolean;
+  payoutAmount: number;
+  onDismiss: () => void;
+}
+
+export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
+  visible,
+  payoutAmount,
+  onDismiss,
+}) => {
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 24,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: Colors.surface,
+            borderRadius: 24,
+            borderWidth: 2,
+            borderColor: Colors.primary,
+            padding: 24,
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: 380,
+          }}
+        >
+          {/* Animated Celebration Icon */}
+          <View
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 36,
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 16,
+              borderWidth: 2,
+              borderColor: Colors.primary,
+            }}
+          >
+            <Ionicons name="checkmark-done" size={38} color={Colors.primary} />
+          </View>
+
+          <Text style={{ fontSize: 22, fontWeight: '900', color: Colors.text, textAlign: 'center' }}>
+            Delivery Completed! 🎉
+          </Text>
+          <Text style={{ fontSize: 13, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
+            Customer OTP verified successfully.
+          </Text>
+
+          {/* Payout badge */}
+          <View
+            style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              borderColor: Colors.primary,
+              borderWidth: 1.5,
+              borderRadius: 16,
+              paddingVertical: 14,
+              paddingHorizontal: 24,
+              alignItems: 'center',
+              marginVertical: 20,
+              width: '100%',
+            }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primaryLight }}>
+              ADDED TO YOUR WALLET
+            </Text>
+            <Text style={{ fontSize: 32, fontWeight: '900', color: Colors.text, marginTop: 2 }}>
+              +₹{payoutAmount}
+            </Text>
+            <Text style={{ fontSize: 11, color: Colors.textSecondary, marginTop: 2 }}>
+              Great job! Your on-time rating is 99.1%
+            </Text>
+          </View>
+
+          {/* Dismiss Button */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onDismiss}
+            style={{
+              backgroundColor: Colors.primary,
+              width: '100%',
+              borderRadius: 14,
+              paddingVertical: 14,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '900', color: Colors.textDark }}>
+              BACK TO DASHBOARD
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
