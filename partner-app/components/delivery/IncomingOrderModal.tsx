@@ -1,257 +1,204 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
 import { useDeliveryContext } from '../../context/DeliveryContext';
+import { Typography } from '../../constants/typography';
+import { DeliveryOrder } from '../../constants/mockData';
+import tw from 'twrnc';
 
-export const IncomingOrderModal: React.FC = () => {
-  const { incomingOrder, acceptIncomingOrder, rejectIncomingOrder } = useDeliveryContext();
-  const [secondsRemaining, setSecondsRemaining] = useState(45);
+export interface IncomingOrderModalProps {
+  visible?: boolean;
+  order?: DeliveryOrder | null;
+  onAccept?: () => void;
+  onReject?: () => void;
+}
 
-  useEffect(() => {
-    if (!incomingOrder) {
-      setSecondsRemaining(45);
-      return;
-    }
-    const timer = setInterval(() => {
-      setSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          rejectIncomingOrder();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [incomingOrder, rejectIncomingOrder]);
+export const IncomingOrderModal: React.FC<IncomingOrderModalProps> = ({
+  visible,
+  order: propOrder,
+  onAccept: propOnAccept,
+  onReject: propOnReject,
+}) => {
+  const context = useDeliveryContext();
+  const incomingOrder = propOrder ?? context.incomingOrder;
+  const acceptIncomingOrder = propOnAccept ?? context.acceptIncomingOrder;
+  const rejectIncomingOrder = propOnReject ?? context.rejectIncomingOrder;
 
-  if (!incomingOrder) return null;
+  if (!incomingOrder || visible === false) return null;
+
+  const totalDistance = (
+    (incomingOrder.storeDistanceKm || 0.8) + (incomingOrder.customerDistanceKm || 2.4)
+  ).toFixed(1);
 
   return (
-    <Modal visible={!!incomingOrder} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: Colors.overlay,
-          justifyContent: 'flex-end',
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: Colors.surface,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            borderWidth: 2,
-            borderColor: Colors.primary,
-            padding: 20,
-            paddingBottom: 36,
-          }}
-        >
-          {/* Header & Timer */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: Colors.primaryBg,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 8,
-                }}
-              >
-                <Ionicons name="bicycle" size={18} color={Colors.primary} />
+    <Modal visible={!!incomingOrder} transparent animationType="slide" statusBarTranslucent>
+      <View style={[tw`flex-1 justify-end`, { backgroundColor: 'rgba(15, 23, 42, 0.68)' }]}>
+        <View style={tw`bg-white rounded-t-3xl border-t-2 border-emerald-500 shadow-2xl p-4 pb-6`}>
+          {/* Top Grabber Handle */}
+          <View style={tw`w-10 h-1 rounded-full bg-slate-200 self-center mb-3`} />
+
+          {/* ================= 1. CLEAN COMPACT HEADER & PAYOUT ================= */}
+          <View style={tw`flex-row justify-between items-center pb-3 border-b border-slate-100`}>
+            {/* Left: Guaranteed Payout */}
+            <View>
+              <Text style={[Typography.caption, { color: '#047857', fontSize: 10, fontWeight: '800', letterSpacing: 0.3 }]}>
+                NEW DELIVERY REQUEST
+              </Text>
+              <View style={tw`flex-row items-baseline mt-0.5`}>
+                <Text style={[Typography.amountLarge, { color: '#0F172A', fontSize: 22, fontWeight: '900' }]}>
+                  ₹{incomingOrder.totalPayout}
+                </Text>
+                <View style={tw`ml-2 px-1.5 py-0.2 rounded bg-emerald-50 border border-emerald-200`}>
+                  <Text style={[Typography.badge, { color: '#047857', fontSize: 9 }]}>
+                    +₹{incomingOrder.surgeBonus || 35} Surge
+                  </Text>
+                </View>
               </View>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: Colors.text }}>
-                New Delivery Request!
+            </View>
+
+            {/* Right: Trip Specs Pill */}
+            <View style={tw`items-end`}>
+              <View style={tw`flex-row items-center px-2 py-1 rounded-xl bg-slate-100 border border-slate-200`}>
+                <Ionicons name="time-outline" size={11} color="#0F172A" style={tw`mr-1`} />
+                <Text style={[Typography.caption, { color: '#0F172A', fontSize: 10, fontWeight: '800' }]}>
+                  ~14 mins
+                </Text>
+                <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginLeft: 3 }]}>
+                  ({totalDistance} km)
+                </Text>
+              </View>
+              <Text style={[Typography.caption, { color: '#64748B', fontSize: 9, marginTop: 2 }]}>
+                #{incomingOrder.orderNumber || 'GM-4920'}
+              </Text>
+            </View>
+          </View>
+
+          {/* ================= 2. DETAILED & CLEAR ROUTE TIMELINE ================= */}
+          <View style={tw`py-3`}>
+            {/* Step 1: Dark Store Pickup */}
+            <View style={tw`flex-row items-start mb-3.5`}>
+              <View style={tw`items-center mr-2.5 mt-0.5`}>
+                <View style={tw`w-5 h-5 rounded-full bg-blue-600 items-center justify-center shadow-sm`}>
+                  <Ionicons name="storefront" size={10} color="#FFFFFF" />
+                </View>
+                <View style={tw`w-0.5 h-8 bg-slate-200 my-0.5`} />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <View style={tw`flex-row items-center justify-between`}>
+                  <Text style={[Typography.caption, { color: '#2563EB', fontSize: 9, fontWeight: '800' }]}>
+                    PICKUP DARK STORE
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#64748B', fontSize: 9 }]}>
+                    {incomingOrder.storeDistanceKm || 0.8} km • ~3 mins
+                  </Text>
+                </View>
+                <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11, marginTop: 1 }]} numberOfLines={1}>
+                  {incomingOrder.storeName || 'Koramangala Dark Store #04'}
+                </Text>
+                <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 1 }]}>
+                  80 Feet Road (Rack #B-04 • Shelf 2 • Counter 1)
+                </Text>
+              </View>
+            </View>
+
+            {/* Step 2: Customer Delivery Drop */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`items-center mr-2.5 mt-0.5`}>
+                <View style={tw`w-5 h-5 rounded-full bg-emerald-600 items-center justify-center shadow-sm`}>
+                  <Ionicons name="location" size={11} color="#FFFFFF" />
+                </View>
+              </View>
+
+              <View style={tw`flex-1`}>
+                <View style={tw`flex-row items-center justify-between`}>
+                  <Text style={[Typography.caption, { color: '#047857', fontSize: 9, fontWeight: '800' }]}>
+                    CUSTOMER DELIVERY
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#64748B', fontSize: 9 }]}>
+                    {incomingOrder.customerDistanceKm || 2.4} km • ~11 mins
+                  </Text>
+                </View>
+                <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11, marginTop: 1 }]} numberOfLines={1}>
+                  Flat 402, Green Glen Layout, 100ft Road
+                </Text>
+                <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 1 }]}>
+                  Customer: {incomingOrder.customerName || 'Rahul Sharma'} (★ 4.95 Rating)
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* ================= 3. COMPACT 3-PILLAR SPEC STRIP ================= */}
+          <View style={tw`flex-row justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-200 mb-3.5`}>
+            <View style={tw`flex-row items-center`}>
+              <Ionicons name="cube-outline" size={12} color="#475569" style={tw`mr-1`} />
+              <Text style={[Typography.caption, { color: '#334155', fontSize: 10, fontWeight: '700' }]}>
+                {incomingOrder.itemsCount || 4} Items
               </Text>
             </View>
 
-            {/* Countdown Badge */}
-            <View
-              style={{
-                backgroundColor: secondsRemaining < 15 ? Colors.dangerLight : Colors.amberLight,
-                borderColor: secondsRemaining < 15 ? Colors.danger : Colors.amber,
-                borderWidth: 1.5,
-                borderRadius: 20,
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
+            <View style={tw`w-px h-3.5 bg-slate-200`} />
+
+            <View style={tw`flex-row items-center`}>
               <Ionicons
-                name="timer-outline"
-                size={14}
-                color={secondsRemaining < 15 ? Colors.danger : Colors.amberDark}
-                style={{ marginRight: 4 }}
+                name={incomingOrder.paymentMode === 'PREPAID' ? 'card-outline' : 'cash-outline'}
+                size={12}
+                color={incomingOrder.paymentMode === 'PREPAID' ? '#047857' : '#D97706'}
+                style={tw`mr-1`}
               />
               <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: '800',
-                  color: secondsRemaining < 15 ? Colors.danger : Colors.amberDark,
-                }}
+                style={[
+                  Typography.caption,
+                  {
+                    color: incomingOrder.paymentMode === 'PREPAID' ? '#047857' : '#D97706',
+                    fontSize: 10,
+                    fontWeight: '800',
+                  },
+                ]}
               >
-                {secondsRemaining}s
+                {incomingOrder.paymentMode === 'PREPAID' ? 'Prepaid (₹0)' : 'Collect ₹450 COD'}
+              </Text>
+            </View>
+
+            <View style={tw`w-px h-3.5 bg-slate-200`} />
+
+            <View style={tw`flex-row items-center`}>
+              <Ionicons name="bicycle-outline" size={12} color="#0F172A" style={tw`mr-1`} />
+              <Text style={[Typography.caption, { color: '#0F172A', fontSize: 10, fontWeight: '800' }]}>
+                {totalDistance} km Total
               </Text>
             </View>
           </View>
 
-          {/* Payout Hero Card */}
-          <View
-            style={{
-              backgroundColor: Colors.primaryBg,
-              borderColor: Colors.primary,
-              borderWidth: 1.5,
-              borderRadius: 16,
-              padding: 16,
-              alignItems: 'center',
-              marginBottom: 16,
-            }}
-          >
-            <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.primaryDark }}>
-              ESTIMATED TRIP EARNING
-            </Text>
-            <Text style={{ fontSize: 36, fontWeight: '900', color: Colors.text, marginVertical: 2 }}>
-              ₹{incomingOrder.totalPayout}
-            </Text>
-
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-              <Text style={{ fontSize: 11, color: Colors.textSecondary }}>
-                Base: ₹{incomingOrder.payoutEarnings}
-              </Text>
-              <Text style={{ fontSize: 11, color: Colors.amberDark, fontWeight: '700' }}>
-                Surge: +₹{incomingOrder.surgeBonus}
-              </Text>
-              <Text style={{ fontSize: 11, color: Colors.primaryDark, fontWeight: '700' }}>
-                Tip: +₹{incomingOrder.tipAmount}
-              </Text>
-            </View>
-          </View>
-
-          {/* Route Details */}
-          <View
-            style={{
-              backgroundColor: Colors.surfaceCard,
-              borderRadius: 14,
-              padding: 14,
-              marginBottom: 20,
-              borderWidth: 1,
-              borderColor: Colors.border,
-            }}
-          >
-            {/* Pickup */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
-              <View style={{ alignItems: 'center', marginRight: 10, marginTop: 2 }}>
-                <View
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 6,
-                    backgroundColor: Colors.blue,
-                  }}
-                />
-                <View style={{ width: 2, height: 26, backgroundColor: Colors.border, marginVertical: 2 }} />
-                <View
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 6,
-                    backgroundColor: Colors.primary,
-                  }}
-                />
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <View style={{ marginBottom: 10 }}>
-                  <Text style={{ fontSize: 11, color: Colors.blue, fontWeight: '700' }}>
-                    PICKUP ({incomingOrder.storeDistanceKm} km • ~{incomingOrder.storeEstimatedMins} mins)
-                  </Text>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: Colors.text, marginTop: 1 }}>
-                    {incomingOrder.storeName}
-                  </Text>
-                </View>
-
-                <View>
-                  <Text style={{ fontSize: 11, color: Colors.primary, fontWeight: '700' }}>
-                    DROP ({incomingOrder.customerDistanceKm} km • ~{incomingOrder.customerEstimatedMins} mins)
-                  </Text>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: Colors.text, marginTop: 1 }}>
-                    {incomingOrder.customerAddress}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Order meta pills */}
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                paddingTop: 10,
-                borderTopWidth: 1,
-                borderTopColor: Colors.border,
-              }}
-            >
-              <Text style={{ fontSize: 12, color: Colors.textSecondary }}>
-                📦 {incomingOrder.itemsCount} Items ({incomingOrder.paymentMode === 'PREPAID' ? '💳 Prepaid' : '💵 COD'})
-              </Text>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.text }}>
-                Total: {(incomingOrder.storeDistanceKm + incomingOrder.customerDistanceKm).toFixed(1)} km
-              </Text>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          {/* ================= 4. DEDICATED PROPER CANCEL & ACCEPT ACTION BUTTONS ================= */}
+          <View style={tw`flex-row items-center gap-2.5`}>
+            {/* Proper Cancel / Decline Button */}
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={rejectIncomingOrder}
-              style={{
-                flex: 1,
-                backgroundColor: Colors.dangerLight,
-                borderColor: Colors.danger,
-                borderWidth: 1.5,
-                borderRadius: 14,
-                paddingVertical: 14,
-                alignItems: 'center',
-              }}
+              style={tw`flex-1 py-3 rounded-2xl bg-rose-50 border border-rose-200 items-center justify-center flex-row shadow-sm`}
             >
-              <Text style={{ fontSize: 15, fontWeight: '700', color: Colors.danger }}>
-                Pass / Reject
+              <Ionicons name="close-circle-outline" size={15} color="#E11D48" style={tw`mr-1`} />
+              <Text style={[Typography.buttonText, { color: '#E11D48', fontSize: 11, fontWeight: '800' }]}>
+                Decline / Cancel
               </Text>
             </TouchableOpacity>
 
+            {/* Accept Delivery Button */}
             <TouchableOpacity
-              activeOpacity={0.85}
+              activeOpacity={0.88}
               onPress={acceptIncomingOrder}
-              style={{
-                flex: 2,
-                backgroundColor: Colors.primary,
-                borderRadius: 14,
-                paddingVertical: 14,
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                shadowColor: Colors.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.4,
-                shadowRadius: 8,
-              }}
+              style={tw`flex-2 py-3 rounded-2xl bg-emerald-600 border border-emerald-500 items-center justify-center flex-row shadow-md`}
             >
-              <Ionicons name="checkmark-circle" size={20} color={Colors.white} style={{ marginRight: 8 }} />
-              <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.white }}>
-                ACCEPT TRIP
+              <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" style={tw`mr-1.5`} />
+              <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 12, fontWeight: '900' }]}>
+                ACCEPT (₹{incomingOrder.totalPayout})
               </Text>
             </TouchableOpacity>
           </View>

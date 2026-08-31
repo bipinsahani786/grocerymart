@@ -11,14 +11,18 @@ interface DeliveryContextType {
   incomingOrder: DeliveryOrder | null;
   activeOrder: DeliveryOrder | null;
   orderHistory: DeliveryOrder[];
+  completedOrders: DeliveryOrder[];
   earningsSummary: EarningSummary;
   acceptIncomingOrder: () => void;
   rejectIncomingOrder: () => void;
   updateActiveOrderStatus: (status: DeliveryOrder['status']) => void;
   toggleItemScanned: (itemId: string) => void;
   completeDelivery: (enteredOtp: string) => { success: boolean; message: string };
+  completeActiveDelivery: () => void;
   triggerIncomingOrderSimulation: () => void;
   withdrawEarnings: (amount: number) => boolean;
+  depositCash: (amount: number) => boolean;
+  refreshDeliveries: () => Promise<void>;
 }
 
 const DeliveryContext = createContext<DeliveryContextType | undefined>(undefined);
@@ -86,11 +90,31 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       surgeBonus: prev.surgeBonus + completed.surgeBonus,
       tips: prev.tips + completed.tipAmount,
       walletBalance: prev.walletBalance + completed.totalPayout,
-      cashCollected: completed.paymentMode === 'CASH_ON_DELIVERY' ? prev.cashCollected + completed.totalAmount : prev.cashCollected,
+      cashCollected:
+        completed.paymentMode === 'CASH_ON_DELIVERY'
+          ? prev.cashCollected + completed.totalAmount
+          : prev.cashCollected,
     }));
 
     setActiveOrder(null);
     return { success: true, message: 'Order delivered successfully!' };
+  };
+
+  const completeActiveDelivery = () => {
+    if (!activeOrder) return;
+    const completed: DeliveryOrder = {
+      ...activeOrder,
+      status: 'DELIVERED',
+      deliveredAt: 'Just now',
+    };
+    setOrderHistory((prev) => [completed, ...prev]);
+    setEarningsSummary((prev) => ({
+      ...prev,
+      todayTotal: prev.todayTotal + completed.totalPayout,
+      tripsCount: prev.tripsCount + 1,
+      walletBalance: prev.walletBalance + completed.totalPayout,
+    }));
+    setActiveOrder(null);
   };
 
   const triggerIncomingOrderSimulation = () => {
@@ -111,20 +135,37 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return true;
   };
 
+  const depositCash = (amount: number): boolean => {
+    if (amount <= 0) return false;
+    setEarningsSummary((prev) => ({
+      ...prev,
+      cashCollected: Math.max(0, prev.cashCollected - amount),
+    }));
+    return true;
+  };
+
+  const refreshDeliveries = async (): Promise<void> => {
+    return new Promise((resolve) => setTimeout(resolve, 800));
+  };
+
   return (
     <DeliveryContext.Provider
       value={{
         incomingOrder,
         activeOrder,
         orderHistory,
+        completedOrders: orderHistory,
         earningsSummary,
         acceptIncomingOrder,
         rejectIncomingOrder,
         updateActiveOrderStatus,
         toggleItemScanned,
         completeDelivery,
+        completeActiveDelivery,
         triggerIncomingOrderSimulation,
         withdrawEarnings,
+        depositCash,
+        refreshDeliveries,
       }}
     >
       {children}

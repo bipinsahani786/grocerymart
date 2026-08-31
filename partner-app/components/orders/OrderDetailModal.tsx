@@ -5,13 +5,14 @@ import { Colors } from '../../constants/theme';
 import { DeliveryOrder } from '../../constants/mockData';
 import tw from 'twrnc';
 
-interface OrderDetailModalProps {
+export interface OrderDetailModalProps {
+  visible?: boolean;
   order: DeliveryOrder | null;
   onClose: () => void;
 }
 
-export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose }) => {
-  if (!order) return null;
+export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ visible, order, onClose }) => {
+  if (!order || visible === false) return null;
 
   const isDelivered = order.status === 'DELIVERED';
   const isCOD = order.paymentMode === 'CASH_ON_DELIVERY';
