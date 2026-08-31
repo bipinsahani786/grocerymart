@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../../context/AuthContext';
-import { useDeliveryContext } from '../../context/DeliveryContext';
 import { useDutyContext } from '../../context/DutyContext';
+import { useDeliveryContext } from '../../context/DeliveryContext';
+import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
 interface PartnerHeaderProps {
@@ -24,20 +25,19 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
   const { earningsSummary } = useDeliveryContext();
 
   const statusBarHeight = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : insets.top;
-  const safeTop = Math.max(statusBarHeight, insets.top, 16);
+  const safeTop = Math.max(statusBarHeight, insets.top, 14);
 
   return (
     <View
       style={[
-        tw`px-4 pb-2 z-50`,
+        tw`px-4 pb-3 bg-[#047857] shadow-md z-30`,
         {
-          paddingTop: safeTop + 6,
-          backgroundColor: '#0B1320',
+          paddingTop: safeTop + 4,
         },
       ]}
     >
       <View style={tw`flex-row items-center justify-between`}>
-        {/* Left: Driver Profile */}
+        {/* Left: Driver Avatar & Info */}
         <View style={tw`flex-row items-center flex-1 mr-2`}>
           <View style={tw`relative mr-2.5`}>
             <Image
@@ -46,46 +46,55 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
                   user?.avatar ||
                   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
               }}
-              style={[tw`w-10 h-10 rounded-full border-2`, { borderColor: '#10B981' }]}
+              style={tw`w-9 h-9 rounded-full border-2 border-white`}
             />
             <View
               style={[
-                tw`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-slate-900`,
-                { backgroundColor: isOnline ? '#10B981' : '#64748B' },
+                tw`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white`,
+                { backgroundColor: isOnline ? '#10B981' : '#CBD5E1' },
               ]}
             />
           </View>
 
           <View style={tw`flex-1`}>
-            <Text style={tw`text-sm font-black text-white`} numberOfLines={1}>
-              {user?.name || 'Partner Captain'}
-            </Text>
-            <Text style={tw`text-xs font-semibold text-emerald-400`}>
-              {isOnline ? 'Online • On Radar' : 'Offline'}
+            <View style={tw`flex-row items-center`}>
+              <Text style={[Typography.cardTitle, { color: '#FFFFFF', marginRight: 4 }]} numberOfLines={1}>
+                {user?.name || 'Captain Bipin'}
+              </Text>
+              <View style={tw`flex-row items-center px-1.5 py-0.2 rounded bg-emerald-800/80 border border-emerald-500/50`}>
+                <Ionicons name="star" size={9} color="#FBBF24" style={tw`mr-0.5`} />
+                <Text style={[Typography.badge, { color: '#FDE68A' }]}>
+                  {user?.rating || '4.9'}
+                </Text>
+              </View>
+            </View>
+            <Text style={[Typography.caption, { color: '#D1FAE5' }]}>
+              {isOnline ? 'Online • Ready for drops' : 'Offline • Duty paused'}
             </Text>
           </View>
         </View>
 
-        {/* Center/Right: Live Earnings Capsule */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onOpenWallet}
-          style={tw`flex-row items-center px-3 py-1.5 rounded-full bg-slate-800/90 border border-slate-700 mr-2`}
-        >
-          <Ionicons name="wallet" size={14} color="#34D399" style={tw`mr-1.5`} />
-          <Text style={tw`text-xs font-black text-white`}>
-            ₹{earningsSummary.todayTotal}
-          </Text>
-        </TouchableOpacity>
+        {/* Right: Wallet pill & SOS */}
+        <View style={tw`flex-row items-center gap-1.5`}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onOpenWallet}
+            style={tw`flex-row items-center px-2.5 py-1.5 rounded-xl bg-emerald-800/90 border border-emerald-600 shadow-sm`}
+          >
+            <Ionicons name="wallet-outline" size={12} color="#A7F3D0" style={tw`mr-1`} />
+            <Text style={[Typography.buttonText, { color: '#FFFFFF' }]}>
+              ₹{earningsSummary.todayTotal}
+            </Text>
+          </TouchableOpacity>
 
-        {/* SOS Button */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onOpenSOS}
-          style={tw`w-9 h-9 rounded-full bg-rose-500/20 border border-rose-500/40 items-center justify-center`}
-        >
-          <Ionicons name="shield-checkmark" size={16} color="#FB7185" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onOpenSOS}
+            style={tw`w-8 h-8 rounded-xl bg-rose-600/90 border border-rose-400 items-center justify-center`}
+          >
+            <Ionicons name="shield-outline" size={14} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );

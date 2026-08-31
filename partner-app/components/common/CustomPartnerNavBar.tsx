@@ -8,6 +8,7 @@ import { Colors } from '../../constants/theme';
 import tw from 'twrnc';
 
 export type PartnerTab = 'home' | 'active' | 'trips' | 'earnings' | 'profile';
+export type PartnerTabType = PartnerTab;
 
 interface CustomPartnerNavBarProps {
   activeTab: PartnerTab;
@@ -176,11 +177,12 @@ export const CustomPartnerNavBar: React.FC<CustomPartnerNavBarProps> = ({
                   </View>
                   <Text
                     style={[
-                      tw`text-[10px] mt-0.5 tracking-tight`,
+                      tw`text-xs mt-0.5 tracking-tight`,
                       {
                         color: '#FFFFFF',
                         fontWeight: isActive ? '900' : '600',
-                        opacity: isActive ? 1 : 0.85,
+                        opacity: isActive ? 1 : 0.9,
+                        fontSize: 11,
                       },
                     ]}
                   >
@@ -227,11 +229,12 @@ export const CustomPartnerNavBar: React.FC<CustomPartnerNavBarProps> = ({
                   </View>
                   <Text
                     style={[
-                      tw`text-[10px] mt-0.5 tracking-tight`,
+                      tw`text-xs mt-0.5 tracking-tight`,
                       {
                         color: '#FFFFFF',
                         fontWeight: isActive ? '900' : '600',
-                        opacity: isActive ? 1 : 0.85,
+                        opacity: isActive ? 1 : 0.9,
+                        fontSize: 11,
                       },
                     ]}
                   >

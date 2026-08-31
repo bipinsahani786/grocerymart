@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
 import { DeliveryOrder } from '../../constants/mockData';
 import { useDeliveryContext } from '../../context/DeliveryContext';
+import { Typography } from '../../constants/typography';
+import tw from 'twrnc';
 
 interface DeliveryVerifyModalProps {
   visible: boolean;
@@ -49,45 +50,25 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: Colors.overlay,
-          justifyContent: 'flex-end',
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: Colors.surface,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            borderWidth: 1,
-            borderColor: Colors.border,
-            padding: 20,
-            paddingBottom: 36,
-          }}
-        >
+    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
+      <View style={[tw`flex-1 justify-end`, { backgroundColor: 'rgba(15, 23, 42, 0.68)' }]}>
+        <View style={tw`bg-white rounded-t-3xl border-t border-emerald-500 shadow-2xl p-4 pb-8`}>
+          {/* Top Grabber */}
+          <View style={tw`w-10 h-1 rounded-full bg-slate-200 self-center mb-3`} />
+
           {/* Header */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}
-          >
+          <View style={tw`flex-row justify-between items-center pb-3 mb-3 border-b border-slate-100`}>
             <View>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: Colors.text }}>
-                Complete Delivery Verification
+              <Text style={[Typography.cardTitle, { color: '#0F172A', fontSize: 13 }]}>
+                Doorstep Verification
               </Text>
-              <Text style={{ fontSize: 12, color: Colors.textSecondary }}>
+              <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
                 Order #{order.orderNumber} • {order.customerName}
               </Text>
             </View>
 
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close-circle" size={24} color={Colors.textMuted} />
+            <TouchableOpacity onPress={onClose} style={tw`w-7 h-7 rounded-full bg-slate-100 items-center justify-center`}>
+              <Ionicons name="close" size={14} color="#64748B" />
             </TouchableOpacity>
           </View>
 
@@ -96,56 +77,48 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => setCashCollectedCheck(!cashCollectedCheck)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: cashCollectedCheck ? Colors.primaryBg : Colors.amberLight,
-                borderColor: cashCollectedCheck ? Colors.primary : Colors.amber,
-                borderWidth: 1.5,
-                borderRadius: 12,
-                padding: 12,
-                marginBottom: 16,
-              }}
+              style={[
+                tw`flex-row items-center p-3 rounded-2xl border mb-3`,
+                {
+                  backgroundColor: cashCollectedCheck ? '#ECFDF5' : '#FFFBEB',
+                  borderColor: cashCollectedCheck ? '#10B981' : '#F59E0B',
+                },
+              ]}
             >
               <Ionicons
                 name={cashCollectedCheck ? 'checkbox' : 'square-outline'}
-                size={22}
-                color={cashCollectedCheck ? Colors.primary : Colors.amber}
-                style={{ marginRight: 10 }}
+                size={18}
+                color={cashCollectedCheck ? '#047857' : '#D97706'}
+                style={tw`mr-2.5`}
               />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.text }}>
-                  I have collected ₹{order.totalAmount} in Cash
+              <View style={tw`flex-1`}>
+                <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11 }]}>
+                  Collected ₹{order.totalAmount} in Cash
                 </Text>
-                <Text style={{ fontSize: 11, color: Colors.textSecondary }}>
-                  Ensure exact cash received before handing over package
+                <Text style={[Typography.caption, { color: '#64748B', fontSize: 9.5 }]}>
+                  Confirm cash received before handing over grocery bag
                 </Text>
               </View>
             </TouchableOpacity>
           )}
 
-          {/* OTP Input Card */}
-          <View
-            style={{
-              backgroundColor: Colors.surfaceCard,
-              borderRadius: 16,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: Colors.border,
-              marginBottom: 16,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.text }}>
-                Ask Customer for 4-Digit Delivery OTP
+          {/* OTP Input Section */}
+          <View style={tw`p-3.5 rounded-2xl bg-slate-50 border border-slate-200 mb-4`}>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+              <Text style={[Typography.caption, { color: '#0F172A', fontSize: 10, fontWeight: '800' }]}>
+                ENTER 4-DIGIT CUSTOMER OTP
               </Text>
-              <TouchableOpacity onPress={handleAutoFill}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.primaryDark }}>
-                  Auto-fill ({order.otp})
+              <TouchableOpacity
+                onPress={handleAutoFill}
+                style={tw`px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300`}
+              >
+                <Text style={[Typography.badge, { color: '#047857', fontSize: 9 }]}>
+                  Auto-fill ({order.otp || '4821'})
                 </Text>
               </TouchableOpacity>
             </View>
 
+            {/* OTP Input with xs placeholder */}
             <TextInput
               value={otp}
               onChangeText={(txt) => {
@@ -153,49 +126,35 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
                 setErrorMsg('');
               }}
               placeholder="Enter 4-digit OTP"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor="#94A3B8"
               keyboardType="number-pad"
               maxLength={4}
-              style={{
-                backgroundColor: Colors.surfaceLight,
-                borderColor: errorMsg ? Colors.danger : Colors.primary,
-                borderWidth: 1.5,
-                borderRadius: 12,
-                paddingVertical: 14,
-                textAlign: 'center',
-                fontSize: 24,
-                fontWeight: '900',
-                color: Colors.text,
-                letterSpacing: 8,
-              }}
+              style={[
+                tw`py-2.5 px-3 rounded-xl bg-white border text-center font-black`,
+                {
+                  borderColor: errorMsg ? '#DC2626' : otp ? '#047857' : '#CBD5E1',
+                  fontSize: otp ? 18 : 11, // xs font size for placeholder
+                  letterSpacing: otp ? 6 : 0,
+                  color: '#0F172A',
+                },
+              ]}
             />
 
             {errorMsg ? (
-              <Text style={{ fontSize: 12, color: Colors.danger, marginTop: 6, textAlign: 'center' }}>
+              <Text style={[Typography.caption, { color: '#DC2626', fontSize: 9.5, marginTop: 4, textAlign: 'center' }]}>
                 {errorMsg}
               </Text>
             ) : null}
           </View>
 
-          {/* Complete Button */}
+          {/* Complete Action Button */}
           <TouchableOpacity
-            activeOpacity={0.85}
+            activeOpacity={0.88}
             onPress={handleVerify}
-            style={{
-              backgroundColor: Colors.primary,
-              borderRadius: 14,
-              paddingVertical: 15,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              shadowColor: Colors.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 8,
-            }}
+            style={tw`w-full py-3.5 rounded-2xl bg-emerald-600 border border-emerald-500 items-center justify-center flex-row shadow-sm`}
           >
-            <Ionicons name="checkmark-circle" size={20} color={Colors.white} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 16, fontWeight: '900', color: Colors.white }}>
+            <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" style={tw`mr-1.5`} />
+            <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 12.5, fontWeight: '900' }]}>
               VERIFY & COMPLETE ORDER
             </Text>
           </TouchableOpacity>

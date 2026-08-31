@@ -321,8 +321,8 @@ export default function LoginScreen() {
             {otpSent
               ? `We have sent a 4-digit code to +91 ${phone}`
               : authMode === 'LOGIN'
-              ? 'Enter your registered phone number to sign in and continue earning.'
-              : 'Enter your 10-digit phone number to register as a delivery partner.'}
+                ? 'Enter your registered phone number to sign in and continue earning.'
+                : 'Enter your 10-digit phone number to register as a delivery partner.'}
           </Text>
         </View>
 
@@ -340,7 +340,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
             )}
           </View>
-          
+
           <View style={tw`flex-row items-center`}>
             <View style={[tw`px-3 py-1.5 rounded-xl mr-2.5 border`, { backgroundColor: Colors.surfaceLight, borderColor: Colors.border }]}>
               <Text style={[tw`text-sm font-black`, { color: Colors.text }]}>🇮🇳 +91</Text>
@@ -405,7 +405,7 @@ export default function LoginScreen() {
               ))}
             </View>
             <Text style={[tw`text-[10px]`, { color: Colors.textSecondary }]}>
-              Demo code: 1234 auto-filled. Code valid for 5 minutes.
+              OTP valid for 5 minutes.
             </Text>
           </View>
         )}
@@ -456,8 +456,8 @@ export default function LoginScreen() {
               {loading
                 ? 'VERIFYING...'
                 : authMode === 'LOGIN'
-                ? 'CONTINUE EARNING'
-                : 'CONTINUE TO KYC SETUP'}
+                  ? 'CONTINUE EARNING'
+                  : 'CONTINUE TO KYC SETUP'}
             </Text>
             <Ionicons name="arrow-forward" size={18} color={Colors.white} />
           </TouchableOpacity>

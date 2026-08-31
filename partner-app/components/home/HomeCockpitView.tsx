@@ -1,9 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+  Platform,
+  StatusBar as RNStatusBar,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthContext } from '../../context/AuthContext';
 import { useDeliveryContext } from '../../context/DeliveryContext';
 import { useDutyContext } from '../../context/DutyContext';
-import { LiveDriverRadarMap } from './LiveDriverRadarMap';
+import { FreeOpenStreetMap } from './FreeOpenStreetMap';
+import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
 interface HomeCockpitViewProps {
@@ -19,188 +30,264 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
   onDepositCash,
   onOpenSupport,
 }) => {
+  const insets = useSafeAreaInsets();
+  const { user } = useAuthContext();
   const { earningsSummary, activeOrder, triggerIncomingOrderSimulation } = useDeliveryContext();
   const { isOnline, toggleDuty, currentHub, formattedShiftTime } = useDutyContext();
 
-  return (
-    <View style={tw`flex-1 w-full`}>
-      {/* ================= 1. INTERACTIVE LIVE RADAR MAP CANVAS ================= */}
-      <LiveDriverRadarMap
-        isOnline={isOnline}
-        activeOrder={activeOrder}
-        currentHub={currentHub}
-        onSimulateOrder={triggerIncomingOrderSimulation}
-      />
+  const screenHeight = Dimensions.get('window').height;
+  const statusBarHeight = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : insets.top;
+  const safeTop = Math.max(statusBarHeight, insets.top, 14);
 
-      {/* ================= 2. FLOATING BOTTOM DRIVER CONTROLLER ================= */}
+  // 48% Map / 52% Dashboard split
+  const mapHeight = Math.round(screenHeight * 0.48);
+
+  return (
+    <View style={tw`flex-1 bg-[#047857]`}>
+      {/* ================= 1. EMERALD TOP APP BAR (MATCHED WITH NAVBAR) ================= */}
       <View
         style={[
-          tw`p-4 rounded-t-3xl shadow-2xl`,
+          tw`px-4 pb-3 bg-[#047857] flex-row items-center justify-between z-30 shadow-md`,
           {
-            backgroundColor: '#0F172A',
-            borderTopWidth: 1,
-            borderTopColor: '#1E293B',
-            marginTop: -24,
+            paddingTop: safeTop + 4,
           },
         ]}
       >
-        {/* Grabber Indicator */}
-        <View style={tw`w-10 h-1 rounded-full bg-slate-600 self-center mb-3`} />
-
-        {/* ACTIVE ORDER POPUP STRIP */}
-        {activeOrder ? (
-          <TouchableOpacity
-            activeOpacity={0.88}
-            onPress={onOpenActiveTask}
-            style={tw`mb-4 p-4 rounded-2xl bg-emerald-600 shadow-lg`}
-          >
-            <View style={tw`flex-row justify-between items-center mb-2`}>
-              <View style={tw`flex-row items-center`}>
-                <View style={tw`w-2.5 h-2.5 rounded-full bg-white mr-2`} />
-                <Text style={tw`text-xs font-black text-white uppercase`}>
-                  Active Order #{activeOrder.orderNumber}
-                </Text>
-              </View>
-              <View style={tw`px-2.5 py-0.5 rounded-full bg-white/20`}>
-                <Text style={tw`text-xs font-black text-white`}>
-                  ₹{activeOrder.totalPayout}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={tw`text-sm font-bold text-white mb-2`} numberOfLines={1}>
-              🏬 {activeOrder.storeName} ➔ 🏠 {activeOrder.customerAddress}
-            </Text>
-
-            <View style={tw`flex-row justify-between items-center pt-2 border-t border-emerald-500`}>
-              <Text style={tw`text-xs font-medium text-emerald-100`}>
-                {activeOrder.items.length} items to deliver
-              </Text>
-              <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-xs font-black text-white mr-1`}>Resume Journey</Text>
-                <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-              </View>
-            </View>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* DRIVER MASTER DUTY ROW */}
-        {isOnline ? (
-          /* ONLINE STATE */
-          <View>
-            <View style={tw`flex-row items-center justify-between mb-4`}>
-              <View style={tw`flex-row items-center flex-1 mr-2`}>
-                <View style={tw`w-3 h-3 rounded-full bg-emerald-500 mr-2.5`} />
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-sm font-black text-white`}>
-                    Searching for Orders
-                  </Text>
-                  <Text style={tw`text-xs font-medium text-slate-400`} numberOfLines={1}>
-                    Auto-dispatching in {currentHub}
-                  </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={toggleDuty}
-                style={tw`px-4 py-2 rounded-full bg-rose-500/20 border border-rose-500/40 flex-row items-center`}
-              >
-                <Ionicons name="power" size={13} color="#FB7185" style={tw`mr-1`} />
-                <Text style={tw`text-xs font-black text-rose-300`}>Go Offline</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          /* OFFLINE MASTER "GO ONLINE" BUTTON */
-          <View style={tw`items-center my-1`}>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={toggleDuty}
+        {/* Driver Avatar & Name */}
+        <View style={tw`flex-row items-center flex-1 mr-2`}>
+          <View style={tw`relative mr-2.5`}>
+            <Image
+              source={{
+                uri:
+                  user?.avatar ||
+                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+              }}
+              style={tw`w-9 h-9 rounded-full border-2 border-white`}
+            />
+            <View
               style={[
-                tw`w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg`,
-                { backgroundColor: '#10B981' },
+                tw`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white`,
+                { backgroundColor: isOnline ? '#10B981' : '#CBD5E1' },
               ]}
-            >
-              <Ionicons name="radio-button-on" size={18} color="#FFFFFF" style={tw`mr-2`} />
-              <Text style={tw`text-base font-black text-white uppercase tracking-wider`}>
-                Go Online
-              </Text>
-            </TouchableOpacity>
-            <Text style={tw`text-xs font-medium text-slate-400 mt-2`}>
-              Turn duty on to start receiving delivery requests
-            </Text>
+            />
           </View>
-        )}
 
-        {/* 3-METRIC TELEMETRY STRIP */}
-        <View style={tw`flex-row justify-between items-center py-3 my-2 border-t border-b border-slate-800`}>
-          <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs font-bold text-slate-400 uppercase tracking-wider`}>Trips</Text>
-            <Text style={tw`text-base font-black text-white mt-0.5`}>
-              {earningsSummary.tripsCount} Done
-            </Text>
-          </View>
-          <View style={tw`w-px bg-slate-800 h-6`} />
-          <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs font-bold text-slate-400 uppercase tracking-wider`}>Online</Text>
-            <Text style={tw`text-base font-black text-emerald-400 mt-0.5`}>
-              {formattedShiftTime}
-            </Text>
-          </View>
-          <View style={tw`w-px bg-slate-800 h-6`} />
-          <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs font-bold text-slate-400 uppercase tracking-wider`}>COD Hand</Text>
-            <Text style={tw`text-base font-black text-amber-400 mt-0.5`}>
-              ₹{earningsSummary.cashCollected}
+          <View style={tw`flex-1`}>
+            <View style={tw`flex-row items-center`}>
+              <Text style={[Typography.cardTitle, { color: '#FFFFFF', marginRight: 4 }]} numberOfLines={1}>
+                {user?.name || 'Captain Bipin'}
+              </Text>
+              <View style={tw`flex-row items-center px-1.5 py-0.2 rounded bg-emerald-800/80 border border-emerald-500/50`}>
+                <Ionicons name="star" size={9} color="#FBBF24" style={tw`mr-0.5`} />
+                <Text style={[Typography.badge, { color: '#FDE68A' }]}>
+                  {user?.rating || '4.9'}
+                </Text>
+              </View>
+            </View>
+            <Text style={[Typography.caption, { color: '#D1FAE5' }]} numberOfLines={1}>
+              {isOnline ? `Zone: ${currentHub}` : 'Duty Paused'}
             </Text>
           </View>
         </View>
 
-        {/* QUICK ACTION ICONS DOCK */}
-        <View style={tw`flex-row justify-around items-center pt-2`}>
+        {/* 1-Tap Online/Offline Switch */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={toggleDuty}
+          style={[
+            tw`px-3 py-1.5 rounded-xl flex-row items-center mr-1.5 shadow-sm border`,
+            {
+              backgroundColor: isOnline ? '#DC2626' : '#10B981',
+              borderColor: isOnline ? '#EF4444' : '#34D399',
+            },
+          ]}
+        >
+          <Ionicons
+            name={isOnline ? 'power' : 'radio-button-on'}
+            size={11}
+            color="#FFFFFF"
+            style={tw`mr-1`}
+          />
+          <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 11 }]}>
+            {isOnline ? 'Offline' : 'Online'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Today's Earnings Pill */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onViewWallet}
+          style={tw`flex-row items-center px-2.5 py-1.5 rounded-xl bg-emerald-800/90 border border-emerald-600 shadow-sm mr-1`}
+        >
+          <Ionicons name="wallet-outline" size={11} color="#A7F3D0" style={tw`mr-1`} />
+          <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 11 }]}>
+            ₹{earningsSummary.todayTotal}
+          </Text>
+        </TouchableOpacity>
+
+        {/* SOS Action */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onOpenSupport}
+          style={tw`w-8 h-8 rounded-xl bg-rose-600/90 border border-rose-400 items-center justify-center`}
+        >
+          <Ionicons name="shield-outline" size={14} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* ================= 2. TOP HALF: REAL LEAFLET OPENSTREETMAP ================= */}
+      <View style={{ height: mapHeight, width: '100%' }}>
+        <FreeOpenStreetMap
+          isOnline={isOnline}
+          activeOrder={activeOrder}
+          currentHub={currentHub}
+          onSimulateOrder={triggerIncomingOrderSimulation}
+        />
+      </View>
+
+      {/* ================= 3. BOTTOM HALF: CLEAN & AIRY DASHBOARD ================= */}
+      <View
+        style={[
+          tw`flex-1 p-4 justify-between bg-white border-t border-slate-100 shadow-lg rounded-t-3xl -mt-3`,
+          {
+            paddingBottom: 78 + Math.max(insets.bottom, 12),
+          },
+        ]}
+      >
+        {/* Grabber Indicator */}
+        <View style={tw`w-10 h-1 rounded-full bg-slate-200 self-center`} />
+
+        {/* ACTIVE ORDER BANNER OR STATUS PILL */}
+        {activeOrder ? (
           <TouchableOpacity
-            activeOpacity={0.75}
+            activeOpacity={0.88}
+            onPress={onOpenActiveTask}
+            style={tw`p-3 rounded-2xl bg-emerald-50 border border-emerald-200 shadow-sm`}
+          >
+            <View style={tw`flex-row justify-between items-center mb-1`}>
+              <View style={tw`flex-row items-center`}>
+                <View style={tw`w-2 h-2 rounded-full bg-emerald-600 mr-1.5`} />
+                <Text style={[Typography.caption, { color: '#064E3B', fontWeight: '800' }]}>
+                  Order #{activeOrder.orderNumber}
+                </Text>
+              </View>
+              <Text style={[Typography.caption, { color: '#047857', fontWeight: '800' }]}>
+                ₹{activeOrder.totalPayout} Payout
+              </Text>
+            </View>
+
+            <Text style={[Typography.bodyBold, { color: '#0F172A' }]} numberOfLines={1}>
+              🏬 {activeOrder.storeName} ➔ 🏠 {activeOrder.customerAddress}
+            </Text>
+
+            <View style={tw`flex-row justify-between items-center mt-1.5 pt-1.5 border-t border-emerald-200`}>
+              <Text style={[Typography.caption, { color: '#047857' }]}>
+                {activeOrder.items?.length || 4} items to deliver
+              </Text>
+              <View style={tw`flex-row items-center px-2 py-0.5 rounded-lg bg-emerald-700`}>
+                <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 10, marginRight: 2 }]}>
+                  Resume Route
+                </Text>
+                <Ionicons name="arrow-forward" size={10} color="#FFFFFF" />
+              </View>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View style={tw`p-3 rounded-2xl bg-slate-50 border border-slate-200 flex-row items-center justify-between`}>
+            <View style={tw`flex-row items-center flex-1 mr-2`}>
+              <View style={[tw`w-2.5 h-2.5 rounded-full mr-2`, { backgroundColor: isOnline ? '#10B981' : '#94A3B8' }]} />
+              <Text style={[Typography.cardTitle, { color: '#0F172A' }]}>
+                {isOnline ? 'Online • Ready for orders' : 'Duty Off • Tap Online to start'}
+              </Text>
+            </View>
+
+            {isOnline && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={triggerIncomingOrderSimulation}
+                style={tw`px-2.5 py-1 rounded-xl bg-emerald-600 shadow-sm flex-row items-center`}
+              >
+                <Ionicons name="flash" size={10} color="#FFFFFF" style={tw`mr-1`} />
+                <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 10 }]}>
+                  + Test
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* 3 CLEAN STAT PILLARS */}
+        <View style={tw`flex-row justify-between items-center gap-2`}>
+          <View style={tw`flex-1 p-2.5 rounded-2xl bg-slate-50 border border-slate-200 items-center`}>
+            <Text style={[Typography.caption, { color: '#94A3B8', marginBottom: 1 }]}>Trips</Text>
+            <Text style={[Typography.statNumber, { color: '#0F172A' }]}>{earningsSummary.tripsCount} Done</Text>
+          </View>
+
+          <View style={tw`flex-1 p-2.5 rounded-2xl bg-slate-50 border border-slate-200 items-center`}>
+            <Text style={[Typography.caption, { color: '#94A3B8', marginBottom: 1 }]}>Shift</Text>
+            <Text style={[Typography.statNumber, { color: '#0F172A' }]}>{formattedShiftTime}</Text>
+          </View>
+
+          <View style={tw`flex-1 p-2.5 rounded-2xl bg-slate-50 border border-slate-200 items-center`}>
+            <Text style={[Typography.caption, { color: '#D97706', marginBottom: 1 }]}>COD Cash</Text>
+            <Text style={[Typography.statNumber, { color: '#D97706' }]}>₹{earningsSummary.cashCollected}</Text>
+          </View>
+        </View>
+
+        {/* DAILY QUEST PROGRESS */}
+        <View style={tw`p-2.5 rounded-2xl bg-slate-50 border border-slate-200`}>
+          <View style={tw`flex-row justify-between items-center mb-1`}>
+            <View style={tw`flex-row items-center`}>
+              <Ionicons name="flame" size={13} color="#D97706" style={tw`mr-1`} />
+              <Text style={[Typography.caption, { color: '#0F172A', fontWeight: '800' }]}>
+                Daily Quest: 14/20 Orders
+              </Text>
+            </View>
+            <Text style={[Typography.badge, { color: '#B45309' }]}>
+              +₹250 Bonus
+            </Text>
+          </View>
+          <View style={tw`h-1.5 bg-slate-200 rounded-full overflow-hidden`}>
+            <View style={[tw`h-full bg-amber-500 rounded-full`, { width: '70%' }]} />
+          </View>
+        </View>
+
+        {/* 4 QUICK UTILITY ICONS */}
+        <View style={tw`flex-row justify-between items-center gap-2`}>
+          <TouchableOpacity
+            activeOpacity={0.8}
             onPress={onDepositCash}
-            style={tw`items-center flex-1`}
+            style={tw`flex-1 p-2 rounded-2xl bg-slate-50 border border-slate-200 items-center`}
           >
-            <View style={tw`w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 items-center justify-center mb-1`}>
-              <Ionicons name="cash-outline" size={20} color="#34D399" />
-            </View>
-            <Text style={tw`text-xs font-bold text-slate-300`}>Deposit</Text>
+            <Ionicons name="cash-outline" size={16} color="#047857" style={tw`mb-0.5`} />
+            <Text style={[Typography.caption, { color: '#334155', fontSize: 10, fontWeight: '700' }]}>Deposit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            activeOpacity={0.75}
+            activeOpacity={0.8}
             onPress={onOpenSupport}
-            style={tw`items-center flex-1`}
+            style={tw`flex-1 p-2 rounded-2xl bg-slate-50 border border-slate-200 items-center`}
           >
-            <View style={tw`w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 items-center justify-center mb-1`}>
-              <Ionicons name="storefront-outline" size={20} color="#60A5FA" />
-            </View>
-            <Text style={tw`text-xs font-bold text-slate-300`}>Hubs</Text>
+            <Ionicons name="storefront-outline" size={16} color="#2563EB" style={tw`mb-0.5`} />
+            <Text style={[Typography.caption, { color: '#334155', fontSize: 10, fontWeight: '700' }]}>Hubs</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            activeOpacity={0.75}
+            activeOpacity={0.8}
             onPress={onViewWallet}
-            style={tw`items-center flex-1`}
+            style={tw`flex-1 p-2 rounded-2xl bg-slate-50 border border-slate-200 items-center`}
           >
-            <View style={tw`w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 items-center justify-center mb-1`}>
-              <Ionicons name="wallet-outline" size={20} color="#FBBF24" />
-            </View>
-            <Text style={tw`text-xs font-bold text-slate-300`}>Wallet</Text>
+            <Ionicons name="wallet-outline" size={16} color="#D97706" style={tw`mb-0.5`} />
+            <Text style={[Typography.caption, { color: '#334155', fontSize: 10, fontWeight: '700' }]}>Wallet</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            activeOpacity={0.75}
+            activeOpacity={0.8}
             onPress={onOpenSupport}
-            style={tw`items-center flex-1`}
+            style={tw`flex-1 p-2 rounded-2xl bg-slate-50 border border-slate-200 items-center`}
           >
-            <View style={tw`w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 items-center justify-center mb-1`}>
-              <Ionicons name="shield-checkmark-outline" size={20} color="#F43F5E" />
-            </View>
-            <Text style={tw`text-xs font-bold text-slate-300`}>SOS Help</Text>
+            <Ionicons name="shield-outline" size={16} color="#E11D48" style={tw`mb-0.5`} />
+            <Text style={[Typography.caption, { color: '#334155', fontSize: 10, fontWeight: '700' }]}>SOS</Text>
           </TouchableOpacity>
         </View>
       </View>

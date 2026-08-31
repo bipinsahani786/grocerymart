@@ -2,18 +2,25 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+import { DeliveryOrder } from '../../constants/mockData';
 
-interface OrderSuccessModalProps {
+export interface OrderSuccessModalProps {
   visible: boolean;
-  payoutAmount: number;
-  onDismiss: () => void;
+  order?: DeliveryOrder | null;
+  payoutAmount?: number;
+  onDismiss?: () => void;
+  onClose?: () => void;
 }
 
 export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
   visible,
+  order,
   payoutAmount,
   onDismiss,
+  onClose,
 }) => {
+  const handleClose = onDismiss || onClose || (() => {});
+  const amount = payoutAmount ?? order?.totalPayout ?? order?.payoutEarnings ?? 0;
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View
@@ -79,7 +86,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
               ADDED TO YOUR WALLET
             </Text>
             <Text style={{ fontSize: 32, fontWeight: '900', color: Colors.text, marginTop: 2 }}>
-              +₹{payoutAmount}
+              +₹{amount}
             </Text>
             <Text style={{ fontSize: 11, color: Colors.textSecondary, marginTop: 2 }}>
               Great job! Your on-time rating is 99.1%
@@ -89,7 +96,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
           {/* Dismiss Button */}
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={onDismiss}
+            onPress={handleClose}
             style={{
               backgroundColor: Colors.primary,
               width: '100%',
