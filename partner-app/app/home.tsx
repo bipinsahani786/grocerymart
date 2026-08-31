@@ -87,12 +87,12 @@ export default function PartnerHomeScreen() {
   });
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: Colors.background }]}>
-      <StatusBar style="light" translucent backgroundColor="#10B981" />
+    <View style={[tw`flex-1`, { backgroundColor: activeTab === 'home' ? '#0B1320' : Colors.background }]}>
+      <StatusBar style="light" translucent backgroundColor="#0B1320" />
       {/* Top App Header with Rider Profile snippet, Battery Telemetry and Duty Switch */}
       <PartnerHeader
         onOpenSOS={() => setShowSupportModal(true)}
-        onOpenNotifications={() => {}}
+        onOpenNotifications={() => { }}
         onOpenWallet={() => setActiveTab('earnings')}
       />
 
@@ -100,7 +100,7 @@ export default function PartnerHomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
-          tw`p-4`,
+          activeTab === 'home' ? tw`p-0` : tw`p-4`,
           {
             paddingBottom: 95 + Math.max(insets.bottom, 12),
           },
@@ -204,24 +204,24 @@ export default function PartnerHomeScreen() {
         {activeTab === 'trips' && (
           <View style={tw`pb-4`}>
             {/* Quick Trip Performance Strip */}
-            <View style={tw`flex-row justify-between items-center py-2.5 px-1 mb-3 border-b border-slate-200`}>
+            <View style={tw`flex-row justify-between items-center py-3 px-2 mb-3 bg-white rounded-2xl border border-slate-100 shadow-sm`}>
               <View style={tw`items-center flex-1`}>
-                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Today Trips</Text>
+                <Text style={tw`text-xs font-bold text-slate-400 uppercase tracking-wider`}>Today Trips</Text>
                 <Text style={tw`text-base font-black text-slate-900 mt-0.5`}>14 Done</Text>
               </View>
               <View style={tw`w-[1px] bg-slate-200 h-6`} />
               <View style={tw`items-center flex-1`}>
-                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Earned</Text>
+                <Text style={tw`text-xs font-bold text-slate-400 uppercase tracking-wider`}>Earned</Text>
                 <Text style={tw`text-base font-black text-emerald-600 mt-0.5`}>₹1,240</Text>
               </View>
               <View style={tw`w-[1px] bg-slate-200 h-6`} />
               <View style={tw`items-center flex-1`}>
-                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Distance</Text>
+                <Text style={tw`text-xs font-bold text-slate-400 uppercase tracking-wider`}>Distance</Text>
                 <Text style={tw`text-base font-black text-slate-900 mt-0.5`}>48.2 km</Text>
               </View>
               <View style={tw`w-[1px] bg-slate-200 h-6`} />
               <View style={tw`items-center flex-1`}>
-                <Text style={tw`text-[9px] font-bold text-slate-400 uppercase tracking-wider`}>Success</Text>
+                <Text style={tw`text-xs font-bold text-slate-400 uppercase tracking-wider`}>Success</Text>
                 <Text style={tw`text-base font-black text-emerald-600 mt-0.5`}>100%</Text>
               </View>
             </View>
