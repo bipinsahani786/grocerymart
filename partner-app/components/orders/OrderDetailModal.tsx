@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
 import { DeliveryOrder } from '../../constants/mockData';
+import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
 export interface OrderDetailModalProps {
@@ -12,163 +13,187 @@ export interface OrderDetailModalProps {
 }
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ visible, order, onClose }) => {
+  const insets = useSafeAreaInsets();
   if (!order || visible === false) return null;
 
   const isDelivered = order.status === 'DELIVERED';
   const isCOD = order.paymentMode === 'CASH_ON_DELIVERY';
-  const distanceText = order.customerDistanceKm ? `${order.customerDistanceKm} km` : '3.2 km';
+  const distanceText = order.customerDistanceKm ? `${order.customerDistanceKm + (order.storeDistanceKm || 0.8)} km` : '3.2 km';
 
   return (
-    <Modal visible={!!order} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={[tw`flex-1 justify-end`, { backgroundColor: 'rgba(15, 23, 42, 0.6)' }]}>
+    <Modal visible={!!order} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View style={[tw`flex-1 justify-end`, { backgroundColor: 'rgba(15, 23, 42, 0.65)' }]}>
         <View
           style={[
-            tw`rounded-t-[32px] p-5 pb-8 max-h-[85%]`,
-            { backgroundColor: '#FFFFFF' },
+            tw`bg-white rounded-t-3xl border-t border-emerald-500 shadow-2xl p-4 max-h-[85%]`,
+            { paddingBottom: Math.max(insets.bottom, 20) + 12 },
           ]}
         >
-          {/* Drag Pill Handle */}
-          <View style={tw`w-12 h-1 bg-slate-300 rounded-full self-center mb-3`} />
+          {/* Drag Grabber */}
+          <View style={tw`w-10 h-1 bg-slate-200 rounded-full self-center mb-3`} />
 
-          {/* Header Row */}
-          <View style={tw`flex-row justify-between items-start mb-4`}>
+          {/* Header */}
+          <View style={tw`flex-row justify-between items-start pb-3 border-b border-slate-100 mb-3`}>
             <View>
               <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-lg font-black text-slate-900 mr-2`}>
-                  Trip #{order.orderNumber}
+                <Text style={[Typography.cardTitle, { color: '#0F172A', fontSize: 15, fontWeight: '900', marginRight: 6 }]}>
+                  Order #{order.orderNumber}
                 </Text>
-                <View
-                  style={[
-                    tw`px-2 py-0.5 rounded-full`,
-                    isDelivered ? tw`bg-emerald-50 border border-emerald-200` : tw`bg-amber-50 border border-amber-200`,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      tw`text-[10px] font-black`,
-                      isDelivered ? tw`text-emerald-700` : tw`text-amber-700`,
-                    ]}
-                  >
+                <View style={tw`px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200`}>
+                  <Text style={[Typography.badge, { color: '#047857', fontSize: 8.5 }]}>
                     {isDelivered ? 'DELIVERED ✓' : order.status}
                   </Text>
                 </View>
               </View>
-              <Text style={tw`text-xs text-slate-400 mt-0.5 font-medium`}>
+              <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 2 }]}>
                 {order.createdAt} {order.deliveredAt ? `• Delivered at ${order.deliveredAt}` : ''}
               </Text>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={onClose}
-              style={tw`w-8 h-8 rounded-full bg-slate-100 items-center justify-center`}
-            >
-              <Ionicons name="close" size={18} color="#64748B" />
+            <TouchableOpacity onPress={onClose} style={tw`w-7 h-7 rounded-full bg-slate-100 items-center justify-center`}>
+              <Ionicons name="close" size={14} color="#64748B" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`pb-6`}>
-            {/* Total Earning Hero Strip */}
-            <View style={tw`p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex-row justify-between items-center mb-4`}>
-              <View>
-                <Text style={tw`text-[10px] font-bold text-emerald-800 uppercase tracking-wider`}>
-                  Your Total Trip Payout
-                </Text>
-                <Text style={tw`text-2xl font-black text-emerald-700 mt-0.5`}>
-                  ₹{order.totalPayout}.00
-                </Text>
-              </View>
-              <View style={tw`items-end`}>
-                <View style={tw`px-2.5 py-1 rounded-xl bg-white border border-emerald-200`}>
-                  <Text style={tw`text-xs font-black text-emerald-700`}>
-                    {order.paymentMode === 'PREPAID' ? 'Prepaid Order' : 'Cash Collected (COD)'}
-                  </Text>
-                </View>
-                <Text style={tw`text-[10px] text-emerald-600 mt-1 font-semibold`}>
-                  ✓ Settled to Wallet
-                </Text>
-              </View>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`pb-4`}>
+            {/* ================= 1. CARDLESS HERO PAYOUT ================= */}
+            <View style={tw`items-center pb-4 border-b border-slate-100`}>
+              <Text style={[Typography.caption, { color: '#047857', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }]}>
+                TOTAL TRIP EARNING
+              </Text>
+              <Text style={[Typography.amountLarge, { color: '#0F172A', fontSize: 28, fontWeight: '900', marginVertical: 2 }]}>
+                ₹{order.totalPayout}.00
+              </Text>
+              <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
+                {order.paymentMode === 'PREPAID' ? '💳 Prepaid Order • Credited to Wallet' : `💵 Collected ₹${order.totalAmount} in Cash`}
+              </Text>
             </View>
 
-            {/* Route Timeline */}
-            <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4`}>
-              <Text style={tw`text-xs font-black text-slate-900 uppercase tracking-wider mb-3`}>
-                Trip Route
+            {/* ================= 2. TRANSIT ROUTE FLOW (CARDLESS) ================= */}
+            <View style={tw`py-4 border-b border-slate-100`}>
+              <Text style={[Typography.caption, { color: '#94A3B8', fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5, marginBottom: 3 }]}>
+                DELIVERY ROUTE
               </Text>
 
-              {/* Pickup Store */}
-              <View style={tw`flex-row items-start`}>
-                <View style={tw`items-center mr-3`}>
-                  <View style={tw`w-6 h-6 rounded-full bg-blue-100 items-center justify-center`}>
-                    <Ionicons name="storefront" size={13} color="#2563EB" />
+              {/* Pickup */}
+              <View style={tw`flex-row items-start mb-3`}>
+                <View style={tw`items-center mr-3 mt-0.5`}>
+                  <View style={tw`w-5 h-5 rounded-full bg-blue-600 items-center justify-center shadow-sm`}>
+                    <Ionicons name="storefront" size={10} color="#FFFFFF" />
                   </View>
-                  <View style={tw`w-[1.5px] h-8 bg-slate-300 my-1`} />
+                  <View style={tw`w-0.5 h-7 bg-slate-200 my-0.5`} />
                 </View>
                 <View style={tw`flex-1`}>
-                  <Text style={tw`text-[10px] font-bold text-blue-600 uppercase`}>Pickup Hub</Text>
-                  <Text style={tw`text-xs font-black text-slate-800`}>{order.storeName}</Text>
-                  <Text style={tw`text-[11px] text-slate-500 mt-0.5`}>{order.storeAddress}</Text>
+                  <Text style={[Typography.caption, { color: '#2563EB', fontSize: 9.5, fontWeight: '800' }]}>
+                    PICKUP DARK STORE
+                  </Text>
+                  <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11.5, marginTop: 1 }]}>
+                    {order.storeName}
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 1 }]}>
+                    {order.storeAddress}
+                  </Text>
                 </View>
               </View>
 
-              {/* Drop Customer */}
-              <View style={tw`flex-row items-start mt-1`}>
-                <View style={tw`items-center mr-3`}>
-                  <View style={tw`w-6 h-6 rounded-full bg-emerald-100 items-center justify-center`}>
-                    <Ionicons name="location" size={14} color="#059669" />
+              {/* Drop */}
+              <View style={tw`flex-row items-start`}>
+                <View style={tw`items-center mr-3 mt-0.5`}>
+                  <View style={tw`w-5 h-5 rounded-full bg-emerald-600 items-center justify-center shadow-sm`}>
+                    <Ionicons name="location" size={11} color="#FFFFFF" />
                   </View>
                 </View>
                 <View style={tw`flex-1`}>
-                  <Text style={tw`text-[10px] font-bold text-emerald-600 uppercase`}>Customer Drop</Text>
-                  <Text style={tw`text-xs font-black text-slate-800`}>{order.customerName}</Text>
-                  <Text style={tw`text-[11px] text-slate-500 mt-0.5`}>{order.customerAddress}</Text>
+                  <Text style={[Typography.caption, { color: '#047857', fontSize: 9.5, fontWeight: '800' }]}>
+                    CUSTOMER DELIVERY
+                  </Text>
+                  <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11.5, marginTop: 1 }]}>
+                    {order.customerName}
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 1 }]}>
+                    {order.customerAddress}
+                  </Text>
                 </View>
               </View>
             </View>
 
-            {/* Itemized Payout Breakdown */}
-            <View style={tw`p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4`}>
-              <Text style={tw`text-xs font-black text-slate-900 uppercase tracking-wider mb-2.5`}>
-                Payout Breakdown
+            {/* ================= 3. ITEMIZED PAYOUT BREAKDOWN ================= */}
+            <View style={tw`py-4 border-b border-slate-100`}>
+              <Text style={[Typography.caption, { color: '#94A3B8', fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5, marginBottom: 3 }]}>
+                PAYOUT BREAKDOWN
               </Text>
 
               <View style={tw`gap-2`}>
-                <View style={tw`flex-row justify-between items-center py-1 border-b border-slate-200`}>
-                  <Text style={tw`text-xs text-slate-600`}>Base Distance Fare ({distanceText})</Text>
-                  <Text style={tw`text-xs font-black text-slate-800`}>₹{order.payoutEarnings}</Text>
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={[Typography.caption, { color: '#334155', fontSize: 10.5 }]}>
+                    Base Distance Pay ({distanceText})
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#0F172A', fontSize: 11, fontWeight: '700' }]}>
+                    ₹{order.payoutEarnings || 45}
+                  </Text>
                 </View>
-                <View style={tw`flex-row justify-between items-center py-1 border-b border-slate-200`}>
-                  <Text style={tw`text-xs text-slate-600`}>Surge / Peak Multiplier</Text>
-                  <Text style={tw`text-xs font-black text-amber-600`}>+₹{order.surgeBonus}</Text>
+
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={[Typography.caption, { color: '#334155', fontSize: 10.5 }]}>
+                    Peak Demand Surge Bonus
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#B45309', fontSize: 11, fontWeight: '700' }]}>
+                    +₹{order.surgeBonus || 35}
+                  </Text>
                 </View>
-                <View style={tw`flex-row justify-between items-center py-1 border-b border-slate-200`}>
-                  <Text style={tw`text-xs text-slate-600`}>Customer Tip (100% credited)</Text>
-                  <Text style={tw`text-xs font-black text-pink-600`}>+₹{order.tipAmount}</Text>
+
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={[Typography.caption, { color: '#334155', fontSize: 10.5 }]}>
+                    Customer Tip (100% credited)
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#047857', fontSize: 11, fontWeight: '700' }]}>
+                    +₹{order.tipAmount || 10}
+                  </Text>
                 </View>
-                <View style={tw`flex-row justify-between items-center pt-1.5`}>
-                  <Text style={tw`text-xs font-black text-slate-900`}>Net Rider Payout</Text>
-                  <Text style={tw`text-sm font-black text-emerald-600`}>₹{order.totalPayout}</Text>
+
+                <View style={tw`flex-row justify-between items-center pt-2 border-t border-slate-100 mt-1`}>
+                  <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
+                    Net Rider Payout
+                  </Text>
+                  <Text style={[Typography.amountLarge, { color: '#047857', fontSize: 14 }]}>
+                    ₹{order.totalPayout}.00
+                  </Text>
                 </View>
               </View>
             </View>
 
-            {/* Verification Security Chip */}
-            <View style={tw`p-3.5 rounded-2xl bg-slate-100 flex-row justify-between items-center`}>
+            {/* ================= 4. ITEMS VERIFICATION BADGE ================= */}
+            <View style={tw`flex-row justify-between items-center py-3.5`}>
               <View style={tw`flex-row items-center`}>
-                <Ionicons name="shield-checkmark" size={16} color="#047857" style={tw`mr-2`} />
+                <Ionicons name="shield-checkmark" size={15} color="#047857" style={tw`mr-2`} />
                 <View>
-                  <Text style={tw`text-xs font-bold text-slate-800`}>Delivery Verification</Text>
-                  <Text style={tw`text-[10px] text-slate-500`}>OTP: {order.otp} • Handed over safely</Text>
+                  <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11 }]}>
+                    Verified Doorstep Delivery
+                  </Text>
+                  <Text style={[Typography.caption, { color: '#64748B', fontSize: 9.5 }]}>
+                    OTP {order.otp || '4821'} Confirmed • {order.items?.length || 4} Items Checked
+                  </Text>
                 </View>
               </View>
-              <View style={tw`px-2 py-0.5 rounded-md bg-emerald-100`}>
-                <Text style={tw`text-[10px] font-black text-emerald-800`}>VERIFIED</Text>
-              </View>
+
+              <Text style={[Typography.badge, { color: '#047857', fontSize: 9 }]}>
+                100% On-Time
+              </Text>
             </View>
           </ScrollView>
+
+          {/* Close Action Button */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onClose}
+            style={tw`w-full py-3.5 rounded-2xl bg-slate-900 border border-slate-800 items-center justify-center shadow-md`}
+          >
+            <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 12, fontWeight: '800' }]}>
+              Dismiss Summary
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 };
-

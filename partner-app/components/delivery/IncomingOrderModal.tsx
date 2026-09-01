@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Modal,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDeliveryContext } from '../../context/DeliveryContext';
 import { Typography } from '../../constants/typography';
@@ -24,6 +25,7 @@ export const IncomingOrderModal: React.FC<IncomingOrderModalProps> = ({
   onAccept: propOnAccept,
   onReject: propOnReject,
 }) => {
+  const insets = useSafeAreaInsets();
   const context = useDeliveryContext();
   const incomingOrder = propOrder ?? context.incomingOrder;
   const acceptIncomingOrder = propOnAccept ?? context.acceptIncomingOrder;
@@ -38,7 +40,12 @@ export const IncomingOrderModal: React.FC<IncomingOrderModalProps> = ({
   return (
     <Modal visible={!!incomingOrder} transparent animationType="slide" statusBarTranslucent>
       <View style={[tw`flex-1 justify-end`, { backgroundColor: 'rgba(15, 23, 42, 0.68)' }]}>
-        <View style={tw`bg-white rounded-t-3xl border-t-2 border-emerald-500 shadow-2xl p-4 pb-6`}>
+        <View
+          style={[
+            tw`bg-white rounded-t-3xl border-t-2 border-emerald-500 shadow-2xl p-4`,
+            { paddingBottom: Math.max(insets.bottom, 20) + 8 },
+          ]}
+        >
           {/* Top Grabber Handle */}
           <View style={tw`w-10 h-1 rounded-full bg-slate-200 self-center mb-3`} />
 
@@ -61,136 +68,91 @@ export const IncomingOrderModal: React.FC<IncomingOrderModalProps> = ({
               </View>
             </View>
 
-            {/* Right: Trip Specs Pill */}
+            {/* Right: Distance & Item Meta */}
             <View style={tw`items-end`}>
-              <View style={tw`flex-row items-center px-2 py-1 rounded-xl bg-slate-100 border border-slate-200`}>
-                <Ionicons name="time-outline" size={11} color="#0F172A" style={tw`mr-1`} />
-                <Text style={[Typography.caption, { color: '#0F172A', fontSize: 10, fontWeight: '800' }]}>
-                  ~14 mins
-                </Text>
-                <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginLeft: 3 }]}>
-                  ({totalDistance} km)
+              <View style={tw`flex-row items-center`}>
+                <Ionicons name="navigate-circle" size={13} color="#047857" style={tw`mr-1`} />
+                <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11 }]}>
+                  {totalDistance} km total
                 </Text>
               </View>
-              <Text style={[Typography.caption, { color: '#64748B', fontSize: 9, marginTop: 2 }]}>
-                #{incomingOrder.orderNumber || 'GM-4920'}
+              <Text style={[Typography.caption, { color: '#64748B', fontSize: 9.5, marginTop: 1 }]}>
+                {incomingOrder.items?.length || 4} Pack Items • Express 10m
               </Text>
             </View>
           </View>
 
-          {/* ================= 2. DETAILED & CLEAR ROUTE TIMELINE ================= */}
-          <View style={tw`py-3`}>
-            {/* Step 1: Dark Store Pickup */}
-            <View style={tw`flex-row items-start mb-3.5`}>
+          {/* ================= 2. TRANSIT TIMELINE (PICKUP ➔ DROP) ================= */}
+          <View style={tw`py-3 border-b border-slate-100 gap-2.5`}>
+            {/* Pickup Dark Store */}
+            <View style={tw`flex-row items-start`}>
               <View style={tw`items-center mr-2.5 mt-0.5`}>
                 <View style={tw`w-5 h-5 rounded-full bg-blue-600 items-center justify-center shadow-sm`}>
                   <Ionicons name="storefront" size={10} color="#FFFFFF" />
                 </View>
-                <View style={tw`w-0.5 h-8 bg-slate-200 my-0.5`} />
+                <View style={tw`w-0.5 h-6 bg-slate-200 my-0.5`} />
               </View>
-
               <View style={tw`flex-1`}>
-                <View style={tw`flex-row items-center justify-between`}>
+                <View style={tw`flex-row justify-between items-center`}>
                   <Text style={[Typography.caption, { color: '#2563EB', fontSize: 9, fontWeight: '800' }]}>
-                    PICKUP DARK STORE
+                    PICKUP DARK STORE ({incomingOrder.storeDistanceKm || 0.8} km)
                   </Text>
-                  <Text style={[Typography.caption, { color: '#64748B', fontSize: 9 }]}>
-                    {incomingOrder.storeDistanceKm || 0.8} km • ~3 mins
+                  <Text style={[Typography.caption, { color: '#2563EB', fontSize: 9, fontWeight: '700' }]}>
+                    Rack #B-04 • Shelf 2
                   </Text>
                 </View>
                 <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11, marginTop: 1 }]} numberOfLines={1}>
-                  {incomingOrder.storeName || 'Koramangala Dark Store #04'}
-                </Text>
-                <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 1 }]}>
-                  80 Feet Road (Rack #B-04 • Shelf 2 • Counter 1)
+                  {incomingOrder.storeName}
                 </Text>
               </View>
             </View>
 
-            {/* Step 2: Customer Delivery Drop */}
+            {/* Drop Customer Address */}
             <View style={tw`flex-row items-start`}>
               <View style={tw`items-center mr-2.5 mt-0.5`}>
                 <View style={tw`w-5 h-5 rounded-full bg-emerald-600 items-center justify-center shadow-sm`}>
                   <Ionicons name="location" size={11} color="#FFFFFF" />
                 </View>
               </View>
-
               <View style={tw`flex-1`}>
-                <View style={tw`flex-row items-center justify-between`}>
+                <View style={tw`flex-row justify-between items-center`}>
                   <Text style={[Typography.caption, { color: '#047857', fontSize: 9, fontWeight: '800' }]}>
-                    CUSTOMER DELIVERY
+                    DROP LOCATION ({incomingOrder.customerDistanceKm || 2.4} km)
                   </Text>
-                  <Text style={[Typography.caption, { color: '#64748B', fontSize: 9 }]}>
-                    {incomingOrder.customerDistanceKm || 2.4} km • ~11 mins
+                  <Text
+                    style={[
+                      Typography.caption,
+                      {
+                        color: incomingOrder.paymentMode === 'PREPAID' ? '#047857' : '#D97706',
+                        fontSize: 9,
+                        fontWeight: '800',
+                      },
+                    ]}
+                  >
+                    {incomingOrder.paymentMode === 'PREPAID' ? '💳 Prepaid' : `💵 Collect ₹${incomingOrder.totalAmount}`}
                   </Text>
                 </View>
                 <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11, marginTop: 1 }]} numberOfLines={1}>
-                  Flat 402, Green Glen Layout, 100ft Road
-                </Text>
-                <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 1 }]}>
-                  Customer: {incomingOrder.customerName || 'Rahul Sharma'} (★ 4.95 Rating)
+                  {incomingOrder.customerName} • {incomingOrder.customerAddress}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* ================= 3. COMPACT 3-PILLAR SPEC STRIP ================= */}
-          <View style={tw`flex-row justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-200 mb-3.5`}>
-            <View style={tw`flex-row items-center`}>
-              <Ionicons name="cube-outline" size={12} color="#475569" style={tw`mr-1`} />
-              <Text style={[Typography.caption, { color: '#334155', fontSize: 10, fontWeight: '700' }]}>
-                {incomingOrder.itemsCount || 4} Items
-              </Text>
-            </View>
-
-            <View style={tw`w-px h-3.5 bg-slate-200`} />
-
-            <View style={tw`flex-row items-center`}>
-              <Ionicons
-                name={incomingOrder.paymentMode === 'PREPAID' ? 'card-outline' : 'cash-outline'}
-                size={12}
-                color={incomingOrder.paymentMode === 'PREPAID' ? '#047857' : '#D97706'}
-                style={tw`mr-1`}
-              />
-              <Text
-                style={[
-                  Typography.caption,
-                  {
-                    color: incomingOrder.paymentMode === 'PREPAID' ? '#047857' : '#D97706',
-                    fontSize: 10,
-                    fontWeight: '800',
-                  },
-                ]}
-              >
-                {incomingOrder.paymentMode === 'PREPAID' ? 'Prepaid (₹0)' : 'Collect ₹450 COD'}
-              </Text>
-            </View>
-
-            <View style={tw`w-px h-3.5 bg-slate-200`} />
-
-            <View style={tw`flex-row items-center`}>
-              <Ionicons name="bicycle-outline" size={12} color="#0F172A" style={tw`mr-1`} />
-              <Text style={[Typography.caption, { color: '#0F172A', fontSize: 10, fontWeight: '800' }]}>
-                {totalDistance} km Total
-              </Text>
-            </View>
-          </View>
-
-          {/* ================= 4. DEDICATED PROPER CANCEL & ACCEPT ACTION BUTTONS ================= */}
-          <View style={tw`flex-row items-center gap-2.5`}>
-            {/* Proper Cancel / Decline Button */}
+          {/* ================= 3. DUAL ACTION BUTTON DOCK ================= */}
+          <View style={tw`flex-row gap-2.5 pt-3`}>
+            {/* Decline Button */}
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={rejectIncomingOrder}
-              style={tw`flex-1 py-3 rounded-2xl bg-rose-50 border border-rose-200 items-center justify-center flex-row shadow-sm`}
+              style={tw`flex-1 py-3 rounded-2xl bg-slate-100 border border-slate-200 items-center justify-center`}
             >
-              <Ionicons name="close-circle-outline" size={15} color="#E11D48" style={tw`mr-1`} />
-              <Text style={[Typography.buttonText, { color: '#E11D48', fontSize: 11, fontWeight: '800' }]}>
-                Decline / Cancel
+              <Text style={[Typography.buttonText, { color: '#64748B', fontSize: 11.5 }]}>
+                Decline
               </Text>
             </TouchableOpacity>
 
-            {/* Accept Delivery Button */}
+            {/* Accept Order Button */}
             <TouchableOpacity
               activeOpacity={0.88}
               onPress={acceptIncomingOrder}

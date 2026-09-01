@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, RefreshControl, StyleSheet, StatusBar as RNStatusBar } from 'react-native';
+import { View, ScrollView, RefreshControl, StyleSheet, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthContext } from '../context/AuthContext';
@@ -41,6 +41,9 @@ export default function PartnerHomeScreen() {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showSOSModal, setShowSOSModal] = useState(false);
 
+  const statusBarHeight = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : insets.top;
+  const safeTop = Math.max(statusBarHeight, insets.top, 14);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshDeliveries();
@@ -53,10 +56,10 @@ export default function PartnerHomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Native Status Bar Matched with Emerald Navbar */}
+      {/* Native Translucent Status Bar Matched with Emerald Header */}
       <StatusBar style="light" backgroundColor="#047857" translucent />
 
-      {/* RENDER ACTIVE TAB */}
+      {/* RENDER ACTIVE TAB WITH SAFE AREA COMPLIANCE */}
       {activeTab === 'home' ? (
         <HomeCockpitView
           onViewWallet={() => setActiveTab('earnings')}
@@ -64,53 +67,57 @@ export default function PartnerHomeScreen() {
           onDepositCash={() => setShowDepositModal(true)}
           onOpenSupport={() => setShowSOSModal(true)}
         />
+      ) : activeTab === 'active' ? (
+        <View style={styles.tabContainer}>
+          <ActiveDeliveryView
+            onContactSupport={() => setShowSOSModal(true)}
+            onFindNewOrders={() => setActiveTab('home')}
+          />
+        </View>
       ) : (
-        <ScrollView
-          style={styles.scrollArea}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: 85 + Math.max(insets.bottom, 16) },
-          ]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#10B981']}
-              tintColor="#10B981"
-            />
-          }
-        >
-          {/* Top Header for Sub-Tabs */}
+        <View style={styles.tabContainer}>
+          {/* Fixed Top Partner Header */}
           <PartnerHeader
             onOpenSOS={() => setShowSOSModal(true)}
             onOpenWallet={() => setActiveTab('earnings')}
           />
 
-          {activeTab === 'active' && (
-            <ActiveDeliveryView
-              onContactSupport={() => setShowSOSModal(true)}
-              onFindNewOrders={() => setActiveTab('home')}
-            />
-          )}
+          {/* Scrollable Sub-Tab Content with Safe Refresh Control Offset */}
+          <ScrollView
+            style={styles.scrollArea}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: 85 + Math.max(insets.bottom, 16) },
+            ]}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#10B981']}
+                tintColor="#10B981"
+                progressViewOffset={safeTop + 50}
+              />
+            }
+          >
+            {activeTab === 'trips' && <TripsHistoryView />}
 
-          {activeTab === 'trips' && <TripsHistoryView />}
+            {activeTab === 'earnings' && (
+              <EarningsView onDepositCash={() => setShowDepositModal(true)} />
+            )}
 
-          {activeTab === 'earnings' && (
-            <EarningsView onDepositCash={() => setShowDepositModal(true)} />
-          )}
-
-          {activeTab === 'profile' && (
-            <PartnerProfileView
-              onOpenDeposit={() => setShowDepositModal(true)}
-              onOpenSOS={() => setShowSOSModal(true)}
-              onLogout={handleLogout}
-            />
-          )}
-        </ScrollView>
+            {activeTab === 'profile' && (
+              <PartnerProfileView
+                onOpenDeposit={() => setShowDepositModal(true)}
+                onOpenSOS={() => setShowSOSModal(true)}
+                onLogout={handleLogout}
+              />
+            )}
+          </ScrollView>
+        </View>
       )}
 
-      {/* Bottom Partner Navigation Bar (Untouched) */}
+      {/* Bottom Partner Navigation Bar */}
       <CustomPartnerNavBar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Modals */}
@@ -137,14 +144,17 @@ export default function PartnerHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#047857',
+    backgroundColor: '#FFFFFF',
+  },
+  tabContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   scrollArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    flexGrow: 1,
     backgroundColor: '#FFFFFF',
   },
 });
