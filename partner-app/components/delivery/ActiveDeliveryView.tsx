@@ -13,6 +13,8 @@ import { useDeliveryContext } from '../../context/DeliveryContext';
 import { FreeOpenStreetMap } from '../home/FreeOpenStreetMap';
 import { DeliveryVerifyModal } from './DeliveryVerifyModal';
 import { OrderSuccessModal } from './OrderSuccessModal';
+import { QuickChatModal } from './QuickChatModal';
+import { ProofOfDeliveryModal } from './ProofOfDeliveryModal';
 import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
@@ -34,6 +36,8 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
 
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [showProofModal, setShowProofModal] = useState(false);
 
   const windowHeight = Dimensions.get('window').height;
 
@@ -92,6 +96,7 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
 
   const handleVerifySuccess = () => {
     setShowVerifyModal(false);
+    setShowProofModal(false);
     setShowSuccessModal(true);
   };
 
@@ -271,12 +276,12 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
                     {activeOrder.customerName}
                   </Text>
                   <Text style={[Typography.caption, { color: '#047857', fontSize: 10, fontWeight: '700' }]}>
-                    OTP Required at Doorstep
+                    OTP / Photo Proof Required
                   </Text>
                 </View>
               </View>
 
-              {/* Call & Chat Buttons */}
+              {/* Call & 1-Tap Quick Chat Buttons */}
               <View style={tw`flex-row items-center gap-1.5`}>
                 <TouchableOpacity
                   activeOpacity={0.8}
@@ -285,21 +290,37 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
                 >
                   <Ionicons name="call" size={14} color="#047857" />
                 </TouchableOpacity>
+
+                {/* In-App Quick Chat Trigger */}
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  onPress={onContactSupport}
-                  style={tw`w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 items-center justify-center shadow-sm`}
+                  onPress={() => setShowChatModal(true)}
+                  style={tw`w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 items-center justify-center shadow-sm`}
                 >
-                  <Ionicons name="chatbubble-ellipses" size={14} color="#2563EB" />
+                  <Ionicons name="chatbubble-ellipses" size={14} color="#047857" />
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Destination Address */}
             <View style={tw`p-2.5 rounded-xl bg-slate-50 border border-slate-100`}>
-              <Text style={[Typography.caption, { color: '#047857', fontSize: 9, fontWeight: '800', marginBottom: 1 }]}>
-                DELIVERY DESTINATION
-              </Text>
+              <View style={tw`flex-row justify-between items-center mb-1`}>
+                <Text style={[Typography.caption, { color: '#047857', fontSize: 9, fontWeight: '800' }]}>
+                  DELIVERY DESTINATION
+                </Text>
+                {/* Contactless Photo Trigger */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setShowProofModal(true)}
+                  style={tw`flex-row items-center px-1.5 py-0.5 rounded bg-purple-50 border border-purple-200`}
+                >
+                  <Ionicons name="camera" size={10} color="#7C3AED" style={tw`mr-1`} />
+                  <Text style={[Typography.badge, { color: '#7C3AED', fontSize: 8.5 }]}>
+                    Photo Proof
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 11, lineHeight: 16 }]}>
                 {activeOrder.customerAddress}
               </Text>
@@ -359,21 +380,24 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
               </TouchableOpacity>
             )
           ) : (
-            <TouchableOpacity
-              activeOpacity={0.88}
-              onPress={() => setShowVerifyModal(true)}
-              style={tw`w-full py-3.5 rounded-2xl bg-emerald-600 border border-emerald-500 items-center justify-center flex-row shadow-md`}
-            >
-              <Ionicons name="checkmark-done-circle" size={17} color="#FFFFFF" style={tw`mr-1.5`} />
-              <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 13, fontWeight: '900' }]}>
-                ARRIVED AT DOORSTEP & VERIFY OTP
-              </Text>
-            </TouchableOpacity>
+            <View style={tw`gap-2`}>
+              <TouchableOpacity
+                activeOpacity={0.88}
+                onPress={() => setShowVerifyModal(true)}
+                style={tw`w-full py-3.5 rounded-2xl bg-emerald-600 border border-emerald-500 items-center justify-center flex-row shadow-md`}
+              >
+                <Ionicons name="checkmark-done-circle" size={17} color="#FFFFFF" style={tw`mr-1.5`} />
+                <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 13, fontWeight: '900' }]}>
+                  ARRIVED AT DOORSTEP & VERIFY OTP
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>
 
       {/* ================= MODALS ================= */}
+      {/* 1. OTP Verification Modal */}
       <DeliveryVerifyModal
         visible={showVerifyModal}
         order={activeOrder}
@@ -381,6 +405,24 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
         onSuccess={handleVerifySuccess}
       />
 
+      {/* 2. In-App Quick Chat Modal */}
+      <QuickChatModal
+        visible={showChatModal}
+        customerName={activeOrder.customerName}
+        orderNumber={activeOrder.orderNumber}
+        onClose={() => setShowChatModal(false)}
+      />
+
+      {/* 3. Contactless Proof of Delivery Photo Modal */}
+      <ProofOfDeliveryModal
+        visible={showProofModal}
+        orderNumber={activeOrder.orderNumber}
+        customerAddress={activeOrder.customerAddress}
+        onClose={() => setShowProofModal(false)}
+        onPhotoConfirmed={handleVerifySuccess}
+      />
+
+      {/* 4. Order Success Payout Modal */}
       <OrderSuccessModal
         visible={showSuccessModal}
         order={activeOrder}

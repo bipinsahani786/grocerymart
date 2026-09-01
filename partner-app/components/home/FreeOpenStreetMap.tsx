@@ -28,6 +28,7 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
     lng: 77.6245,
   });
   const [isLocating, setIsLocating] = useState(false);
+  const [showSurgeZones, setShowSurgeZones] = useState(true);
 
   // Fetch real device current location on mount
   useEffect(() => {
@@ -87,9 +88,9 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
   };
 
   const stores = [
-    { id: '1', name: 'Koramangala Hub #04', lat: currentCoords.lat + 0.004, lng: currentCoords.lng + 0.003, surge: '+₹35' },
-    { id: '2', name: 'HSR Layout Sector 2', lat: currentCoords.lat - 0.008, lng: currentCoords.lng + 0.006, surge: '+₹25' },
-    { id: '3', name: 'Indiranagar 100ft Hub', lat: currentCoords.lat + 0.012, lng: currentCoords.lng - 0.005, surge: '+₹30' },
+    { id: '1', name: 'Koramangala Hub #04', lat: currentCoords.lat + 0.004, lng: currentCoords.lng + 0.003, surge: '+₹35', radius: 450 },
+    { id: '2', name: 'HSR Layout Sector 2', lat: currentCoords.lat - 0.008, lng: currentCoords.lng + 0.006, surge: '+₹25', radius: 350 },
+    { id: '3', name: 'Indiranagar 100ft Hub', lat: currentCoords.lat + 0.012, lng: currentCoords.lng - 0.005, surge: '+₹30', radius: 400 },
   ];
 
   const htmlContent = `
@@ -98,14 +99,21 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Leaflet OpenStreetMap</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <title>GroceryMart Live Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    
-    /* Delivery Rider Icon Pin with Swiggy/Blinkit Animated Pulse */
+    html, body, #map {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background: #F1F5F9;
+    }
+    .custom-delivery-rider {
+      background: transparent;
+      border: none;
+    }
     .rider-container {
       position: relative;
       width: 48px;
@@ -119,34 +127,37 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: rgba(16, 185, 129, 0.4);
-      animation: pulseDeliveryRider 2s infinite ease-out;
+      background: rgba(16, 185, 129, 0.35);
+      animation: pulse-ring 1.8s infinite ease-out;
     }
-    @keyframes pulseDeliveryRider {
-      0% { transform: scale(0.85); opacity: 0.8; }
-      70% { transform: scale(1.6); opacity: 0.15; }
-      100% { transform: scale(1.8); opacity: 0; }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.7); opacity: 1; }
+      100% { transform: scale(2.0); opacity: 0; }
     }
-    
-    /* Dark Store Hub Surge Tag */
     .store-badge {
-      background: #047857; color: #FFFFFF; font-size: 11px; font-weight: 800;
-      padding: 3px 8px; border-radius: 14px; border: 1.5px solid #FFFFFF;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25); white-space: nowrap; text-align: center;
-      cursor: pointer;
+      background: #0F172A;
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1.5px solid #10B981;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      white-space: nowrap;
     }
-    
-    /* Customer Drop Pin */
     .drop-pin {
-      width: 26px; height: 26px; background: #EF4444; border: 2px solid #FFFFFF; border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
-      display: flex; align-items: center; justify-content: center; font-size: 13px;
-    }
-    
-    .leaflet-control-attribution {
-      font-size: 9px !important;
-      background: rgba(255, 255, 255, 0.7) !important;
-      padding: 0 4px !important;
+      background: #DC2626;
+      color: #FFFFFF;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      font-size: 14px;
     }
   </style>
 </head>
@@ -169,7 +180,23 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // 3D Delivery Motorcycle Icon (Blinkit / Swiggy / Zomato Style)
+    // Live Hotspot Surge Heatmap Circles
+    ${stores
+      .map(
+        (s) => `
+      L.circle([${s.lat}, ${s.lng}], {
+        color: '#F59E0B',
+        fillColor: '#FEF3C7',
+        fillOpacity: 0.35,
+        radius: ${s.radius},
+        weight: 1.5,
+        dashArray: '4, 4'
+      }).addTo(map);
+    `
+      )
+      .join('\n')}
+
+    // 3D Delivery Motorcycle Icon (Blinkit / Swiggy / Zepto Style)
     var deliveryBoyBikeSvg = \`
       <div class="rider-container">
         <div class="rider-pulse"></div>
@@ -222,8 +249,8 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
       var dropIcon = L.divIcon({
         className: 'custom-drop',
         html: '<div class="drop-pin">🏠</div>',
-        iconSize: [26, 26],
-        iconAnchor: [13, 13]
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       });
       L.marker([dropLat, dropLng], { icon: dropIcon }).addTo(map);
 
@@ -251,7 +278,7 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
     }
 
     window.recenter = function() {
-      map.flyTo([currentLat, currentLng], 15, { duration: 1 });
+      map.flyTo([currentLat, currentLng], 15, { duration: 1.0 });
     };
   </script>
 </body>
@@ -259,73 +286,89 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
 `;
 
   return (
-    <View
-      style={[
-        tw`relative w-full overflow-hidden`,
-        { height: '100%', backgroundColor: '#F1F5F9' },
-      ]}
-    >
-      {/* 100% Free OpenStreetMap via Leaflet with Delivery Boy on Bike */}
+    <View style={styles.container}>
       <WebView
         ref={webViewRef}
         originWhitelist={['*']}
         source={{ html: htmlContent }}
-        style={{ flex: 1, backgroundColor: '#F1F5F9' }}
-        onLoad={() => setMapLoaded(true)}
+        style={styles.map}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        onLoadEnd={() => setMapLoaded(true)}
         onMessage={(event) => {
           try {
             const data = JSON.parse(event.nativeEvent.data);
-            if (data.type === 'SELECT_HUB') {
-              onSelectHub?.(data.name);
+            if (data.type === 'SELECT_HUB' && onSelectHub) {
+              onSelectHub(data.name);
             }
           } catch (e) {}
         }}
-        geolocationEnabled={true}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        scalesPageToFit={true}
-        scrollEnabled={true}
       />
 
-      {/* Loading Placeholder */}
       {!mapLoaded && (
-        <View style={[StyleSheet.absoluteFill, tw`items-center justify-center bg-slate-100`]}>
+        <View style={styles.loadingOverlay}>
           <ActivityIndicator size="small" color="#047857" />
-          <Text style={[Typography.caption, { color: '#64748B', marginTop: 6 }]}>
-            Acquiring Live GPS Location...
+          <Text style={[Typography.caption, { color: '#64748B', fontSize: 10, marginTop: 4 }]}>
+            Loading GPS Route Map...
           </Text>
         </View>
       )}
 
-      {/* ================= FLOATING MAP ACTION BUTTONS ================= */}
-      <View style={tw`absolute right-3.5 top-26 z-30 gap-2.5 items-end`}>
-        {/* Recenter GPS Button */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleRecenter}
-          style={tw`w-9 h-9 rounded-xl bg-white border border-slate-200 items-center justify-center shadow-md`}
-        >
-          {isLocating ? (
-            <ActivityIndicator size="small" color="#047857" />
-          ) : (
-            <Ionicons name="locate" size={18} color="#047857" />
-          )}
-        </TouchableOpacity>
-
-        {/* Quick Test Order Trigger */}
-        {isOnline && !activeOrder && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={onSimulateOrder}
-            style={tw`px-3 py-1.5 rounded-xl bg-emerald-600 border border-emerald-500 shadow-md flex-row items-center`}
-          >
-            <Ionicons name="flash" size={12} color="#FFFFFF" style={tw`mr-1`} />
-            <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 10 }]}>
-              + Test Order
-            </Text>
-          </TouchableOpacity>
-        )}
+      {/* Floating Surge Hotspot Pill (Top Left) */}
+      <View style={tw`absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-900/90 border border-amber-400/80 shadow-md flex-row items-center z-20`}>
+        <Ionicons name="flame" size={12} color="#F59E0B" style={tw`mr-1`} />
+        <Text style={[Typography.badge, { color: '#FCD34D', fontSize: 9.5 }]}>
+          High Surge Active (+₹35)
+        </Text>
       </View>
+
+      {/* Floating Recenter GPS Button */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={handleRecenter}
+        style={tw`absolute top-3 right-3 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md items-center justify-center z-20`}
+      >
+        {isLocating ? (
+          <ActivityIndicator size="small" color="#047857" />
+        ) : (
+          <Ionicons name="locate" size={18} color="#047857" />
+        )}
+      </TouchableOpacity>
+
+      {/* Floating Quick Test Order Button (Bottom Left) */}
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={onSimulateOrder}
+        style={tw`absolute bottom-3 left-3 px-3 py-1.5 rounded-full bg-emerald-600 border border-emerald-500 shadow-md flex-row items-center z-20`}
+      >
+        <Ionicons name="flash" size={12} color="#FFFFFF" style={tw`mr-1`} />
+        <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 10.5 }]}>
+          + Test Order
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#F1F5F9',
+    position: 'relative',
+  },
+  map: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#F1F5F9',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+});
