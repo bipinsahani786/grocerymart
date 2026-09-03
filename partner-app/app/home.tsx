@@ -22,8 +22,11 @@ import { IncomingOrderModal } from '../components/delivery/IncomingOrderModal';
 import { CashDepositModal } from '../components/common/CashDepositModal';
 import { SOSSupportModal } from '../components/common/SOSSupportModal';
 
+import { useRouter } from 'expo-router';
+
 export default function PartnerHomeScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { logout } = useAuthContext();
   const {
     activeOrder,
@@ -52,7 +55,9 @@ export default function PartnerHomeScreen() {
 
   const handleLogout = async () => {
     await logout();
+    router.replace('/login');
   };
+
 
   return (
     <View style={styles.container}>

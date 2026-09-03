@@ -289,4 +289,9 @@ router.post("/otp/send", authController.sendOtpDirect);
 router.post("/otp/verify", authController.verifyOtpDirect);
 router.post("/otp/register", authController.registerCustomerDirect);
 
+// ── PARTNER SETTINGS API ──
+router.get("/partner-settings", authController.getPartnerSettings);
+router.put("/partner-settings", authController.updatePartnerSettings);
+router.patch("/partner-settings", authController.updatePartnerSettings);
+
 export default router;

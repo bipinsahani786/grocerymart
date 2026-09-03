@@ -1,66 +1,86 @@
 import { TextStyle } from 'react-native';
 
 export const Typography: { [key: string]: TextStyle } = {
-  // Compact, normalized numbers
+
+  // Amounts & Numbers (Hero Elements)
   amountLarge: {
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: -0.2,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.3,
     includeFontPadding: false,
   },
   amountMedium: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     includeFontPadding: false,
   },
-  // Section Titles
+
+  // Headings & Section Titles
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     letterSpacing: 0.1,
     includeFontPadding: false,
   },
   cardTitle: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     includeFontPadding: false,
   },
-  // Stat numbers & labels
+
+  // Stat Numbers & Labels
   statNumber: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
     includeFontPadding: false,
   },
   statLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     includeFontPadding: false,
   },
-  // Body text
+
+  // Body Text (Regular / Medium / Bold)
   body: {
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '400',
+    includeFontPadding: false,
+  },
+  bodyMedium: {
+    fontSize: 12,
     fontWeight: '500',
     includeFontPadding: false,
   },
   bodyBold: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     includeFontPadding: false,
   },
-  // Subtext & Badges
+
+  // Captions, Subtext & Badges
   caption: {
-    fontSize: 10,
-    fontWeight: '500',
+    fontSize: 10.5,
+    fontWeight: '400',
+    includeFontPadding: false,
+  },
+  captionItalic: {
+    fontSize: 10.5,
+    fontWeight: '400',
+    fontStyle: 'italic',
     includeFontPadding: false,
   },
   badge: {
     fontSize: 9,
-    fontWeight: '800',
+    fontWeight: '700',
+    letterSpacing: 0.2,
     includeFontPadding: false,
   },
+
+  // Buttons & Controls
   buttonText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     includeFontPadding: false,
   },
 };
+

@@ -8,12 +8,12 @@ import {
   Switch,
   Platform,
   StatusBar as RNStatusBar,
-  Alert,
   BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageContext, LanguageCode } from '../../context/LanguageContext';
+import { useSettingsContext, NavAppOption } from '../../context/SettingsContext';
 import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
@@ -28,13 +28,10 @@ type SubPage = 'MAIN' | 'RATE_CARD' | 'PRIVACY' | 'ABOUT';
 export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogout }) => {
   const insets = useSafeAreaInsets();
   const { language, setLanguage, t } = useLanguageContext();
+  const { settings, updateSetting, clearCache, getNavAppName } = useSettingsContext();
 
   const [activeSubPage, setActiveSubPage] = useState<SubPage>('MAIN');
-  const [soundAlerts, setSoundAlerts] = useState(true);
-  const [screenWake, setScreenWake] = useState(true);
-  const [voiceGuidance, setVoiceGuidance] = useState(true);
-  const [autoNavigate, setAutoNavigate] = useState(true);
-  const [batterySaver, setBatterySaver] = useState(false);
+  const [showNavPicker, setShowNavPicker] = useState(false);
 
   const statusBarHeight = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : insets.top;
   const safeTop = Math.max(statusBarHeight, insets.top, 14);
@@ -44,6 +41,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
     if (!visible) return;
 
     const onBackPress = () => {
+      if (showNavPicker) {
+        setShowNavPicker(false);
+        return true;
+      }
       if (activeSubPage !== 'MAIN') {
         setActiveSubPage('MAIN');
         return true; // Prevent modal closing
@@ -53,14 +54,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => backHandler.remove();
-  }, [visible, activeSubPage]);
-
-  const handleClearCache = () => {
-    Alert.alert('Cache Cleared', 'Offline map and temporary app cache cleared successfully (48 MB freed).');
-  };
+  }, [visible, activeSubPage, showNavPicker]);
 
   const handleBackNavigation = () => {
-    if (activeSubPage !== 'MAIN') {
+    if (showNavPicker) {
+      setShowNavPicker(false);
+    } else if (activeSubPage !== 'MAIN') {
       setActiveSubPage('MAIN');
     } else {
       onClose();
@@ -132,19 +131,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
               {/* Siren Alert */}
               <View style={tw`flex-row justify-between items-center py-2.5`}>
                 <View style={tw`flex-row items-center flex-1 mr-2`}>
-                  <Ionicons name="volume-high-outline" size={17} color="#475569" style={tw`mr-3`} />
+                  <Ionicons
+                    name={settings.soundAlerts ? 'volume-high' : 'volume-mute-outline'}
+                    size={17}
+                    color={settings.soundAlerts ? '#047857' : '#94A3B8'}
+                    style={tw`mr-3`}
+                  />
                   <View style={tw`flex-1`}>
                     <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
                       {t.orderSiren}
                     </Text>
                     <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
-                      Loud ringtone for incoming delivery requests
+                      {settings.soundAlerts
+                        ? 'Loud ringtone active for incoming delivery requests'
+                        : 'Siren alerts currently muted (silent request mode)'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={soundAlerts}
-                  onValueChange={setSoundAlerts}
+                  value={settings.soundAlerts}
+                  onValueChange={(val) => updateSetting('soundAlerts', val)}
                   trackColor={{ false: '#E2E8F0', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
@@ -153,19 +159,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
               {/* Screen Wake */}
               <View style={tw`flex-row justify-between items-center py-2.5 border-t border-slate-50`}>
                 <View style={tw`flex-row items-center flex-1 mr-2`}>
-                  <Ionicons name="phone-portrait-outline" size={17} color="#475569" style={tw`mr-3`} />
+                  <Ionicons
+                    name={settings.screenWake ? 'phone-portrait' : 'phone-portrait-outline'}
+                    size={17}
+                    color={settings.screenWake ? '#047857' : '#94A3B8'}
+                    style={tw`mr-3`}
+                  />
                   <View style={tw`flex-1`}>
                     <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
                       Wake Screen on New Order
                     </Text>
                     <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
-                      Turns on phone display automatically
+                      {settings.screenWake
+                        ? 'Turns on phone display automatically when order rings'
+                        : 'Keep phone screen off on incoming orders'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={screenWake}
-                  onValueChange={setScreenWake}
+                  value={settings.screenWake}
+                  onValueChange={(val) => updateSetting('screenWake', val)}
                   trackColor={{ false: '#E2E8F0', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
@@ -174,19 +187,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
               {/* Voice Guidance */}
               <View style={tw`flex-row justify-between items-center py-2.5 border-t border-slate-50`}>
                 <View style={tw`flex-row items-center flex-1 mr-2`}>
-                  <Ionicons name="mic-outline" size={17} color="#475569" style={tw`mr-3`} />
+                  <Ionicons
+                    name={settings.voiceGuidance ? 'mic' : 'mic-off-outline'}
+                    size={17}
+                    color={settings.voiceGuidance ? '#047857' : '#94A3B8'}
+                    style={tw`mr-3`}
+                  />
                   <View style={tw`flex-1`}>
                     <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
                       Voice Prompts & Notes
                     </Text>
                     <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
-                      Speaks customer delivery instructions
+                      {settings.voiceGuidance
+                        ? 'Speaks customer delivery instructions automatically'
+                        : 'Voice note playback disabled'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={voiceGuidance}
-                  onValueChange={setVoiceGuidance}
+                  value={settings.voiceGuidance}
+                  onValueChange={(val) => updateSetting('voiceGuidance', val)}
                   trackColor={{ false: '#E2E8F0', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
@@ -202,38 +222,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
               {/* Default Nav App */}
               <TouchableOpacity
                 activeOpacity={0.7}
+                onPress={() => setShowNavPicker(true)}
                 style={tw`flex-row justify-between items-center py-2.5`}
               >
                 <View style={tw`flex-row items-center flex-1 mr-2`}>
-                  <Ionicons name="navigate-outline" size={17} color="#2563EB" style={tw`mr-3`} />
+                  <Ionicons name="navigate" size={17} color="#2563EB" style={tw`mr-3`} />
                   <View style={tw`flex-1`}>
                     <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
                       Default Navigation App
                     </Text>
-                    <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
-                      Google Maps (Recommended)
+                    <Text style={[Typography.caption, { color: '#2563EB', fontSize: 10, fontWeight: '700' }]}>
+                      {getNavAppName()}
                     </Text>
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={13} color="#CBD5E1" />
+                <View style={tw`flex-row items-center bg-blue-50 px-2 py-1 rounded-md border border-blue-200`}>
+                  <Text style={tw`text-[10px] font-bold text-blue-700 mr-1`}>Change</Text>
+                  <Ionicons name="chevron-forward" size={12} color="#2563EB" />
+                </View>
               </TouchableOpacity>
 
               {/* Auto Navigate Switch */}
               <View style={tw`flex-row justify-between items-center py-2.5 border-t border-slate-50`}>
                 <View style={tw`flex-row items-center flex-1 mr-2`}>
-                  <Ionicons name="arrow-redo-outline" size={17} color="#475569" style={tw`mr-3`} />
+                  <Ionicons
+                    name={settings.autoNavigate ? 'arrow-redo' : 'arrow-redo-outline'}
+                    size={17}
+                    color={settings.autoNavigate ? '#047857' : '#94A3B8'}
+                    style={tw`mr-3`}
+                  />
                   <View style={tw`flex-1`}>
                     <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
                       {t.autoNav}
                     </Text>
                     <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
-                      Opens directions immediately upon accepting order
+                      {settings.autoNavigate
+                        ? 'Opens directions immediately upon accepting order'
+                        : 'Require manual button tap to launch navigation'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={autoNavigate}
-                  onValueChange={setAutoNavigate}
+                  value={settings.autoNavigate}
+                  onValueChange={(val) => updateSetting('autoNavigate', val)}
                   trackColor={{ false: '#E2E8F0', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
@@ -255,7 +286,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                   <TouchableOpacity
                     key={lang.code}
                     activeOpacity={0.8}
-                    onPress={() => setLanguage(lang.code)}
+                    onPress={() => {
+                      setLanguage(lang.code);
+                    }}
                     style={[
                       tw`flex-1 py-2.5 rounded-xl items-center justify-center border shadow-sm`,
                       {
@@ -290,20 +323,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
               {/* Battery Saver Switch */}
               <View style={tw`flex-row justify-between items-center py-2.5`}>
                 <View style={tw`flex-row items-center flex-1 mr-2`}>
-                  <Ionicons name="battery-charging-outline" size={17} color="#D97706" style={tw`mr-3`} />
+                  <Ionicons
+                    name={settings.batterySaver ? 'battery-charging' : 'battery-charging-outline'}
+                    size={17}
+                    color={settings.batterySaver ? '#D97706' : '#64748B'}
+                    style={tw`mr-3`}
+                  />
                   <View style={tw`flex-1`}>
-                    <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
-                      Battery Saver Shift Mode
-                    </Text>
+                    <View style={tw`flex-row items-center`}>
+                      <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
+                        Battery Saver Shift Mode
+                      </Text>
+                      {settings.batterySaver && (
+                        <View style={tw`ml-2 px-1.5 py-0.2 rounded bg-amber-100 border border-amber-300`}>
+                          <Text style={tw`text-[9px] font-extrabold text-amber-800`}>ACTIVE ⚡</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
-                      Optimizes GPS polling to save phone battery
+                      {settings.batterySaver
+                        ? 'Optimized GPS 15s polling active (Saves battery)'
+                        : 'Standard continuous high-accuracy GPS tracking'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={batterySaver}
-                  onValueChange={setBatterySaver}
-                  trackColor={{ false: '#E2E8F0', true: '#10B981' }}
+                  value={settings.batterySaver}
+                  onValueChange={(val) => updateSetting('batterySaver', val)}
+                  trackColor={{ false: '#E2E8F0', true: '#F59E0B' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -311,7 +358,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
               {/* Clear Cache */}
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={handleClearCache}
+                onPress={clearCache}
                 style={tw`flex-row justify-between items-center py-2.5 border-t border-slate-50`}
               >
                 <View style={tw`flex-row items-center flex-1 mr-2`}>
@@ -320,8 +367,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
                     <Text style={[Typography.bodyBold, { color: '#0F172A', fontSize: 12 }]}>
                       Clear Offline Map Cache
                     </Text>
-                    <Text style={[Typography.caption, { color: '#64748B', fontSize: 10 }]}>
-                      Free up 48 MB local storage
+                    <Text style={[Typography.caption, { color: settings.cacheSize === 0 ? '#059669' : '#64748B', fontSize: 10, fontWeight: settings.cacheSize === 0 ? '700' : '400' }]}>
+                      {settings.cacheSize === 0
+                        ? '0.0 MB • Storage Clean & Optimized 🎉'
+                        : `Free up ${settings.cacheSize} MB local map storage`}
                     </Text>
                   </View>
                 </View>
@@ -397,6 +446,87 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, 
             </View>
           </ScrollView>
         )}
+
+        {/* ================= MODAL: DEFAULT NAVIGATION APP PICKER ================= */}
+        <Modal
+          visible={showNavPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowNavPicker(false)}
+        >
+          <View style={tw`flex-1 bg-black/50 items-center justify-center px-5`}>
+            <View style={tw`w-full bg-white rounded-3xl p-5 shadow-2xl border border-slate-100`}>
+              <View style={tw`flex-row items-center justify-between pb-3 border-b border-slate-100`}>
+                <View style={tw`flex-row items-center`}>
+                  <Ionicons name="navigate" size={20} color="#2563EB" style={tw`mr-2`} />
+                  <Text style={[Typography.cardTitle, { color: '#0F172A', fontSize: 16, fontWeight: '800' }]}>
+                    Select Default Nav App
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowNavPicker(false)}>
+                  <Ionicons name="close-circle" size={24} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[Typography.caption, { color: '#64748B', fontSize: 11, marginVertical: 10 }]}>
+                Choose your preferred mapping provider for turn-by-turn routing during delivery trips:
+              </Text>
+
+              <View style={tw`gap-2.5 my-2`}>
+                {[
+                  { id: 'google_maps' as NavAppOption, title: 'Google Maps', subtitle: 'Recommended for precise street routing in India', icon: 'map' },
+                  { id: 'waze' as NavAppOption, title: 'Waze Navigation', subtitle: 'Real-time traffic hazard & radar alerts', icon: 'car-sport' },
+                  { id: 'apple_maps' as NavAppOption, title: 'Apple Maps', subtitle: 'Native iOS direction engine', icon: 'compass' },
+                  { id: 'in_app' as NavAppOption, title: 'In-App OpenStreetMap', subtitle: 'Lightweight offline map viewer inside app', icon: 'globe' },
+                ].map((item) => {
+                  const isSelected = settings.defaultNavApp === item.id;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        updateSetting('defaultNavApp', item.id);
+                        setShowNavPicker(false);
+                      }}
+                      style={[
+                        tw`p-3.5 rounded-2xl border flex-row items-center justify-between`,
+                        {
+                          backgroundColor: isSelected ? '#EFF6FF' : '#F8FAFC',
+                          borderColor: isSelected ? '#2563EB' : '#E2E8F0',
+                        },
+                      ]}
+                    >
+                      <View style={tw`flex-row items-center flex-1 mr-2`}>
+                        <View style={[tw`w-9 h-9 rounded-xl items-center justify-center mr-3`, { backgroundColor: isSelected ? '#2563EB' : '#E2E8F0' }]}>
+                          <Ionicons name={item.icon as any} size={18} color={isSelected ? '#FFFFFF' : '#475569'} />
+                        </View>
+                        <View style={tw`flex-1`}>
+                          <Text style={[Typography.bodyBold, { color: isSelected ? '#1E40AF' : '#0F172A', fontSize: 13 }]}>
+                            {item.title}
+                          </Text>
+                          <Text style={[Typography.caption, { color: isSelected ? '#1D4ED8' : '#64748B', fontSize: 10 }]}>
+                            {item.subtitle}
+                          </Text>
+                        </View>
+                      </View>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={22} color="#2563EB" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setShowNavPicker(false)}
+                style={tw`mt-2 py-3 bg-slate-900 rounded-xl items-center justify-center`}
+              >
+                <Text style={tw`text-white text-xs font-bold`}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {/* ================= SUB-PAGE 1: DETAILED RATE CARD & TERMS ================= */}
         {activeSubPage === 'RATE_CARD' && (

@@ -191,6 +191,12 @@ export const Header: React.FC<HeaderProps> = ({
     refetchOnMount: 'always',
   });
 
+  const { data: nearbyStore } = useQuery({
+    queryKey: ['backend-nearby-store', pincode],
+    queryFn: () => productService.fetchNearbyStore(pincode),
+    staleTime: 0,
+  });
+
   const activeOutlet = React.useMemo(() => {
     if (storesList.length > 0) {
       if (selectedStore?.id) {
@@ -199,8 +205,9 @@ export const Header: React.FC<HeaderProps> = ({
       }
       return storesList[0];
     }
-    return selectedStore;
-  }, [storesList, selectedStore]);
+    return nearbyStore || selectedStore;
+  }, [storesList, selectedStore, nearbyStore]);
+
 
   React.useEffect(() => {
     if (storesList.length > 0) {

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ScrollView, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { DeliveryOrder } from '../../constants/mockData';
+import { useSettingsContext } from '../../context/SettingsContext';
 import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
@@ -14,11 +15,30 @@ export interface OrderDetailModalProps {
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ visible, order, onClose }) => {
   const insets = useSafeAreaInsets();
+  const { settings, getNavAppName, showToast } = useSettingsContext();
+
   if (!order || visible === false) return null;
 
   const isDelivered = order.status === 'DELIVERED';
   const isCOD = order.paymentMode === 'CASH_ON_DELIVERY';
   const distanceText = order.customerDistanceKm ? `${order.customerDistanceKm + (order.storeDistanceKm || 0.8)} km` : '3.2 km';
+
+  const handleLaunchNavigation = () => {
+    const navApp = getNavAppName();
+    showToast(`🗺️ Launching ${navApp} navigation...`);
+    
+    // Simulate opening map URL based on setting
+    const address = encodeURIComponent(order.customerAddress || 'Koramangala, Bengaluru');
+    if (settings.defaultNavApp === 'waze') {
+      Linking.openURL(`https://waze.com/ul?q=${address}`).catch(() => {});
+    } else {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${address}`).catch(() => {});
+    }
+  };
+
+  const handleSpeakVoiceNote = () => {
+    showToast(`🗣️ Voice Guidance: "Deliver to ${order.customerName}, ${order.customerAddress}"`);
+  };
 
   return (
     <Modal visible={!!order} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
@@ -56,6 +76,31 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ visible, ord
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`pb-4`}>
+            {/* ================= ACTIVE SETTINGS QUICK ACTIONS BAR ================= */}
+            <View style={tw`flex-row gap-2 mb-3`}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleLaunchNavigation}
+                style={tw`flex-1 py-2 px-3 bg-blue-50 border border-blue-200 rounded-xl flex-row items-center justify-center`}
+              >
+                <Ionicons name="navigate" size={13} color="#2563EB" style={tw`mr-1.5`} />
+                <Text style={tw`text-[10px] font-extrabold text-blue-800`}>
+                  Nav: {settings.defaultNavApp === 'google_maps' ? 'Google Maps' : settings.defaultNavApp === 'waze' ? 'Waze' : 'In-App'}
+                </Text>
+              </TouchableOpacity>
+
+              {settings.voiceGuidance && (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={handleSpeakVoiceNote}
+                  style={tw`flex-1 py-2 px-3 bg-emerald-50 border border-emerald-200 rounded-xl flex-row items-center justify-center`}
+                >
+                  <Ionicons name="volume-high" size={13} color="#047857" style={tw`mr-1.5`} />
+                  <Text style={tw`text-[10px] font-extrabold text-emerald-800`}>Read Voice Note 🗣️</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             {/* ================= 1. CARDLESS HERO PAYOUT ================= */}
             <View style={tw`items-center pb-4 border-b border-slate-100`}>
               <Text style={[Typography.caption, { color: '#047857', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }]}>

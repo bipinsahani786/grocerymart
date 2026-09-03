@@ -130,6 +130,47 @@ export class AuthController {
     const result = await authService.registerCustomerDirect(req.body);
     res.json(result);
   });
+
+
+  // ── PARTNER SETTINGS ──
+  getPartnerSettings = catchAsync(async (req, res) => {
+    res.json({
+      success: true,
+      data: partnerSettingsStore[req.user?.id || "default"] || {
+        soundAlerts: true,
+        screenWake: true,
+        voiceGuidance: true,
+        defaultNavApp: "google_maps",
+        autoNavigate: true,
+        batterySaver: false,
+        language: "EN",
+        cacheSize: 48.5,
+      },
+      message: "Partner settings retrieved successfully",
+    });
+  });
+
+  updatePartnerSettings = catchAsync(async (req, res) => {
+    const userId = req.user?.id || "default";
+    const prev = partnerSettingsStore[userId] || {
+      soundAlerts: true,
+      screenWake: true,
+      voiceGuidance: true,
+      defaultNavApp: "google_maps",
+      autoNavigate: true,
+      batterySaver: false,
+      language: "EN",
+      cacheSize: 48.5,
+    };
+    partnerSettingsStore[userId] = { ...prev, ...req.body };
+    res.json({
+      success: true,
+      data: partnerSettingsStore[userId],
+      message: "Partner settings updated successfully",
+    });
+  });
 }
+
+const partnerSettingsStore = {};
 
 export const authController = new AuthController();
