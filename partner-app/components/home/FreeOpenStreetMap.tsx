@@ -6,12 +6,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
+import { getApiBaseUrl } from '../../constants/config';
+
 interface FreeOpenStreetMapProps {
   isOnline: boolean;
   activeOrder: any;
   currentHub: string;
   onSimulateOrder: () => void;
   onSelectHub?: (hubName: string) => void;
+  onMapMoveEnd?: (coords: { lat: number; lng: number }) => void;
 }
 
 export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
@@ -20,7 +23,9 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
   currentHub,
   onSimulateOrder,
   onSelectHub,
+  onMapMoveEnd,
 }) => {
+
   const webViewRef = useRef<WebView>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number }>({
@@ -87,11 +92,55 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
     }
   };
 
-  const stores = [
+  const [stores, setStores] = useState<any[]>([
     { id: '1', name: 'Koramangala Hub #04', lat: currentCoords.lat + 0.004, lng: currentCoords.lng + 0.003, surge: '+₹35', radius: 450 },
     { id: '2', name: 'HSR Layout Sector 2', lat: currentCoords.lat - 0.008, lng: currentCoords.lng + 0.006, surge: '+₹25', radius: 350 },
     { id: '3', name: 'Indiranagar 100ft Hub', lat: currentCoords.lat + 0.012, lng: currentCoords.lng - 0.005, surge: '+₹30', radius: 400 },
-  ];
+  ]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchBackendStores = async () => {
+      try {
+        const baseUrl = getApiBaseUrl();
+        const url = `${baseUrl}/api/customer/stores?userLat=${currentCoords.lat}&userLng=${currentCoords.lng}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const mappedStores = data.data.map((s: any, idx: number) => {
+            const rawLat = parseFloat(s.lat);
+            const rawLng = parseFloat(s.long || s.lng);
+            const hasValidCoords = !isNaN(rawLat) && !isNaN(rawLng) && (rawLat !== 0 || rawLng !== 0);
+
+            const storeLat = hasValidCoords ? rawLat : currentCoords.lat + (idx === 0 ? 0.004 : idx === 1 ? -0.008 : 0.012);
+            const storeLng = hasValidCoords ? rawLng : currentCoords.lng + (idx === 0 ? 0.003 : idx === 1 ? 0.006 : -0.005);
+
+            return {
+              id: s.id || String(idx + 1),
+              name: s.name,
+              lat: storeLat,
+              lng: storeLng,
+              surge: idx === 0 ? '+₹35' : idx === 1 ? '+₹25' : '+₹30',
+              radius: Math.max(300, 450 - idx * 50),
+              address: s.address,
+              distance: s.distance,
+            };
+          });
+          if (isMounted) {
+            setStores(mappedStores);
+          }
+        }
+      } catch (err) {
+        console.log('Failed to fetch stores for homepage map:', err);
+      }
+    };
+    fetchBackendStores();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentCoords]);
+
+
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -226,24 +275,25 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
     ${stores
       .map(
         (s) => `
-      var storeIcon_${s.id} = L.divIcon({
+      var safeStoreId = String('${s.id}').replace(/[^a-zA-Z0-9]/g, '_');
+      var storeIcon = L.divIcon({
         className: 'custom-store',
-        html: '<div class="store-badge">🏬 ${s.surge}</div>',
-        iconSize: [64, 26],
-        iconAnchor: [32, 13]
+        html: '<div class="store-badge">🏬 ${s.name.replace(/'/g, "\\'")}</div>',
+        iconSize: [120, 26],
+        iconAnchor: [60, 13]
       });
-      L.marker([${s.lat}, ${s.lng}], { icon: storeIcon_${s.id} })
+      L.marker([${s.lat}, ${s.lng}], { icon: storeIcon })
         .addTo(map)
         .on('click', function() {
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECT_HUB', name: '${s.name}' }));
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECT_HUB', name: '${s.name.replace(/'/g, "\\'")}' }));
         });
+
     `
       )
       .join('\n')}
 
-    ${
-      activeOrder
-        ? `
+    ${activeOrder
+      ? `
       var dropLat = currentLat + 0.012;
       var dropLng = currentLng + 0.010;
       var dropIcon = L.divIcon({
@@ -267,7 +317,7 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
 
       map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
     `
-        : ''
+      : ''
     }
 
     if (navigator.geolocation) {
@@ -276,6 +326,15 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
         map.setView([pos.coords.latitude, pos.coords.longitude], 15);
       }, function() {}, { enableHighAccuracy: true, timeout: 5000 });
     }
+
+    map.on('moveend', function() {
+      var center = map.getCenter();
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'MAP_MOVED',
+        lat: center.lat,
+        lng: center.lng
+      }));
+    });
 
     window.recenter = function() {
       map.flyTo([currentLat, currentLng], 15, { duration: 1.0 });
@@ -288,9 +347,11 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
   return (
     <View style={styles.container}>
       <WebView
+        key={`map-${stores.length}-${stores.map((s) => s.id).join('-')}`}
         ref={webViewRef}
         originWhitelist={['*']}
         source={{ html: htmlContent }}
+
         style={styles.map}
         javaScriptEnabled={true}
         domStorageEnabled={true}
@@ -300,10 +361,13 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
             const data = JSON.parse(event.nativeEvent.data);
             if (data.type === 'SELECT_HUB' && onSelectHub) {
               onSelectHub(data.name);
+            } else if (data.type === 'MAP_MOVED' && onMapMoveEnd) {
+              onMapMoveEnd({ lat: data.lat, lng: data.lng });
             }
-          } catch (e) {}
+          } catch (e) { }
         }}
       />
+
 
       {!mapLoaded && (
         <View style={styles.loadingOverlay}>

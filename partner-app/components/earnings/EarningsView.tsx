@@ -11,7 +11,8 @@ interface EarningsViewProps {
 }
 
 export const EarningsView: React.FC<EarningsViewProps> = ({ onDepositCash }) => {
-  const { earningsSummary, walletBalance } = useDeliveryContext();
+  const { earningsSummary } = useDeliveryContext();
+  const walletBalance = earningsSummary?.todayTotal || 0;
   const { t } = useLanguageContext();
 
   const [activeRange, setActiveRange] = useState<'TODAY' | 'WEEK' | 'MONTH'>('TODAY');
@@ -134,7 +135,7 @@ export const EarningsView: React.FC<EarningsViewProps> = ({ onDepositCash }) => 
               {t.tipsEarned}
             </Text>
             <Text style={[Typography.amountLarge, { color: '#D97706', fontSize: 15, marginTop: 1 }]}>
-              ₹{earningsSummary.tipsTotal || 140}
+              ₹{(earningsSummary as any).tipsTotal || 140}
             </Text>
           </View>
         </View>

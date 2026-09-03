@@ -45,14 +45,15 @@ export class CustomerStoresService {
       return bMatch - aMatch;
     });
 
-    return sortedStores.map((s, index) => {
+    const mapped = sortedStores.map((s, index) => {
       const sAddr = (s.address || "").toLowerCase();
       const isDirectMatch = cleanPin && (sAddr.includes(cleanPin) || s.name.toLowerCase().includes(cleanPin));
 
       let calculatedKm = null;
-      if (userLat && userLng && s.lat && s.long) {
+      if (userLat && userLng && typeof s.lat === "number" && typeof s.long === "number" && (s.lat !== 0 || s.long !== 0)) {
         calculatedKm = calculateHaversineKm(s.lat, s.long, parseFloat(userLat), parseFloat(userLng));
       }
+
       const distNum = calculatedKm !== null ? calculatedKm : isDirectMatch ? 0.8 : parseFloat((1.2 + index * 1.5).toFixed(1));
 
       return {
@@ -74,7 +75,19 @@ export class CustomerStoresService {
         clickCollectEnabled: s.clickCollectEnabled !== false,
       };
     });
+
+    if (userLat && userLng) {
+      mapped.sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+
+    return mapped;
   }
+
+  async getNearbyStore(pincode = "", userLat = null, userLng = null) {
+    const stores = await this.getStores(pincode, userLat, userLng);
+    return stores && stores.length > 0 ? stores[0] : null;
+  }
+
 
   async getDeliveryConfig({ storeId = "", pincode = "", distanceKm = null, subtotal = 0, userLat = null, userLng = null } = {}) {
     let store = null;

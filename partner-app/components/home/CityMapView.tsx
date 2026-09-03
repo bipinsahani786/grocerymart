@@ -20,7 +20,9 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from '../../constants/typography';
+import { getApiBaseUrl } from '../../constants/config';
 import tw from 'twrnc';
+
 
 interface CityMapViewProps {
   isOnline: boolean;
@@ -72,7 +74,7 @@ export const CityMapView: React.FC<CityMapViewProps> = ({
   });
 
   // Dark stores in city coordinates
-  const stores = [
+  const [stores, setStores] = useState<any[]>([
     {
       id: '1',
       name: 'Koramangala Hub #04',
@@ -97,7 +99,45 @@ export const CityMapView: React.FC<CityMapViewProps> = ({
       y: mapHeight * 0.28,
       surge: '+₹30',
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchBackendStores = async () => {
+      try {
+        const baseUrl = getApiBaseUrl();
+        const res = await fetch(`${baseUrl}/api/customer/stores`);
+        const data = await res.json();
+
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const positions = [
+            { x: screenWidth * 0.48, y: mapHeight * 0.48 },
+            { x: screenWidth * 0.22, y: mapHeight * 0.72 },
+            { x: screenWidth * 0.76, y: mapHeight * 0.28 },
+          ];
+          const mapped = data.data.map((s: any, idx: number) => ({
+            id: s.id || String(idx + 1),
+            name: s.name,
+            shortName: s.name.split(' ')[0] || s.name,
+            x: positions[idx % positions.length].x,
+            y: positions[idx % positions.length].y,
+            surge: idx === 0 ? '+₹35' : idx === 1 ? '+₹25' : '+₹30',
+          }));
+          if (isMounted) {
+            setStores(mapped);
+          }
+        }
+      } catch (err) {
+        console.log('Failed to fetch stores for CityMapView:', err);
+      }
+    };
+    fetchBackendStores();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+
 
   return (
     <View

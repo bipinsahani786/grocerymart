@@ -113,6 +113,22 @@ export class ProductService {
     return [];
   }
 
+  async fetchNearbyStore(pincode?: string, userLat?: number, userLng?: number): Promise<any | null> {
+    const response = await apiClient.get<any>('/api/customer/stores/nearby', {
+      params: {
+        ...(pincode ? { pincode } : {}),
+        ...(userLat ? { userLat } : {}),
+        ...(userLng ? { userLng } : {}),
+        _t: Date.now(),
+      },
+    });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return null;
+  }
+
+
   async fetchDeliveryConfig(
     paramsOrStoreId?:
       | {

@@ -29,6 +29,26 @@ export class CustomerStoresController {
     });
   });
 
+  getNearbyStore = catchAsync(async (req, res) => {
+    const { pincode, userLat, userLng, lat, long, lng } = req.query;
+    const finalLat = userLat || lat;
+    const finalLng = userLng || lng || long;
+    const store = await customerStoresService.getNearbyStore(pincode, finalLat, finalLng);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: "No nearby store found.",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: store,
+    });
+  });
+
+
   getDeliveryConfig = catchAsync(async (req, res) => {
     const { storeId, pincode, distanceKm, subtotal, userLat, userLng } = req.query;
     const config = await customerStoresService.getDeliveryConfig({

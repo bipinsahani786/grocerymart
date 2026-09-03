@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,9 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+import { getApiBaseUrl } from '../../constants/config';
 import tw from 'twrnc';
+
 
 interface LiveDriverRadarMapProps {
   isOnline: boolean;
@@ -92,11 +94,47 @@ export const LiveDriverRadarMap: React.FC<LiveDriverRadarMapProps> = ({
   });
 
   // Dark store pin locations on map canvas
-  const darkStores = [
+  const [darkStores, setDarkStores] = useState<any[]>([
     { id: '1', name: 'Koramangala Hub #04', x: screenWidth * 0.5, y: mapHeight * 0.45, isCurrent: true, surge: '+₹35' },
     { id: '2', name: 'HSR Layout Hub', x: screenWidth * 0.22, y: mapHeight * 0.65, isCurrent: false, surge: '+₹25' },
     { id: '3', name: 'Indiranagar Express', x: screenWidth * 0.78, y: mapHeight * 0.28, isCurrent: false, surge: '+₹30' },
-  ];
+  ]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchBackendStores = async () => {
+      try {
+        const baseUrl = getApiBaseUrl();
+        const res = await fetch(`${baseUrl}/api/customer/stores`);
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const positions = [
+            { x: screenWidth * 0.5, y: mapHeight * 0.45 },
+            { x: screenWidth * 0.22, y: mapHeight * 0.65 },
+            { x: screenWidth * 0.78, y: mapHeight * 0.28 },
+          ];
+          const mapped = data.data.map((s: any, idx: number) => ({
+            id: s.id || String(idx + 1),
+            name: s.name,
+            x: positions[idx % positions.length].x,
+            y: positions[idx % positions.length].y,
+            isCurrent: idx === 0,
+            surge: idx === 0 ? '+₹35' : idx === 1 ? '+₹25' : '+₹30',
+          }));
+          if (isMounted) {
+            setDarkStores(mapped);
+          }
+        }
+      } catch (err) {
+        console.log('Failed to fetch stores for LiveDriverRadarMap:', err);
+      }
+    };
+    fetchBackendStores();
+    return () => {
+      isMounted = false;
+    };
+  }, [screenWidth, mapHeight]);
+
 
   return (
     <View style={[tw`relative w-full overflow-hidden`, { height: mapHeight, backgroundColor: '#0B1320' }]}>
