@@ -61,8 +61,9 @@ export default function PartnerHomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Native Translucent Status Bar Matched with Emerald Header */}
-      <StatusBar style="light" backgroundColor="#047857" translucent />
+      {/* Native StatusBar Matched with Emerald Green Header */}
+      <RNStatusBar backgroundColor="#047857" barStyle="light-content" />
+      <StatusBar style="light" />
 
       {/* RENDER ACTIVE TAB WITH SAFE AREA COMPLIANCE */}
       {activeTab === 'home' ? (

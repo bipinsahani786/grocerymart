@@ -1,0 +1,125 @@
+import { apiClient, ApiResponse } from './apiClient';
+import { API_CONFIG } from '../config/api';
+
+export interface VerifyOtpResponseData {
+  token: string;
+  accessToken: string;
+  refreshToken: string;
+  isNewUser: boolean;
+  isKycCompleted: boolean;
+  user: {
+    id: string;
+    phone: string;
+    name: string;
+    email?: string | null;
+    avatar?: string | null;
+    role: string;
+    status: string;
+  };
+  deliveryPartner: {
+    id: string;
+    userId: string;
+    vehicleType: string;
+    kycStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+    isKycCompleted: boolean;
+    isOnline: boolean;
+    rating: number;
+    totalDeliveries: number;
+    totalEarnings: number;
+    address?: string | null;
+    city?: string | null;
+    pincode?: string | null;
+    rcNumber?: string | null;
+    dlNumber?: string | null;
+    allocatedHub?: string | null;
+    stores?: any[];
+  };
+}
+
+export class PartnerAuthService {
+  /**
+   * Request a 4-digit OTP for the given mobile number
+   */
+  async sendOtp(phone: string, authMode: 'LOGIN' | 'REGISTER' = 'LOGIN'): Promise<ApiResponse> {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return await apiClient.post(API_CONFIG.ENDPOINTS.PARTNER.SEND_OTP, {
+      phone: cleanPhone,
+      authMode,
+    });
+  }
+
+  /**
+   * Verify the 4-digit OTP and obtain session tokens + partner profile
+   */
+  async verifyOtp(params: {
+    phone: string;
+    otp: string;
+    authMode?: 'LOGIN' | 'REGISTER';
+    vehicleType?: string;
+    name?: string;
+  }): Promise<ApiResponse<VerifyOtpResponseData>> {
+    const cleanPhone = params.phone.replace(/\D/g, '');
+    const cleanOtp = params.otp.trim();
+
+    return await apiClient.post<VerifyOtpResponseData>(API_CONFIG.ENDPOINTS.PARTNER.VERIFY_OTP, {
+      phone: cleanPhone,
+      otp: cleanOtp,
+      authMode: params.authMode || 'LOGIN',
+      vehicleType: params.vehicleType,
+      name: params.name,
+    });
+  }
+
+  /**
+   * Fetch authenticated partner profile
+   */
+  async getProfile(token: string): Promise<ApiResponse> {
+    return await apiClient.get(API_CONFIG.ENDPOINTS.PARTNER.PROFILE, { token });
+  }
+
+  /**
+   * Update partner profile
+   */
+  async updateProfile(data: any, token: string): Promise<ApiResponse> {
+    return await apiClient.put(API_CONFIG.ENDPOINTS.PARTNER.PROFILE, data, { token });
+  }
+
+  /**
+   * Upload image file (Avatar / Document) to Cloudflare R2
+   */
+  async uploadImage(uri: string, token?: string | null): Promise<string> {
+    try {
+      const formData = new FormData();
+      const filename = uri.split('/').pop() || `avatar_${Date.now()}.jpg`;
+      const match = /\.(\w+)$/.exec(filename);
+      const ext = match ? match[1].toLowerCase() : 'jpg';
+      const type = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+
+      formData.append('file', {
+        uri,
+        name: filename,
+        type,
+      } as any);
+
+      const endpoint = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PARTNER.UPLOAD}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      const resJson = await response.json();
+      if (resJson.success && resJson.data?.url) {
+        return resJson.data.url;
+      }
+      return uri; // Return uri as fallback
+    } catch (err) {
+      console.warn('Image upload to R2 error, using local fallback:', err);
+      return uri;
+    }
+  }
+}
+
+export const partnerAuthService = new PartnerAuthService();

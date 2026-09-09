@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   Modal,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -16,6 +17,18 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthContext } from '../context/AuthContext';
+import { partnerAuthService } from '../services/partnerAuth.service';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import {
+  validateAadhaarNumber,
+  validateDlNumber,
+  validateDlExpiry,
+  validateRcNumber,
+  validateVehicleModel,
+  formatExpiryDate,
+  formatDlNumber,
+  formatRcNumber,
+} from '../utils/validation';
 import { Colors } from '../constants/theme';
 import tw from 'twrnc';
 
@@ -24,43 +37,67 @@ type OnboardingStep = 1 | 2 | 3 | 4;
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, completeKyc } = useAuthContext();
+  const { user, token, completeKyc } = useAuthContext();
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
 
-  // Step 1: Personal, Photo, Blood Group & Address
-  const [address, setAddress] = useState('Flat 402, Green Glen Layout, Bellandur');
-  const [pincode, setPincode] = useState('560103');
-  const [city] = useState('Bengaluru');
-  const [aadhaar, setAadhaar] = useState('4821 9904 8812');
-  const [emergencyContact, setEmergencyContact] = useState('9876501234');
-  const [bloodGroup, setBloodGroup] = useState('O+');
-  const [riderPhotoUri, setRiderPhotoUri] = useState<string>(
-    user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'
-  );
+  // Step 1: Personal, Profile Photo, Blood Group & Address
+  const [fullName, setFullName] = useState(user?.name || '');
+  const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [city, setCity] = useState('');
+  const [aadhaar, setAadhaar] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [riderPhotoUri, setRiderPhotoUri] = useState<string>(user?.avatar || '');
   const [showPhotoPickerModal, setShowPhotoPickerModal] = useState(false);
   const [photoPickerTarget, setPhotoPickerTarget] = useState<'RIDER' | 'VEHICLE'>('RIDER');
 
-  // Step 2: Vehicle & DL / RC (No insurance policy number)
-  const [dlNumber, setDlNumber] = useState('KA0120220048210');
-  const [dlExpiry, setDlExpiry] = useState('12/2034');
-  const [rcNumber, setRcNumber] = useState('KA-01-EQ-4921');
-  const [vehicleModel, setVehicleModel] = useState('Honda Activa 6G / Hero Splendor');
-  const [vehiclePhotoUri, setVehiclePhotoUri] = useState<string>(
-    'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600'
-  );
+  // Step 2: Vehicle & DL / RC
+  const [vehicleType, setVehicleType] = useState<'EV_BIKE' | 'PETROL_BIKE' | 'SCOOTER' | 'CYCLE'>('EV_BIKE');
+  const [dlNumber, setDlNumber] = useState('');
+  const [dlExpiry, setDlExpiry] = useState('');
+  const [rcNumber, setRcNumber] = useState('');
+  const [vehicleModel, setVehicleModel] = useState('');
+  const [vehiclePhotoUri, setVehiclePhotoUri] = useState<string>('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [expiryDateValue, setExpiryDateValue] = useState<Date>(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 5);
+    return d;
+  });
 
   // Step 3: Bank Account & Payouts
-  const [accountHolder, setAccountHolder] = useState(user?.name || 'Sahil');
-  const [accountNumber, setAccountNumber] = useState('5010049218841');
-  const [ifscCode, setIfscCode] = useState('HDFC0001248');
-  const [panNumber, setPanNumber] = useState('ABCPS4821F');
+  const [accountHolder, setAccountHolder] = useState(user?.name || '');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+  const [panNumber, setPanNumber] = useState('');
 
   // Step 4: Verification Simulation
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const bloodGroups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+
+  const vehicleOptions = [
+    { id: 'EV_BIKE', label: 'EV 2-Wheeler', sub: 'Electric (Ather, Ola, etc.)', icon: 'flash' },
+    { id: 'PETROL_BIKE', label: 'Motorcycle', sub: 'Petrol Bike (Splendor, Pulsar)', icon: 'speedometer' },
+    { id: 'SCOOTER', label: 'Scooter / Moped', sub: 'Gearless (Activa, Jupiter)', icon: 'bicycle' },
+    { id: 'CYCLE', label: 'E-Cycle / Bicycle', sub: 'Green & Fast Fleet', icon: 'leaf' },
+  ];
+
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker(false);
+    }
+    if (selectedDate && (event.type === 'set' || Platform.OS === 'ios')) {
+      setExpiryDateValue(selectedDate);
+      const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const yyyy = selectedDate.getFullYear();
+      setDlExpiry(`${mm}/${yyyy}`);
+      setErrorMsg('');
+    }
+  };
 
   const handleSelectPhotoSource = async (source: 'CAMERA' | 'GALLERY') => {
     setShowPhotoPickerModal(false);
@@ -75,7 +112,7 @@ export default function OnboardingScreen() {
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ['images'],
           allowsEditing: true,
-          aspect: [4, 3],
+          aspect: [1, 1],
           quality: 0.8,
         });
       } else {
@@ -87,22 +124,35 @@ export default function OnboardingScreen() {
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ['images'],
           allowsEditing: true,
-          aspect: [4, 3],
+          aspect: [1, 1],
           quality: 0.8,
         });
       }
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const selectedUri = result.assets[0].uri;
+        const localUri = result.assets[0].uri;
         if (photoPickerTarget === 'RIDER') {
-          setRiderPhotoUri(selectedUri);
+          setRiderPhotoUri(localUri);
         } else {
-          setVehiclePhotoUri(selectedUri);
+          setVehiclePhotoUri(localUri);
+        }
+
+        // Upload to Cloudflare R2 and update state with persistent R2 storage URL
+        try {
+          const r2Url = await partnerAuthService.uploadImage(localUri, token);
+          if (r2Url && r2Url !== localUri) {
+            if (photoPickerTarget === 'RIDER') {
+              setRiderPhotoUri(r2Url);
+            } else {
+              setVehiclePhotoUri(r2Url);
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('Background Cloudflare R2 upload error:', uploadErr);
         }
       }
     } catch (err) {
-      console.error('Error with device photo picker:', err);
-      // Fallback
+      console.error('Error with photo picker:', err);
       if (photoPickerTarget === 'RIDER') {
         setRiderPhotoUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400');
       } else {
@@ -114,18 +164,67 @@ export default function OnboardingScreen() {
   const handleNextStep = () => {
     setErrorMsg('');
     if (currentStep === 1) {
-      if (!address.trim() || !pincode.trim() || !aadhaar.trim() || !emergencyContact.trim()) {
-        setErrorMsg('Please fill all required personal & address fields');
+      if (!riderPhotoUri) {
+        setErrorMsg('Please upload a clear profile photo (Compulsory)');
         return;
+      }
+      if (!fullName.trim()) {
+        setErrorMsg('Please enter your full name');
+        return;
+      }
+      if (!bloodGroup.trim()) {
+        setErrorMsg('Please select your blood group');
+        return;
+      }
+      if (!address.trim()) {
+        setErrorMsg('Please enter your residential address');
+        return;
+      }
+      if (!pincode.trim() || pincode.trim().length !== 6) {
+        setErrorMsg('Please enter a valid 6-digit PIN code');
+        return;
+      }
+      if (!city.trim()) {
+        setErrorMsg('Please enter your city');
+        return;
+      }
+      const aadhaarVal = validateAadhaarNumber(aadhaar);
+      if (!aadhaarVal.isValid) {
+        setErrorMsg(aadhaarVal.error || 'Aadhaar number must be exactly 12 numeric digits');
+        return;
+      }
+      if (!emergencyContact.trim() || emergencyContact.trim().length !== 10) {
+        setErrorMsg('Please enter a valid 10-digit emergency contact number');
+        return;
+      }
+      // Sync account holder name with full name if blank
+      if (!accountHolder) {
+        setAccountHolder(fullName.trim());
       }
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      if (!dlNumber.trim() || !rcNumber.trim() || !vehicleModel.trim()) {
-        setErrorMsg('Please enter valid DL and vehicle details');
+      const dlVal = validateDlNumber(dlNumber);
+      if (!dlVal.isValid) {
+        setErrorMsg(dlVal.error || 'Please enter a valid Driving License number');
+        return;
+      }
+      const expiryVal = validateDlExpiry(dlExpiry);
+      if (!expiryVal.isValid) {
+        setErrorMsg(expiryVal.error || 'Please enter a valid DL expiry date (MM/YYYY)');
+        return;
+      }
+      const rcVal = validateRcNumber(rcNumber);
+      if (!rcVal.isValid) {
+        setErrorMsg(rcVal.error || 'Please enter a valid Vehicle RC number');
+        return;
+      }
+      const modelVal = validateVehicleModel(vehicleModel);
+      if (!modelVal.isValid) {
+        setErrorMsg(modelVal.error || 'Please enter your vehicle make and model');
         return;
       }
       if (!vehiclePhotoUri) {
-        setErrorMsg('Please capture or upload a vehicle front photo');
+        setErrorMsg('Please capture or upload a vehicle front photo (Compulsory)');
         return;
       }
       setCurrentStep(3);
@@ -135,29 +234,36 @@ export default function OnboardingScreen() {
         return;
       }
       setIsVerifying(true);
-      setTimeout(async () => {
-        setIsVerifying(false);
+      setErrorMsg('');
+      try {
         await completeKyc({
-          address,
-          pincode,
-          city,
-          aadhaarNumber: aadhaar,
-          emergencyContact,
-          dlNumber,
-          dlExpiry,
-          rcNumber,
-          vehicleModel,
-          bankHolderName: accountHolder,
-          bankAccountNumber: accountNumber,
-          bankIfsc: ifscCode,
-          panNumber,
+          name: fullName.trim(),
+          address: address.trim(),
+          pincode: pincode.trim(),
+          city: city.trim(),
+          aadhaarNumber: aadhaar.trim(),
+          emergencyContact: emergencyContact.trim(),
+          bloodGroup: bloodGroup.trim(),
+          dlNumber: dlNumber.trim().toUpperCase(),
+          dlExpiry: dlExpiry.trim(),
+          rcNumber: rcNumber.trim().toUpperCase(),
+          vehicleModel: vehicleModel.trim(),
+          vehicleType,
+          bankHolderName: (accountHolder || fullName).trim(),
+          bankAccountNumber: accountNumber.trim(),
+          bankIfsc: ifscCode.trim().toUpperCase(),
+          panNumber: panNumber.trim().toUpperCase(),
           profilePhotoUri: riderPhotoUri,
           vehiclePhotoUri: vehiclePhotoUri,
           allocatedHub: 'Koramangala Express Hub #04',
           riderId: 'RID-88421',
         });
         setCurrentStep(4);
-      }, 1500);
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Failed to save KYC details to backend. Please check fields and try again.');
+      } finally {
+        setIsVerifying(false);
+      }
     }
   };
 
@@ -173,6 +279,7 @@ export default function OnboardingScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[tw`flex-1`, { backgroundColor: Colors.surface }]}
     >
+      <RNStatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
       <StatusBar style="dark" />
 
       {/* Native App Top Bar */}
@@ -228,7 +335,7 @@ export default function OnboardingScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={tw`px-4 pt-4 pb-28`}
       >
-        {/* ================= STEP 1: PERSONAL, PHOTO, BLOOD GROUP & ADDRESS ================= */}
+        {/* ================= STEP 1: PERSONAL, USER PROFILE, BLOOD GROUP & ADDRESS ================= */}
         {currentStep === 1 && (
           <View>
             <View style={tw`mb-4`}>
@@ -236,17 +343,36 @@ export default function OnboardingScreen() {
                 Personal & Address Details
               </Text>
               <Text style={[tw`text-xs mt-0.5`, { color: Colors.textSecondary }]}>
-                Take or upload a clear photo of yourself and enter your emergency medical info.
+                Enter your full name, blood group, address and identity details.
               </Text>
             </View>
 
-            {/* Profile Photo Row with Camera & Gallery Trigger */}
-            <View style={[tw`flex-row items-center py-3.5 border-b`, { borderBottomColor: Colors.border }]}>
+            {/* Delivery Partner Avatar Header Badge & Photo Upload (Compulsory) */}
+            <View
+              style={[
+                tw`flex-row items-center p-3.5 rounded-2xl border mb-3.5`,
+                {
+                  backgroundColor: Colors.surfaceLight,
+                  borderColor: !riderPhotoUri && errorMsg ? Colors.danger : Colors.border,
+                },
+              ]}
+            >
               <View style={tw`relative mr-3`}>
-                <Image
-                  source={{ uri: riderPhotoUri }}
-                  style={[tw`w-14 h-14 rounded-full border-2`, { borderColor: Colors.primary }]}
-                />
+                {riderPhotoUri ? (
+                  <Image
+                    source={{ uri: riderPhotoUri }}
+                    style={[tw`w-14 h-14 rounded-full border-2`, { borderColor: Colors.primary }]}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      tw`w-14 h-14 rounded-full border-2 border-dashed justify-center items-center`,
+                      { backgroundColor: Colors.primaryBg, borderColor: Colors.primary },
+                    ]}
+                  >
+                    <Ionicons name="person" size={26} color={Colors.primaryDark} />
+                  </View>
+                )}
                 <TouchableOpacity
                   onPress={() => {
                     setPhotoPickerTarget('RIDER');
@@ -262,11 +388,21 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={tw`flex-1 mr-2`}>
-                <Text style={[tw`text-sm font-bold`, { color: Colors.text }]}>
-                  Rider Profile Photo
-                </Text>
-                <Text style={[tw`text-[11px]`, { color: Colors.primaryDark }]}>
-                  Face match verified ✓
+                <View style={tw`flex-row items-center`}>
+                  <Text style={[tw`text-sm font-black`, { color: Colors.text }]}>
+                    Rider Profile Photo
+                  </Text>
+                  <Text style={[tw`text-[10px] font-bold ml-1.5`, { color: Colors.danger }]}>
+                    Compulsory *
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    tw`text-[11px] mt-0.5`,
+                    { color: riderPhotoUri ? Colors.primaryDark : Colors.textSecondary },
+                  ]}
+                >
+                  {riderPhotoUri ? 'Photo uploaded ✓' : 'Clear selfie/front photo required'}
                 </Text>
               </View>
 
@@ -278,14 +414,41 @@ export default function OnboardingScreen() {
                 }}
                 style={[
                   tw`px-3 py-1.5 rounded-xl border flex-row items-center`,
-                  { backgroundColor: Colors.primaryBg, borderColor: Colors.primary },
+                  {
+                    backgroundColor: riderPhotoUri ? Colors.surfaceLight : Colors.primaryBg,
+                    borderColor: Colors.primary,
+                  },
                 ]}
               >
-                <Ionicons name="camera" size={13} color={Colors.primaryDark} style={tw`mr-1`} />
+                <Ionicons
+                  name="camera"
+                  size={13}
+                  color={Colors.primaryDark}
+                  style={tw`mr-1`}
+                />
                 <Text style={[tw`text-xs font-bold`, { color: Colors.primaryDark }]}>
-                  Upload Photo
+                  {riderPhotoUri ? 'Change' : 'Upload'}
                 </Text>
               </TouchableOpacity>
+            </View>
+
+            {/* Full Name Input */}
+            <View style={[tw`py-3 border-b`, { borderBottomColor: Colors.border }]}>
+              <View style={tw`flex-row justify-between items-center mb-1`}>
+                <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
+                  Full Name (As per Govt ID)
+                </Text>
+                <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
+                  Required *
+                </Text>
+              </View>
+              <TextInput
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Enter your full legal name"
+                placeholderTextColor={Colors.textMuted}
+                style={[tw`text-sm font-semibold p-0`, { color: Colors.text }]}
+              />
             </View>
 
             {/* Blood Group Selector */}
@@ -294,7 +457,7 @@ export default function OnboardingScreen() {
                 <View style={tw`flex-row items-center`}>
                   <Ionicons name="water" size={14} color={Colors.danger} style={tw`mr-1`} />
                   <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
-                    Blood Group (Emergency Insurance Record)
+                    Blood Group (Emergency Record)
                   </Text>
                 </View>
                 <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
@@ -369,7 +532,13 @@ export default function OnboardingScreen() {
                   <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1`, { color: Colors.textSecondary }]}>
                     City
                   </Text>
-                  <Text style={[tw`text-sm font-semibold`, { color: Colors.text }]}>{city}</Text>
+                  <TextInput
+                    value={city}
+                    onChangeText={setCity}
+                    placeholder="e.g. Bengaluru"
+                    placeholderTextColor={Colors.textMuted}
+                    style={[tw`text-sm font-semibold p-0`, { color: Colors.text }]}
+                  />
                 </View>
               </View>
 
@@ -379,16 +548,26 @@ export default function OnboardingScreen() {
                   <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
                     Aadhaar Card (12 Digits)
                   </Text>
-                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.primaryDark }]}>
-                    DigiLocker ✓
+                  <Text
+                    style={[
+                      tw`text-[10px] font-bold`,
+                      { color: aadhaar.length === 12 ? Colors.primaryDark : Colors.textSecondary },
+                    ]}
+                  >
+                    {aadhaar.length}/12 Digits
                   </Text>
                 </View>
                 <TextInput
                   value={aadhaar}
-                  onChangeText={setAadhaar}
-                  placeholder="XXXX XXXX XXXX"
+                  onChangeText={(txt) => {
+                    const clean = txt.replace(/\D/g, '').slice(0, 12);
+                    setAadhaar(clean);
+                    setErrorMsg('');
+                  }}
+                  placeholder="12-digit Aadhaar number"
                   placeholderTextColor={Colors.textMuted}
                   keyboardType="number-pad"
+                  maxLength={12}
                   style={[tw`text-sm font-semibold p-0`, { color: Colors.text }]}
                 />
               </View>
@@ -425,22 +604,85 @@ export default function OnboardingScreen() {
             </View>
 
             <View style={tw`mt-1`}>
+              {/* Vehicle Type Selector */}
+              <View style={[tw`py-3 border-b`, { borderBottomColor: Colors.border }]}>
+                <View style={tw`flex-row justify-between items-center mb-2`}>
+                  <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
+                    Vehicle Type
+                  </Text>
+                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
+                    Required *
+                  </Text>
+                </View>
+                <View style={tw`flex-row flex-wrap gap-2`}>
+                  {vehicleOptions.map((v) => {
+                    const isSelected = vehicleType === v.id;
+                    return (
+                      <TouchableOpacity
+                        key={v.id}
+                        activeOpacity={0.8}
+                        onPress={() => setVehicleType(v.id as any)}
+                        style={[
+                          tw`p-2.5 rounded-2xl border flex-row items-center`,
+                          {
+                            width: '48%',
+                            backgroundColor: isSelected ? Colors.primaryBg : Colors.surfaceLight,
+                            borderColor: isSelected ? Colors.primary : Colors.border,
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            tw`w-8 h-8 rounded-xl justify-center items-center mr-2`,
+                            { backgroundColor: isSelected ? Colors.primary : Colors.white },
+                          ]}
+                        >
+                          <Ionicons
+                            name={v.icon as any}
+                            size={16}
+                            color={isSelected ? Colors.white : Colors.primaryDark}
+                          />
+                        </View>
+                        <View style={tw`flex-1`}>
+                          <Text
+                            style={[
+                              tw`text-xs font-black`,
+                              { color: isSelected ? Colors.primaryDark : Colors.text },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {v.label}
+                          </Text>
+                          <Text style={[tw`text-[10px]`, { color: Colors.textSecondary }]} numberOfLines={1}>
+                            {v.sub}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
               {/* DL Number */}
               <View style={[tw`py-3 border-b`, { borderBottomColor: Colors.border }]}>
                 <View style={tw`flex-row justify-between items-center mb-1`}>
                   <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
                     Driving License (DL) Number
                   </Text>
-                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.primaryDark }]}>
-                    Active
+                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
+                    Required *
                   </Text>
                 </View>
                 <TextInput
                   value={dlNumber}
-                  onChangeText={setDlNumber}
+                  onChangeText={(txt) => {
+                    setDlNumber(formatDlNumber(txt));
+                    setErrorMsg('');
+                  }}
                   placeholder="e.g. KA0120220048210"
                   placeholderTextColor={Colors.textMuted}
                   autoCapitalize="characters"
+                  maxLength={20}
                   style={[tw`text-sm font-semibold p-0`, { color: Colors.text }]}
                 />
               </View>
@@ -448,43 +690,121 @@ export default function OnboardingScreen() {
               {/* DL Expiry & RC Number */}
               <View style={[tw`flex-row border-b`, { borderBottomColor: Colors.border }]}>
                 <View style={[tw`flex-1 py-3 pr-2 border-r`, { borderRightColor: Colors.border }]}>
-                  <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1`, { color: Colors.textSecondary }]}>
-                    DL Expiry
-                  </Text>
-                  <TextInput
-                    value={dlExpiry}
-                    onChangeText={setDlExpiry}
-                    placeholder="MM/YYYY"
-                    placeholderTextColor={Colors.textMuted}
-                    style={[tw`text-sm font-semibold p-0`, { color: Colors.text }]}
-                  />
+                  <View style={tw`flex-row justify-between items-center mb-1`}>
+                    <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
+                      DL Expiry (Calendar)
+                    </Text>
+                    <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
+                      *
+                    </Text>
+                  </View>
+                  <View style={tw`flex-row items-center justify-between`}>
+                    <TextInput
+                      value={dlExpiry}
+                      onChangeText={(txt) => {
+                        setDlExpiry(formatExpiryDate(txt));
+                        setErrorMsg('');
+                      }}
+                      placeholder="MM/YYYY"
+                      placeholderTextColor={Colors.textMuted}
+                      keyboardType="number-pad"
+                      maxLength={7}
+                      style={[tw`text-sm font-semibold p-0 flex-1`, { color: Colors.text }]}
+                    />
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => setShowDatePicker(true)}
+                      style={[
+                        tw`p-1.5 rounded-lg ml-1 items-center justify-center border`,
+                        { backgroundColor: Colors.primaryBg, borderColor: Colors.primary },
+                      ]}
+                    >
+                      <Ionicons name="calendar-outline" size={15} color={Colors.primaryDark} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 <View style={tw`flex-1 py-3 pl-3`}>
-                  <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1`, { color: Colors.textSecondary }]}>
-                    Vehicle Number (RC)
-                  </Text>
+                  <View style={tw`flex-row justify-between items-center mb-1`}>
+                    <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
+                      Vehicle RC No.
+                    </Text>
+                    <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
+                      *
+                    </Text>
+                  </View>
                   <TextInput
                     value={rcNumber}
-                    onChangeText={setRcNumber}
-                    placeholder="KA-01-EQ-4921"
+                    onChangeText={(txt) => {
+                      setRcNumber(formatRcNumber(txt));
+                      setErrorMsg('');
+                    }}
+                    placeholder="KA01EQ4921"
                     placeholderTextColor={Colors.textMuted}
                     autoCapitalize="characters"
+                    maxLength={15}
                     style={[tw`text-sm font-semibold p-0`, { color: Colors.text }]}
                   />
                 </View>
               </View>
 
+              {/* DateTimePicker Component for DL Expiry Calendar */}
+              {showDatePicker && (
+                Platform.OS === 'ios' ? (
+                  <Modal transparent animationType="fade" visible={showDatePicker}>
+                    <View style={[tw`flex-1 justify-end`, { backgroundColor: Colors.overlay }]}>
+                      <View style={[tw`p-4 rounded-t-3xl border-t`, { backgroundColor: Colors.surface, borderTopColor: Colors.border }]}>
+                        <View style={tw`flex-row justify-between items-center mb-3 pb-2 border-b border-gray-100`}>
+                          <Text style={[tw`text-sm font-black`, { color: Colors.text }]}>Select DL Expiry Date</Text>
+                          <TouchableOpacity
+                            onPress={() => setShowDatePicker(false)}
+                            style={[tw`px-3 py-1.5 rounded-xl`, { backgroundColor: Colors.primary }]}
+                          >
+                            <Text style={[tw`text-xs font-bold`, { color: Colors.white }]}>Done</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                          value={expiryDateValue}
+                          mode="date"
+                          display="spinner"
+                          minimumDate={new Date()}
+                          maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() + 30))}
+                          onChange={handleDateChange}
+                        />
+                      </View>
+                    </View>
+                  </Modal>
+                ) : (
+                  <DateTimePicker
+                    value={expiryDateValue}
+                    mode="date"
+                    display="default"
+                    minimumDate={new Date()}
+                    maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() + 30))}
+                    onChange={handleDateChange}
+                  />
+                )
+              )}
+
               {/* Vehicle Model */}
               <View style={[tw`py-3 border-b mb-4`, { borderBottomColor: Colors.border }]}>
-                <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1`, { color: Colors.textSecondary }]}>
-                  Vehicle Make & Model
-                </Text>
+                <View style={tw`flex-row justify-between items-center mb-1`}>
+                  <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
+                    Vehicle Make & Model
+                  </Text>
+                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
+                    Required *
+                  </Text>
+                </View>
                 <TextInput
                   value={vehicleModel}
-                  onChangeText={setVehicleModel}
-                  placeholder="e.g. Ather 450X / Hero Splendor / Honda Activa"
+                  onChangeText={(txt) => {
+                    setVehicleModel(txt);
+                    setErrorMsg('');
+                  }}
+                  placeholder="e.g. Hero Splendor / Honda Activa / Ather 450X"
                   placeholderTextColor={Colors.textMuted}
+                  maxLength={50}
                   style={[tw`text-sm font-semibold p-0`, { color: Colors.text }]}
                 />
               </View>
@@ -495,8 +815,8 @@ export default function OnboardingScreen() {
                   <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
                     Vehicle Front Photo Preview
                   </Text>
-                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.primaryDark }]}>
-                    VAHAN Plate Match ✓
+                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.danger }]}>
+                    Compulsory *
                   </Text>
                 </View>
 
@@ -702,7 +1022,9 @@ export default function OnboardingScreen() {
               </View>
               <View style={tw`flex-row justify-between py-2`}>
                 <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>Vehicle</Text>
-                <Text style={[tw`text-xs font-extrabold`, { color: Colors.text }]}>{rcNumber}</Text>
+                <Text style={[tw`text-xs font-extrabold`, { color: Colors.text }]}>
+                  {rcNumber} • {vehicleType.replace('_', ' ')}
+                </Text>
               </View>
               <View style={tw`flex-row justify-between py-2`}>
                 <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>Payout Account</Text>
@@ -743,7 +1065,7 @@ export default function OnboardingScreen() {
           >
             <View style={tw`flex-row justify-between items-center mb-4 pb-2 border-b border-gray-100`}>
               <Text style={[tw`text-base font-black`, { color: Colors.text }]}>
-                {photoPickerTarget === 'RIDER' ? 'Upload Rider Photo' : 'Upload Vehicle Front Photo'}
+                {photoPickerTarget === 'RIDER' ? 'Upload Rider Profile Photo' : 'Upload Vehicle Front Photo'}
               </Text>
               <TouchableOpacity onPress={() => setShowPhotoPickerModal(false)}>
                 <Ionicons name="close" size={20} color={Colors.text} />

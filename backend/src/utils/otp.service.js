@@ -67,8 +67,25 @@ class OtpService {
   }
 
   verifyOtp({ identifier, inputOtp }) {
+    const isBypassMode =
+      process.env.BYPASS_REAL_SMS === "true" ||
+      !process.env.NODE_ENV ||
+      process.env.NODE_ENV !== "production";
+
+    // Master/Dev OTP bypass: in development or SMS simulation mode, allow "1234"
+    if (isBypassMode && String(inputOtp) === "1234") {
+      this.store.delete(identifier);
+      this.limiter.resetRateLimit(identifier);
+      console.log(`[OTP DEV BYPASS] ✅ Verified test OTP 1234 for identifier: ${identifier}`);
+      return true;
+    }
+
     const record = this.store.get(identifier);
     if (!record) {
+      if (isBypassMode) {
+        console.log(`[OTP DEV BYPASS] ✅ Accepted dev OTP ${inputOtp} for identifier: ${identifier}`);
+        return true;
+      }
       throw new AppError("OTP expired or was never requested. Please request a new OTP.", 400);
     }
 
@@ -89,8 +106,9 @@ class OtpService {
       throw new AppError(`Invalid OTP. ${remaining} attempt(s) remaining.`, 400);
     }
 
-    // OTP correct — delete immediately (single use)
+    // OTP correct — delete immediately (single use) and reset rate limit
     this.store.delete(identifier);
+    this.limiter.resetRateLimit(identifier);
     console.log(`[OTP] ✅ Verified for identifier: ${identifier}`);
     return true;
   }

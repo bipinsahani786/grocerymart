@@ -8,6 +8,8 @@ export interface RiderProfile {
   vehicleNumber: string;
   rating: number;
   totalTrips: number;
+  totalDeliveries?: number;
+  status?: 'ON_DUTY' | 'OFF_DUTY' | 'BUSY';
   acceptanceRate: number;
   onTimeRate: number;
   tier: 'Silver' | 'Gold' | 'Platinum Pro';

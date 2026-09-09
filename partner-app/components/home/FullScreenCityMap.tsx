@@ -99,7 +99,7 @@ export const FullScreenCityMap: React.FC<FullScreenCityMapProps> = ({
   ];
 
   return (
-    <View style={StyleSheet.absoluteFillObject}>
+    <View style={StyleSheet.absoluteFill}>
       {/* ================= VECTOR CITY MAP BASE (FULL-SCREEN LIGHT THEME) ================= */}
       <Svg width={screenWidth} height={screenHeight} style={StyleSheet.absoluteFill}>
         <Defs>

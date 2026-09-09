@@ -18,11 +18,19 @@ export const SplashScreen: React.FC = () => {
     if (isLoading) return;
 
     const timer = setTimeout(() => {
-      router.replace('/login');
+      if (user) {
+        if (isKycCompleted) {
+          router.replace('/home');
+        } else {
+          router.replace('/onboarding');
+        }
+      } else {
+        router.replace('/login');
+      }
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [isLoading, router]);
+  }, [isLoading, user, isKycCompleted, router]);
 
   return (
     <LinearGradient

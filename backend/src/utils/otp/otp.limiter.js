@@ -4,7 +4,11 @@ import { AppError } from "../AppError.js";
  * Single Responsibility: Rate limiting and resend cooldown enforcement for OTP requests.
  */
 export class OtpRateLimiter {
-  constructor(windowMs = 15 * 60 * 1000, maxRequests = 5, cooldownMs = 60 * 1000) {
+  constructor(
+    windowMs = 15 * 60 * 1000,
+    maxRequests = process.env.NODE_ENV === "production" ? 10 : 30,
+    cooldownMs = 30 * 1000
+  ) {
     this.rateMap = new Map();
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
@@ -41,7 +45,7 @@ export class OtpRateLimiter {
     }
 
     if (rate.count >= this.maxRequests) {
-      const waitMinutes = Math.ceil((this.windowMs - (now - rate.windowStart)) / 60000);
+      const waitMinutes = Math.max(1, Math.ceil((this.windowMs - (now - rate.windowStart)) / 60000));
       throw new AppError(
         `Too many OTP requests. Please wait ${waitMinutes} minute(s) before requesting again.`,
         429
@@ -52,13 +56,22 @@ export class OtpRateLimiter {
   }
 
   /**
-   * Enforces cooldown between successive OTP sends to same identifier
+   * Resets rate limit for identifier upon successful verification
+   */
+  resetRateLimit(identifier) {
+    if (identifier) {
+      this.rateMap.delete(identifier);
+    }
+  }
+
+  /**
+   * Enforces cooldown between successive OTP sends to same identifier (30s)
    */
   checkResendCooldown(lastSentRecord) {
     if (lastSentRecord && lastSentRecord.sentAt) {
       const timeSinceSent = Date.now() - lastSentRecord.sentAt;
       if (timeSinceSent < this.cooldownMs) {
-        const waitSec = Math.ceil((this.cooldownMs - timeSinceSent) / 1000);
+        const waitSec = Math.max(1, Math.ceil((this.cooldownMs - timeSinceSent) / 1000));
         throw new AppError(
           `OTP already sent. Please wait ${waitSec} second(s) before requesting a new one.`,
           429

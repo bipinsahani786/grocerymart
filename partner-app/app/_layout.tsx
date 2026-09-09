@@ -29,7 +29,6 @@ const queryClient = new QueryClient({
 function InitialLayout() {
   return (
     <>
-      <StatusBar style="auto" />
       <SettingsToast />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
