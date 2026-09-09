@@ -12,6 +12,7 @@ import uploadRoutes from "./common/upload/upload.routes.js";
 import adminRoutes from "./admin/index.js";
 import storeRoutes from "./store/index.js";
 import customerRoutes from "./customer/customer.routes.js";
+import partnerRoutes from "./partner/partner.routes.js";
 
 const app = express();
 
@@ -96,6 +97,7 @@ app.use("/api/upload", apiLimiter, uploadRoutes);
 app.use("/api/admin", apiLimiter, adminRoutes);
 app.use("/api/store", apiLimiter, storeRoutes);
 app.use("/api/customer", apiLimiter, customerRoutes);
+app.use("/api/partner", apiLimiter, partnerRoutes);
 
 // Platform System Readiness Check Endpoint
 app.get("/", (req, res) => {

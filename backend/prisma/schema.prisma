@@ -112,7 +112,7 @@ model User {
   ticketMessages TicketMessage[]
 
   addresses      Address[]
-  deliveryProfile DeliveryPartner?
+  deliveryProfile Rider?
   staffStore     StoreStaff[]
   creditLedger   CreditLedger[]
   auditLogs      AuditLog[]
@@ -190,7 +190,7 @@ model Store {
   suppliers           Supplier[]
   purchaseOrders      PurchaseOrder[]
   batches             StoreBatch[]
-  deliveryPartners    DeliveryPartnerStore[]
+  riders              RiderStore[]
   pickupSlots         PickupSlot[]
   offers              StoreOffer[]
   subscriptionPlans   StoreSubscriptionPlan[]
@@ -410,29 +410,61 @@ model Shift {
   @@map("shifts")
 }
 
-model DeliveryPartner {
-  id          String   @id @default(uuid())
-  userId      String   @unique @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kycStatus   KYCStatus @default(PENDING) @map("kyc_status")
-  vehicleType String?  @map("vehicle_type")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  stores      DeliveryPartnerStore[]
+model Rider {
+  id                String    @id @default(uuid())
+  userId            String    @unique @map("user_id")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kycStatus         KYCStatus @default(PENDING) @map("kyc_status")
+  vehicleType       String?   @map("vehicle_type")
+  
+  // Personal & Address Details
+  address           String?
+  city              String?
+  pincode           String?
+  aadhaarNumber     String?   @map("aadhaar_number")
+  emergencyContact  String?   @map("emergency_contact")
+  bloodGroup        String?   @map("blood_group")
 
-  @@map("delivery_partners")
+  // Vehicle Details
+  dlNumber          String?   @map("dl_number")
+  dlExpiry          String?   @map("dl_expiry")
+  rcNumber          String?   @map("rc_number")
+  vehicleModel      String?   @map("vehicle_model")
+  vehiclePhotoUri   String?   @map("vehicle_photo_uri")
+
+  // Bank & Payout Details
+  bankHolderName    String?   @map("bank_holder_name")
+  bankAccountNumber String?   @map("bank_account_number")
+  bankIfsc          String?   @map("bank_ifsc")
+  panNumber         String?   @map("pan_number")
+
+  // Location, Live Status & Metrics
+  allocatedHub      String?   @map("allocated_hub")
+  isOnline          Boolean   @default(false) @map("is_online")
+  currentLat        Float?    @map("current_lat")
+  currentLong       Float?    @map("current_long")
+  rating            Float     @default(5.0)
+  totalDeliveries   Int       @default(0) @map("total_deliveries")
+  totalEarnings     Float     @default(0.0) @map("total_earnings")
+
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @default(now()) @map("updated_at")
+  stores            RiderStore[]
+
+  @@map("riders")
 }
 
-model DeliveryPartnerStore {
-  id                String          @id @default(uuid())
-  deliveryPartnerId String          @map("delivery_partner_id")
-  deliveryPartner   DeliveryPartner @relation(fields: [deliveryPartnerId], references: [id], onDelete: Cascade)
-  storeId           String          @map("store_id")
-  store             Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  createdAt         DateTime        @default(now()) @map("created_at")
+model RiderStore {
+  id        String   @id @default(uuid())
+  riderId   String   @map("rider_id")
+  rider     Rider    @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  storeId   String   @map("store_id")
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
 
-  @@unique([deliveryPartnerId, storeId])
-  @@map("delivery_partner_stores")
+  @@unique([riderId, storeId])
+  @@map("rider_stores")
 }
 
 // ─── ORDERS & TRANSACTIONS ──────────────────────────────────────────────────

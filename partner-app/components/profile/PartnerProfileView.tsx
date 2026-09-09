@@ -7,6 +7,7 @@ import { useDutyContext } from '../../context/DutyContext';
 import { useDeliveryContext } from '../../context/DeliveryContext';
 import { useLanguageContext } from '../../context/LanguageContext';
 import { SettingsModal } from './SettingsModal';
+import { partnerAuthService } from '../../services/partnerAuth.service';
 import { Typography } from '../../constants/typography';
 import tw from 'twrnc';
 
@@ -21,7 +22,7 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
   onOpenSOS,
   onLogout,
 }) => {
-  const { user } = useAuthContext();
+  const { user, token, updateProfile } = useAuthContext();
   const { currentHub } = useDutyContext();
   const { earningsSummary } = useDeliveryContext();
   const { t, language } = useLanguageContext();
@@ -40,8 +41,8 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
   const handlePickFromCamera = async () => {
     setShowAvatarPicker(false);
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
         Alert.alert('Permission Denied', 'Camera access is required to take a profile picture.');
         return;
       }
@@ -51,7 +52,22 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
         quality: 0.8,
       });
       if (!result.canceled && result.assets && result.assets[0]?.uri) {
-        setCurrentAvatar(result.assets[0].uri);
+        const localUri = result.assets[0].uri;
+        setCurrentAvatar(localUri);
+
+        // Upload directly to Cloudflare R2
+        try {
+          const r2Url = await partnerAuthService.uploadImage(localUri, token);
+          if (r2Url) {
+            setCurrentAvatar(r2Url);
+            updateProfile({ avatar: r2Url });
+            if (token) {
+              await partnerAuthService.updateProfile({ avatar: r2Url }, token);
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('Avatar upload to R2 error:', uploadErr);
+        }
       }
     } catch (err) {
       console.log('Error opening camera:', err);
@@ -61,8 +77,8 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
   const handlePickFromGallery = async () => {
     setShowAvatarPicker(false);
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
         Alert.alert('Permission Denied', 'Gallery access is required to select a profile picture.');
         return;
       }
@@ -73,7 +89,22 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
         quality: 0.8,
       });
       if (!result.canceled && result.assets && result.assets[0]?.uri) {
-        setCurrentAvatar(result.assets[0].uri);
+        const localUri = result.assets[0].uri;
+        setCurrentAvatar(localUri);
+
+        // Upload directly to Cloudflare R2
+        try {
+          const r2Url = await partnerAuthService.uploadImage(localUri, token);
+          if (r2Url) {
+            setCurrentAvatar(r2Url);
+            updateProfile({ avatar: r2Url });
+            if (token) {
+              await partnerAuthService.updateProfile({ avatar: r2Url }, token);
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('Avatar upload to R2 error:', uploadErr);
+        }
       }
     } catch (err) {
       console.log('Error opening gallery:', err);
