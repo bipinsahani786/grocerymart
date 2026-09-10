@@ -1,10 +1,9 @@
 import jwt from "jsonwebtoken";
-import { partnerRepository } from "./partner.repository.js";
-import { otpService } from "../utils/otp.service.js";
-import { otpStore } from "../utils/otp/otp.store.js";
-import { AppError } from "../utils/AppError.js";
+import { registerRepository } from "./register.repository.js";
+import { otpService } from "../../utils/otp.service.js";
+import { AppError } from "../../utils/AppError.js";
 
-export class PartnerService {
+export class RegisterService {
   /**
    * Helper to generate JWT tokens for Delivery Partner
    */
@@ -40,12 +39,6 @@ export class PartnerService {
       throw new AppError("Please enter a valid 10-digit Indian mobile number", 400);
     }
 
-    const existingUser = await partnerRepository.findUserByPhone(cleanPhone);
-    if (authMode === "LOGIN" && !existingUser) {
-      // In partner portal, if user doesn't exist yet, we still allow sending OTP
-      // and will smoothly onboard them or flag during verification
-    }
-
     const purpose = authMode === "REGISTER" ? "Partner Registration" : "Partner Login";
     await otpService.sendOtp({ phone: cleanPhone, purpose });
 
@@ -70,28 +63,26 @@ export class PartnerService {
       throw new AppError("Please enter a valid 4-digit OTP", 400);
     }
 
-    // Verify OTP using OtpService
+    // Verify OTP
     otpService.verifyOtp({ identifier: cleanPhone, inputOtp: cleanOtp });
 
     // Check if user already exists
-    let user = await partnerRepository.findUserByPhone(cleanPhone);
+    let user = await registerRepository.findUserByPhone(cleanPhone);
     let isNewUser = false;
 
     if (!user) {
-      // Create new Delivery Partner User in dedicated tables
-      user = await partnerRepository.createPartnerUser({
+      user = await registerRepository.createPartnerUser({
         phone: cleanPhone,
         name: name || "Delivery Partner",
         vehicleType,
       });
       isNewUser = true;
     } else {
-      // Existing user: ensure delivery_partners table entry exists
-      await partnerRepository.ensurePartnerProfile(user.id, vehicleType);
+      await registerRepository.ensurePartnerProfile(user.id, vehicleType);
     }
 
     // Fetch full profile from database
-    const partnerProfile = await partnerRepository.getFullPartnerProfile(user.id);
+    const partnerProfile = await registerRepository.getFullPartnerProfile(user.id);
 
     // Generate JWT auth tokens
     const { accessToken, refreshToken } = this.generateTokens(user);
@@ -147,7 +138,7 @@ export class PartnerService {
    * Get full partner profile
    */
   async getProfile(userId) {
-    const partnerProfile = await partnerRepository.getFullPartnerProfile(userId);
+    const partnerProfile = await registerRepository.getFullPartnerProfile(userId);
     if (!partnerProfile) {
       throw new AppError("Delivery partner profile not found", 404);
     }
@@ -163,13 +154,12 @@ export class PartnerService {
   }
 
   /**
-   * Update partner details across users and delivery_partners tables
+   * Update partner registration & KYC details
    */
   async updateProfile(userId, updateData) {
     const userFields = {};
     const partnerFields = {};
 
-    // Segregate fields for User vs DeliveryPartner table
     if (updateData.name !== undefined) userFields.name = updateData.name.trim();
     if (updateData.email !== undefined) userFields.email = updateData.email?.trim() || null;
     if (updateData.avatar !== undefined) userFields.avatar = updateData.avatar;
@@ -213,15 +203,15 @@ export class PartnerService {
     }
 
     if (Object.keys(userFields).length > 0) {
-      await partnerRepository.updateUser(userId, userFields);
+      await registerRepository.updateUser(userId, userFields);
     }
 
     if (Object.keys(partnerFields).length > 0) {
-      await partnerRepository.updatePartner(userId, partnerFields);
+      await registerRepository.updatePartner(userId, partnerFields);
     }
 
     return await this.getProfile(userId);
   }
 }
 
-export const partnerService = new PartnerService();
+export const registerService = new RegisterService();

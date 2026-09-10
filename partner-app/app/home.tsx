@@ -34,6 +34,7 @@ export default function PartnerHomeScreen() {
     acceptIncomingOrder,
     rejectIncomingOrder,
     refreshDeliveries,
+    refreshEarnings,
   } = useDeliveryContext();
   const { isOnline } = useDutyContext();
 
@@ -49,7 +50,10 @@ export default function PartnerHomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refreshDeliveries();
+    await Promise.all([
+      refreshDeliveries(),
+      refreshEarnings(),
+    ]);
     setRefreshing(false);
   };
 

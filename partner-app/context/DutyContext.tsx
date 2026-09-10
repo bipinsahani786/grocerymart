@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
+import { useAuthContext } from './AuthContext';
+import { partnerAuthService } from '../services/partnerAuth.service';
 
 interface DutyContextType {
   isOnline: boolean;
-  toggleDuty: () => void;
-  setDuty: (online: boolean) => void;
+  toggleDuty: () => Promise<void>;
+  setDuty: (online: boolean) => Promise<void>;
+  refreshDuty: () => Promise<void>;
   shiftSeconds: number;
   formattedShiftTime: string;
   batteryLevel: number;
@@ -27,11 +30,18 @@ const DUTY_STORAGE_KEY = '@grocerymart_partner_duty';
 const DEFAULT_ADDRESS = '80 Feet Rd, 4th Block, Koramangala, Bengaluru';
 
 export const DutyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isOnline, setIsOnline] = useState<boolean>(true);
-  const [shiftSeconds, setShiftSeconds] = useState<number>(19800); // ~5.5 hrs
+  const { user, token, deliveryPartner, updateProfile } = useAuthContext();
+
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    if (deliveryPartner?.isOnline !== undefined) {
+      return Boolean(deliveryPartner.isOnline);
+    }
+    return false;
+  });
+  const [shiftSeconds, setShiftSeconds] = useState<number>(0);
   const [batteryLevel] = useState<number>(86);
-  const [currentHub, setCurrentHub] = useState<string>('Koramangala Express Hub #04');
-  const [floatingCash, setFloatingCash] = useState<number>(450);
+  const [currentHub, setCurrentHub] = useState<string>(deliveryPartner?.allocatedHub || 'Central Hub');
+  const [floatingCash, setFloatingCash] = useState<number>(0);
 
   // Live Location Address State
   const [liveAddress, setLiveAddress] = useState<string>(DEFAULT_ADDRESS);
@@ -44,7 +54,16 @@ export const DutyProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     loadDutyState();
     fetchLiveLocation();
-  }, []);
+  }, [token]);
+
+  useEffect(() => {
+    if (deliveryPartner?.isOnline !== undefined) {
+      setIsOnline(Boolean(deliveryPartner.isOnline));
+    }
+    if (deliveryPartner?.allocatedHub) {
+      setCurrentHub(deliveryPartner.allocatedHub);
+    }
+  }, [deliveryPartner?.isOnline, deliveryPartner?.allocatedHub]);
 
   // Timer ticker when online
   useEffect(() => {
@@ -144,12 +163,30 @@ export const DutyProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadDutyState = async () => {
     try {
+      // 1. Fetch real rider duty status from backend if authenticated
+      const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+      if (activeToken) {
+        const res = await partnerAuthService.getProfile(activeToken);
+        if (res.success && res.data) {
+          const backendOnline = Boolean(res.data.isOnline);
+          setIsOnline(backendOnline);
+          await AsyncStorage.setItem(DUTY_STORAGE_KEY, JSON.stringify(backendOnline));
+          if (res.data.allocatedHub) {
+            setCurrentHub(res.data.allocatedHub);
+          }
+          return;
+        }
+      }
+
+      // 2. Fallback to AsyncStorage
       const stored = await AsyncStorage.getItem(DUTY_STORAGE_KEY);
       if (stored !== null) {
         setIsOnline(JSON.parse(stored));
+      } else if (deliveryPartner?.isOnline !== undefined) {
+        setIsOnline(Boolean(deliveryPartner.isOnline));
       }
     } catch (e) {
-      console.error('Error loading duty state', e);
+      console.error('Error loading duty state from backend:', e);
     }
   };
 
@@ -157,11 +194,31 @@ export const DutyProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const nextState = !isOnline;
     setIsOnline(nextState);
     await AsyncStorage.setItem(DUTY_STORAGE_KEY, JSON.stringify(nextState));
+    updateProfile({ status: nextState ? 'ON_DUTY' : 'OFF_DUTY' });
+
+    try {
+      const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+      if (activeToken) {
+        await partnerAuthService.updateDuty(nextState, liveCoords, activeToken);
+      }
+    } catch (err) {
+      console.warn('Failed to sync duty to backend:', err);
+    }
   };
 
   const setDuty = async (online: boolean) => {
     setIsOnline(online);
     await AsyncStorage.setItem(DUTY_STORAGE_KEY, JSON.stringify(online));
+    updateProfile({ status: online ? 'ON_DUTY' : 'OFF_DUTY' });
+
+    try {
+      const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+      if (activeToken) {
+        await partnerAuthService.updateDuty(online, liveCoords, activeToken);
+      }
+    } catch (err) {
+      console.warn('Failed to set duty in backend:', err);
+    }
   };
 
   const depositCash = (amount: number) => {
@@ -210,6 +267,7 @@ export const DutyProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOnline,
         toggleDuty,
         setDuty,
+        refreshDuty: loadDutyState,
         shiftSeconds,
         formattedShiftTime: formatTime(shiftSeconds),
         batteryLevel,

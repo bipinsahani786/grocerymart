@@ -121,9 +121,9 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
       {/* ================= 1. EMERALD TOP APP BAR WITH LIVE LOCATION ================= */}
       <View
         style={[
-          tw`px-4 pb-2.5 bg-[#047857] z-30 shadow-md`,
+          tw`px-4 pb-2 bg-[#047857] z-30 shadow-md`,
           {
-            paddingTop: safeTop + 4,
+            paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 12, 8) : 8,
           },
         ]}
       >

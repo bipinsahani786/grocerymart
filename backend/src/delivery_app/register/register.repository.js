@@ -1,8 +1,8 @@
-import { prisma } from "../../config/prisma.js";
+import { prisma } from "../../../config/prisma.js";
 
-export class PartnerRepository {
+export class RegisterRepository {
   /**
-   * Find user by phone including user role and delivery profile (Rider)
+   * Find user by phone including role and deliveryProfile
    */
   async findUserByPhone(phone) {
     return await prisma.user.findUnique({
@@ -38,8 +38,7 @@ export class PartnerRepository {
   }
 
   /**
-   * Create a new delivery partner user in a single transactional write
-   * Creates User -> UserRole (Role.DELIVERY_PARTNER) -> Rider (riders table)
+   * Create a new delivery partner user (User -> UserRole -> Rider)
    */
   async createPartnerUser({ phone, name, vehicleType = "EV_BIKE" }) {
     return await prisma.user.create({
@@ -95,7 +94,7 @@ export class PartnerRepository {
   }
 
   /**
-   * Update or create rider details in the riders table (upsert prevents missing record crashes)
+   * Update or create rider details in the riders table
    */
   async updatePartner(userId, data) {
     return await prisma.rider.upsert({
@@ -117,7 +116,7 @@ export class PartnerRepository {
   }
 
   /**
-   * Update basic user details (name, email, avatar, etc.)
+   * Update basic user details (name, email, avatar)
    */
   async updateUser(userId, data) {
     return await prisma.user.update({
@@ -163,4 +162,4 @@ export class PartnerRepository {
   }
 }
 
-export const partnerRepository = new PartnerRepository();
+export const registerRepository = new RegisterRepository();

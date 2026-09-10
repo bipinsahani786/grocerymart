@@ -316,11 +316,11 @@ export default function OnboardingScreen() {
       {/* Native App Top Bar */}
       <View
         style={[
-          tw`px-4 pb-3 border-b`,
+          tw`px-4 pb-2.5 border-b`,
           {
             backgroundColor: Colors.surface,
             borderBottomColor: Colors.border,
-            paddingTop: insets.top + 8,
+            paddingTop: Platform.OS === 'ios' ? Math.max(insets.top - 12, 8) : 8,
           },
         ]}
       >

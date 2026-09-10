@@ -1,11 +1,16 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 import {
   DeliveryOrder,
   EarningSummary,
   MOCK_INCOMING_ORDER,
   MOCK_PAST_TRIPS,
-  MOCK_SHIFT_SUMMARY,
 } from '../constants/mockData';
+import {
+  partnerEarningsService,
+  EarningsSummaryData,
+} from '../services/partnerEarnings.service';
+import { useAuthContext } from './AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface AreaRider {
   id: string;
@@ -21,12 +26,14 @@ export interface DispatchInfo {
   riderDistanceKm: number;
 }
 
-interface DeliveryContextType {
+export interface DeliveryContextType {
   incomingOrder: DeliveryOrder | null;
   activeOrder: DeliveryOrder | null;
   orderHistory: DeliveryOrder[];
   completedOrders: DeliveryOrder[];
   earningsSummary: EarningSummary;
+  earningsData: EarningsSummaryData | null;
+  isLoadingEarnings: boolean;
   dispatchInfo: DispatchInfo;
   acceptIncomingOrder: () => void;
   rejectIncomingOrder: () => void;
@@ -35,13 +42,28 @@ interface DeliveryContextType {
   completeDelivery: (enteredOtp: string) => { success: boolean; message: string };
   completeActiveDelivery: () => void;
   triggerIncomingOrderSimulation: () => void;
-  withdrawEarnings: (amount: number) => boolean;
-  depositCash: (amount: number) => boolean;
+  withdrawEarnings: (amount: number) => Promise<{ success: boolean; message: string; data?: any }>;
+  depositCash: (amount: number, method?: 'UPI' | 'QR' | 'STORE') => Promise<{ success: boolean; message: string }>;
   refreshDeliveries: () => Promise<void>;
+  refreshEarnings: (range?: 'TODAY' | 'WEEK' | 'MONTH') => Promise<void>;
 }
 
+const DEFAULT_ZERO_EARNINGS: EarningSummary = {
+  todayTotal: 0,
+  tripsCount: 0,
+  onlineHours: 0,
+  basePay: 0,
+  surgeBonus: 0,
+  tips: 0,
+  incentives: 0,
+  cashCollected: 0,
+  floatingCashLimit: 2500,
+  walletBalance: 0,
+  pendingWithdrawal: 0,
+};
+
 const MOCK_AREA_RIDERS: AreaRider[] = [
-  { id: 'r1', name: 'Captain Bipin (You - Nearest)', distanceKm: 0.5 },
+  { id: 'r1', name: 'Captain Sahil (You - Nearest)', distanceKm: 0.5 },
   { id: 'r2', name: 'Captain Rahul (Nearby Partner)', distanceKm: 1.2 },
   { id: 'r3', name: 'Captain Amit (Nearby Partner)', distanceKm: 2.1 },
 ];
@@ -49,10 +71,13 @@ const MOCK_AREA_RIDERS: AreaRider[] = [
 const DeliveryContext = createContext<DeliveryContextType | undefined>(undefined);
 
 export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { token } = useAuthContext();
   const [incomingOrder, setIncomingOrder] = useState<DeliveryOrder | null>(null);
   const [activeOrder, setActiveOrder] = useState<DeliveryOrder | null>(null);
   const [orderHistory, setOrderHistory] = useState<DeliveryOrder[]>(MOCK_PAST_TRIPS);
-  const [earningsSummary, setEarningsSummary] = useState<EarningSummary>(MOCK_SHIFT_SUMMARY);
+  const [earningsSummary, setEarningsSummary] = useState<EarningSummary>(DEFAULT_ZERO_EARNINGS);
+  const [earningsData, setEarningsData] = useState<EarningsSummaryData | null>(null);
+  const [isLoadingEarnings, setIsLoadingEarnings] = useState<boolean>(false);
 
   // Sequential Rider Dispatch State
   const [currentRiderIndex, setCurrentRiderIndex] = useState(0);
@@ -165,19 +190,30 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setOrderHistory((prev) => [completed, ...prev]);
 
-    setEarningsSummary((prev) => ({
-      ...prev,
-      todayTotal: prev.todayTotal + completed.totalPayout,
-      tripsCount: prev.tripsCount + 1,
-      basePay: prev.basePay + completed.payoutEarnings,
-      surgeBonus: prev.surgeBonus + completed.surgeBonus,
-      tips: prev.tips + completed.tipAmount,
-      walletBalance: prev.walletBalance + completed.totalPayout,
-      cashCollected:
-        completed.paymentMode === 'CASH_ON_DELIVERY'
-          ? prev.cashCollected + completed.totalAmount
-          : prev.cashCollected,
-    }));
+    // Asynchronously record delivery earnings in backend database
+    (async () => {
+      try {
+        let activeToken = token;
+        if (!activeToken) {
+          activeToken = await AsyncStorage.getItem('@grocerymart_partner_token');
+        }
+        await partnerEarningsService.recordDeliveryEarnings(
+          {
+            orderId: completed.id,
+            orderNumber: completed.orderNumber,
+            payoutEarnings: completed.payoutEarnings,
+            tipAmount: completed.tipAmount,
+            surgeBonus: completed.surgeBonus,
+            isCod: completed.paymentMode === 'CASH_ON_DELIVERY',
+            codAmount: completed.paymentMode === 'CASH_ON_DELIVERY' ? completed.totalAmount : 0,
+          },
+          activeToken
+        );
+        await fetchEarnings();
+      } catch (err) {
+        console.error('Failed to record delivery in backend:', err);
+      }
+    })();
 
     setActiveOrder(null);
     return { success: true, message: 'Order delivered successfully!' };
@@ -191,36 +227,152 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       deliveredAt: 'Just now',
     };
     setOrderHistory((prev) => [completed, ...prev]);
-    setEarningsSummary((prev) => ({
-      ...prev,
-      todayTotal: prev.todayTotal + completed.totalPayout,
-      tripsCount: prev.tripsCount + 1,
-      walletBalance: prev.walletBalance + completed.totalPayout,
-    }));
+
+    (async () => {
+      try {
+        let activeToken = token;
+        if (!activeToken) {
+          activeToken = await AsyncStorage.getItem('@grocerymart_partner_token');
+        }
+        await partnerEarningsService.recordDeliveryEarnings(
+          {
+            orderId: completed.id,
+            orderNumber: completed.orderNumber,
+            payoutEarnings: completed.payoutEarnings,
+            tipAmount: completed.tipAmount,
+            surgeBonus: completed.surgeBonus,
+            isCod: completed.paymentMode === 'CASH_ON_DELIVERY',
+            codAmount: completed.paymentMode === 'CASH_ON_DELIVERY' ? completed.totalAmount : 0,
+          },
+          activeToken
+        );
+        await fetchEarnings();
+      } catch (err) {
+        console.error('Failed to record delivery in backend:', err);
+      }
+    })();
+
     setActiveOrder(null);
   };
 
-  const withdrawEarnings = (amount: number): boolean => {
-    if (amount <= 0 || amount > earningsSummary.walletBalance) return false;
-    setEarningsSummary((prev) => ({
-      ...prev,
-      walletBalance: prev.walletBalance - amount,
-    }));
-    return true;
+  /**
+   * Fetch real earnings data from backend
+   */
+  const fetchEarnings = useCallback(
+    async (range: 'TODAY' | 'WEEK' | 'MONTH' = 'TODAY') => {
+      setIsLoadingEarnings(true);
+      try {
+        let activeToken = token;
+        if (!activeToken) {
+          activeToken = await AsyncStorage.getItem('@grocerymart_partner_token');
+        }
+
+        const res = await partnerEarningsService.getEarningsSummary(range, activeToken);
+        if (res.success && res.data) {
+          setEarningsData(res.data);
+          setEarningsSummary({
+            todayTotal: res.data.periodMetrics.totalEarned,
+            tripsCount: res.data.periodMetrics.tripsCount,
+            onlineHours: 0,
+            basePay: Math.max(
+              0,
+              res.data.periodMetrics.totalEarned -
+                res.data.periodMetrics.tipsEarned -
+                res.data.periodMetrics.surgeBonus
+            ),
+            surgeBonus: res.data.periodMetrics.surgeBonus,
+            tips: res.data.periodMetrics.tipsEarned,
+            incentives: 0,
+            cashCollected: res.data.periodMetrics.cashCollected,
+            floatingCashLimit: res.data.periodMetrics.floatingCashLimit || 2500,
+            walletBalance: res.data.walletBalance,
+            pendingWithdrawal: 0,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch earnings summary:', err);
+      } finally {
+        setIsLoadingEarnings(false);
+      }
+    },
+    [token]
+  );
+
+  /**
+   * Live Instant Withdrawal to verified KYC bank account
+   */
+  const withdrawEarnings = async (
+    amount: number
+  ): Promise<{ success: boolean; message: string; data?: any }> => {
+    try {
+      let activeToken = token;
+      if (!activeToken) {
+        activeToken = await AsyncStorage.getItem('@grocerymart_partner_token');
+      }
+
+      const res = await partnerEarningsService.requestWithdrawal(amount, activeToken);
+      if (res.success && res.data) {
+        await fetchEarnings();
+        return {
+          success: true,
+          message: res.message || `Successfully transferred ₹${amount} via IMPS`,
+          data: res.data,
+        };
+      } else {
+        return {
+          success: false,
+          message: res.error || res.message || 'Failed to process withdrawal',
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.message || 'Network error during withdrawal',
+      };
+    }
   };
 
-  const depositCash = (amount: number): boolean => {
-    if (amount <= 0) return false;
-    setEarningsSummary((prev) => ({
-      ...prev,
-      cashCollected: Math.max(0, prev.cashCollected - amount),
-    }));
-    return true;
+  /**
+   * Cash Deposit (COD floating cash settlement)
+   */
+  const depositCash = async (
+    amount: number,
+    method: 'UPI' | 'QR' | 'STORE' = 'UPI'
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      let activeToken = token;
+      if (!activeToken) {
+        activeToken = await AsyncStorage.getItem('@grocerymart_partner_token');
+      }
+
+      const res = await partnerEarningsService.recordCashDeposit(amount, method, activeToken);
+      if (res.success) {
+        await fetchEarnings();
+        return {
+          success: true,
+          message: res.message || `Cash deposit of ₹${amount} recorded successfully`,
+        };
+      } else {
+        return {
+          success: false,
+          message: res.error || res.message || 'Failed to record deposit',
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.message || 'Network error during deposit',
+      };
+    }
   };
 
   const refreshDeliveries = async (): Promise<void> => {
     return new Promise((resolve) => setTimeout(resolve, 800));
   };
+
+  useEffect(() => {
+    fetchEarnings('TODAY');
+  }, [fetchEarnings]);
 
   useEffect(() => {
     return () => {
@@ -238,6 +390,8 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         orderHistory,
         completedOrders: orderHistory,
         earningsSummary,
+        earningsData,
+        isLoadingEarnings,
         dispatchInfo: {
           currentRiderIndex,
           totalAreaRiders: MOCK_AREA_RIDERS.length,
@@ -255,6 +409,7 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         withdrawEarnings,
         depositCash,
         refreshDeliveries,
+        refreshEarnings: fetchEarnings,
       }}
     >
       {children}

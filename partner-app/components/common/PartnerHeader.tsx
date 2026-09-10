@@ -32,9 +32,9 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
   return (
     <View
       style={[
-        tw`px-4 pb-2.5 bg-[#047857] shadow-md z-30`,
+        tw`px-4 pb-2 bg-[#047857] shadow-md z-30`,
         {
-          paddingTop: safeTop + 4,
+          paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 12, 8) : 8,
         },
       ]}
     >

@@ -86,6 +86,25 @@ export class PartnerAuthService {
   }
 
   /**
+   * Update partner live duty status (online/offline) in backend
+   */
+  async updateDuty(
+    isOnline: boolean,
+    coords?: { lat: number; lng: number } | null,
+    token?: string | null
+  ): Promise<ApiResponse> {
+    return await apiClient.put(
+      API_CONFIG.ENDPOINTS.PARTNER.DUTY,
+      {
+        isOnline,
+        currentLat: coords?.lat,
+        currentLong: coords?.lng,
+      },
+      { token: token || undefined }
+    );
+  }
+
+  /**
    * Upload image file (Avatar / Document) to Cloudflare R2
    */
   async uploadImage(uri: string, token?: string | null): Promise<string> {
