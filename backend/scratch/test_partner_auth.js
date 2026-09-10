@@ -28,7 +28,7 @@ async function testPartnerAuth() {
   console.log("Verify OTP Response:", JSON.stringify(verifyRes, null, 2));
 
   // 4. Verify DeliveryPartner row exists in database
-  const partnerInDb = await prisma.deliveryPartner.findUnique({
+  const partnerInDb = await prisma.rider.findUnique({
     where: { userId: verifyRes.data.user.id },
     include: { user: true },
   });

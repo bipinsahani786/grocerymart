@@ -288,6 +288,7 @@ router.get("/seed-admin", authController.seedAdmin);
 router.post("/otp/send", authController.sendOtpDirect);
 router.post("/otp/verify", authController.verifyOtpDirect);
 router.post("/otp/register", authController.registerCustomerDirect);
+router.post("/profile/register", authController.registerCustomerDirect);
 
 // ── PARTNER SETTINGS API ──
 router.get("/partner-settings", authController.getPartnerSettings);

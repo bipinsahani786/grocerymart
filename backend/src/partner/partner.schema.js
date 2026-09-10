@@ -261,6 +261,7 @@ export const updatePartnerProfileSchema = z.object({
         .nullable()
     ),
     allocatedHub: z.preprocess(sanitizeOptionalString, z.string().optional().nullable()),
+    riderId: z.preprocess(sanitizeOptionalString, z.string().optional().nullable()),
     isOnline: z.boolean().optional(),
     currentLat: z.number().optional().nullable(),
     currentLong: z.number().optional().nullable(),

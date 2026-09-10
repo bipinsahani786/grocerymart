@@ -15,6 +15,7 @@ export interface VerifyOtpResponseData {
     avatar?: string | null;
     role: string;
     status: string;
+    createdAt?: string | null;
   };
   deliveryPartner: {
     id: string;

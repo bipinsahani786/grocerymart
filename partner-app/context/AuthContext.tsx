@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MOCK_RIDER, RiderProfile } from '../constants/mockData';
+import { RiderProfile } from '../constants/mockData';
 import { partnerAuthService, VerifyOtpResponseData } from '../services/partnerAuth.service';
 import { ApiResponse } from '../services/apiClient';
 
@@ -73,7 +73,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const kycStored = await AsyncStorage.getItem(KYC_STORAGE_KEY);
 
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        // Clear out any old mock user leftover in local storage
+        if (parsed.name === 'Rajesh Kumar Verma' || parsed.id === 'PRT-88492') {
+          await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+          await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+          await AsyncStorage.removeItem(PARTNER_STORAGE_KEY);
+          await AsyncStorage.removeItem(KYC_STORAGE_KEY);
+          setUser(null);
+          setToken(null);
+          setDeliveryPartner(null);
+          setIsKycCompleted(false);
+        } else {
+          setUser(parsed);
+        }
       }
       if (storedToken) {
         setToken(storedToken);
@@ -131,15 +144,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const verifiedToken = resData.token || resData.accessToken;
 
       const profile: RiderProfile = {
-        ...MOCK_RIDER,
         id: resData.user.id,
-        name: resData.user.name || name || 'Delivery Captain',
+        name: resData.user.name || name || '',
         phone: resData.user.phone || phone,
-        vehicleType: (resData.deliveryPartner?.vehicleType as any) || vehicleType,
-        vehicleNumber: resData.deliveryPartner?.rcNumber || MOCK_RIDER.vehicleNumber,
+        email: resData.user.email || '',
+        avatar: resData.user.avatar || '',
+        vehicleType: (resData.deliveryPartner?.vehicleType as any) || vehicleType || 'EV_BIKE',
+        vehicleNumber: resData.deliveryPartner?.rcNumber || '',
         status: (resData.deliveryPartner?.isOnline ? 'ON_DUTY' : 'OFF_DUTY') as any,
         rating: resData.deliveryPartner?.rating || 5.0,
+        totalTrips: resData.deliveryPartner?.totalDeliveries || 0,
         totalDeliveries: resData.deliveryPartner?.totalDeliveries || 0,
+        acceptanceRate: 100,
+        onTimeRate: 100,
+        tier: 'Silver',
+        joinedDate: resData.user.createdAt
+          ? new Date(resData.user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          : 'Recently',
+        currentHub: resData.deliveryPartner?.allocatedHub || '',
       };
 
       setUser(profile);
@@ -171,22 +193,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const completeKyc = async (kycData: Partial<PartnerKycData>): Promise<{ success: boolean; message?: string }> => {
-    if (token) {
-      const res = await partnerAuthService.updateProfile(kycData, token);
-      if (!res.success) {
-        throw new Error(res.error || res.message || 'Failed to save KYC to backend. Please check inputs and try again.');
-      }
-      if (res.data) {
-        setDeliveryPartner(res.data);
-        await AsyncStorage.setItem(PARTNER_STORAGE_KEY, JSON.stringify(res.data));
+    let activeToken = token;
+    if (!activeToken) {
+      activeToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+      if (activeToken) {
+        setToken(activeToken);
       }
     }
 
-    if (user) {
+    if (!activeToken) {
+      throw new Error('Authentication session missing. Please sign in again.');
+    }
+
+    const res = await partnerAuthService.updateProfile(kycData, activeToken);
+    if (!res.success) {
+      throw new Error(res.error || res.message || 'Failed to save KYC to backend. Please check inputs and try again.');
+    }
+
+    if (res.data) {
+      setDeliveryPartner(res.data);
+      await AsyncStorage.setItem(PARTNER_STORAGE_KEY, JSON.stringify(res.data));
+    }
+
+    if (user || res.data?.user) {
+      const currentProfile: RiderProfile = user || {
+        id: res.data?.user?.id || '',
+        name: '',
+        phone: res.data?.user?.phone || '',
+        email: res.data?.user?.email || '',
+        avatar: '',
+        vehicleType: (kycData.vehicleType as any) || 'EV_BIKE',
+        vehicleNumber: '',
+        status: 'OFF_DUTY',
+        rating: 5.0,
+        totalTrips: 0,
+        totalDeliveries: 0,
+        acceptanceRate: 100,
+        onTimeRate: 100,
+        tier: 'Silver',
+        joinedDate: 'Recently',
+        currentHub: '',
+      };
+
       const updatedUser: RiderProfile = {
-        ...user,
-        vehicleNumber: kycData.rcNumber || user.vehicleNumber,
-        name: kycData.name || kycData.bankHolderName || user.name,
+        ...currentProfile,
+        id: res.data?.user?.id || currentProfile.id,
+        name: kycData.name || kycData.bankHolderName || res.data?.user?.name || currentProfile.name,
+        vehicleNumber: kycData.rcNumber || res.data?.rcNumber || currentProfile.vehicleNumber,
+        avatar: kycData.profilePhotoUri || res.data?.user?.avatar || currentProfile.avatar,
+        currentHub: kycData.allocatedHub || res.data?.allocatedHub || currentProfile.currentHub,
       };
       setUser(updatedUser);
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));

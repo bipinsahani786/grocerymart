@@ -45,7 +45,7 @@ export class PartnerRepository {
     return await prisma.user.create({
       data: {
         phone,
-        name: name || "Delivery Partner",
+        name: name || null,
         status: "active",
         isActive: true,
         role: {
@@ -95,12 +95,16 @@ export class PartnerRepository {
   }
 
   /**
-   * Update rider details in the riders table
+   * Update or create rider details in the riders table (upsert prevents missing record crashes)
    */
   async updatePartner(userId, data) {
-    return await prisma.rider.update({
+    return await prisma.rider.upsert({
       where: { userId },
-      data,
+      update: data,
+      create: {
+        userId,
+        ...data,
+      },
       include: {
         user: {
           include: { role: true },

@@ -106,13 +106,7 @@ export default function LoginScreen() {
       if (response.success) {
         setOtpSent(true);
         setInfoMessage(response.message || `OTP sent to +91 ${validation.cleanValue}`);
-        const testOtp = (response as any).otp || (response as any).data?.otp;
-        if (testOtp) {
-          const digits = String(testOtp).split('').slice(0, 4);
-          setOtpDigits(digits);
-        } else {
-          setOtpDigits(['', '', '', '']);
-        }
+        setOtpDigits(['', '', '', '']);
         setResendCooldown(30); // 30s cooldown before next resend
         setTimeout(() => {
           otpRef0.current?.focus();
@@ -149,8 +143,7 @@ export default function LoginScreen() {
         phoneVal.cleanValue,
         otpVal.cleanValue,
         authMode,
-        'EV_BIKE',
-        authMode === 'REGISTER' ? 'New Captain' : 'Delivery Captain'
+        'EV_BIKE'
       );
 
       if (result.success) {

@@ -49,20 +49,10 @@ export class PartnerService {
     const purpose = authMode === "REGISTER" ? "Partner Registration" : "Partner Login";
     await otpService.sendOtp({ phone: cleanPhone, purpose });
 
-    const stored = otpStore.get(cleanPhone);
-    const isBypass =
-      process.env.BYPASS_REAL_SMS === "true" ||
-      !process.env.NODE_ENV ||
-      process.env.NODE_ENV !== "production";
-    const devCode = stored?.otp || "1234";
-
     return {
       success: true,
-      message: isBypass
-        ? `OTP sent to +91 ${cleanPhone} (Test Code: ${devCode} or 1234)`
-        : `OTP sent successfully to +91 ${cleanPhone}`,
+      message: `OTP sent successfully to +91 ${cleanPhone}`,
       phone: cleanPhone,
-      otp: isBypass ? devCode : undefined,
     };
   }
 
