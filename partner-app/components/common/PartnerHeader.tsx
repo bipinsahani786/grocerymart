@@ -32,9 +32,9 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
   return (
     <View
       style={[
-        tw`px-4 pb-2.5 bg-[#047857] shadow-md z-30`,
+        tw`px-4 pb-2 bg-[#047857] shadow-md z-30`,
         {
-          paddingTop: safeTop + 4,
+          paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 12, 8) : 8,
         },
       ]}
     >
@@ -78,12 +78,12 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
           <View style={tw`flex-1`}>
             <View style={tw`flex-row items-center flex-wrap gap-1`}>
               <Text style={[Typography.cardTitle, { color: '#FFFFFF', marginRight: 2 }]} numberOfLines={1}>
-                {user?.name || 'Captain Bipin'}
+                {user?.name || 'Partner Captain'}
               </Text>
               <View style={tw`flex-row items-center px-1.5 py-0.2 rounded bg-emerald-800/80 border border-emerald-500/50`}>
                 <Ionicons name="star" size={9} color="#FBBF24" style={tw`mr-0.5`} />
                 <Text style={[Typography.badge, { color: '#FDE68A' }]}>
-                  {user?.rating || '4.9'}
+                  {Number(user?.rating ?? 5.0).toFixed(1)}
                 </Text>
               </View>
               {settings.batterySaver && (
@@ -112,7 +112,7 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
           >
             <Ionicons name="wallet-outline" size={12} color="#A7F3D0" style={tw`mr-1`} />
             <Text style={[Typography.buttonText, { color: '#FFFFFF' }]}>
-              ₹{earningsSummary.todayTotal}
+              ₹{Number(earningsSummary.walletBalance ?? user?.walletBalance ?? 0).toLocaleString('en-IN')}
             </Text>
           </TouchableOpacity>
 

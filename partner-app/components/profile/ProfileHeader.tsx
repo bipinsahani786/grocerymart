@@ -90,11 +90,11 @@ export const ProfileHeader: React.FC = () => {
         <View style={[tw`w-[1px]`, { backgroundColor: Colors.border }]} />
 
         <View style={tw`items-center flex-1`}>
-          <Text style={[tw`text-base font-black`, { color: Colors.text }]}>
-            {user.totalTrips}
+          <Text style={[tw`text-base font-black`, { color: Colors.primaryDark }]}>
+            ₹{Number(user.walletBalance || 0).toLocaleString('en-IN')}
           </Text>
           <Text style={[tw`text-[10px] mt-0.5`, { color: Colors.textSecondary }]}>
-            Total Trips
+            Wallet
           </Text>
         </View>
       </View>

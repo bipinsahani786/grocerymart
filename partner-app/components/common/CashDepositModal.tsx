@@ -26,9 +26,8 @@ type DepositMethod = 'UPI' | 'QR' | 'STORE';
 export const CashDepositModal: React.FC<CashDepositModalProps> = ({ visible, onClose }) => {
   const insets = useSafeAreaInsets();
   const { earningsSummary, depositCash } = useDeliveryContext();
-  const [depositAmount, setDepositAmount] = useState(
-    (earningsSummary.cashCollected || 450).toString()
-  );
+  const cashInHand = earningsSummary.cashCollected || 0;
+  const [depositAmount, setDepositAmount] = useState(cashInHand.toString());
   const [selectedMethod, setSelectedMethod] = useState<DepositMethod>('UPI');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -37,7 +36,7 @@ export const CashDepositModal: React.FC<CashDepositModalProps> = ({ visible, onC
   const safeTop = Math.max(statusBarHeight, insets.top, 14);
 
   const quickAmounts = [
-    { label: `Full (₹${earningsSummary.cashCollected || 450})`, value: (earningsSummary.cashCollected || 450).toString() },
+    { label: `Full (₹${cashInHand})`, value: cashInHand.toString() },
     { label: '₹300', value: '300' },
     { label: '₹200', value: '200' },
     { label: '₹100', value: '100' },
@@ -49,20 +48,22 @@ export const CashDepositModal: React.FC<CashDepositModalProps> = ({ visible, onC
     { id: '3', title: 'UPI Deposit (PhonePe)', date: '28 Aug, 09:00 PM', amount: 1800, status: 'SETTLED' },
   ];
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     const amt = parseFloat(depositAmount);
     if (!amt || amt <= 0) return;
 
     setIsProcessing(true);
-    setTimeout(() => {
-      depositCash(amt);
+    try {
+      await depositCash(amt, selectedMethod);
       setIsProcessing(false);
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
       }, 1200);
-    }, 800);
+    } catch {
+      setIsProcessing(false);
+    }
   };
 
   const handleOpenUPI = () => {

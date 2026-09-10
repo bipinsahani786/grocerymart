@@ -95,9 +95,9 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
         {/* Emerald Green Thin Top Header Bar for Status Bar Alignment */}
         <View
           style={[
-            tw`px-4 pb-2.5 bg-[#047857] z-30 shadow-md flex-row items-center justify-between`,
+            tw`px-4 pb-2 bg-[#047857] z-30 shadow-md flex-row items-center justify-between`,
             {
-              paddingTop: safeTop + 4,
+              paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 12, 8) : 8,
             },
           ]}
         >
@@ -185,9 +185,9 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
       {/* ================= 1. EMERALD TOP HEADER BAR ================= */}
       <View
         style={[
-          tw`px-4 pb-2.5 bg-[#047857] z-30 shadow-md`,
+          tw`px-4 pb-2 bg-[#047857] z-30 shadow-md`,
           {
-            paddingTop: safeTop + 4,
+            paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 12, 8) : 8,
           },
         ]}
       >

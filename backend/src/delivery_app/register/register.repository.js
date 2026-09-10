@@ -1,8 +1,8 @@
-import { prisma } from "../../config/prisma.js";
+import { prisma } from "../../../config/prisma.js";
 
-export class PartnerRepository {
+export class RegisterRepository {
   /**
-   * Find user by phone including user role and delivery profile (Rider)
+   * Find user by phone including role and deliveryProfile
    */
   async findUserByPhone(phone) {
     return await prisma.user.findUnique({
@@ -38,14 +38,14 @@ export class PartnerRepository {
   }
 
   /**
-   * Create a new delivery partner user in a single transactional write
-   * Creates User -> UserRole (Role.DELIVERY_PARTNER) -> Rider (riders table)
+   * Create a new delivery partner user (User -> UserRole -> Rider)
    */
   async createPartnerUser({ phone, name, vehicleType = "EV_BIKE" }) {
     return await prisma.user.create({
       data: {
         phone,
-        name: name || "Delivery Partner",
+        name: name || null,
+        email: null, // explicit: rider email starts as null, must be filled manually
         status: "active",
         isActive: true,
         role: {
@@ -62,6 +62,9 @@ export class PartnerRepository {
             rating: 5.0,
             totalDeliveries: 0,
             totalEarnings: 0.0,
+            subscriptionStatus: "NONE",
+            subscriptionPlan: null,
+            subscriptionExpiry: null,
           },
         },
       },
@@ -95,12 +98,16 @@ export class PartnerRepository {
   }
 
   /**
-   * Update rider details in the riders table
+   * Update or create rider details in the riders table
    */
   async updatePartner(userId, data) {
-    return await prisma.rider.update({
+    return await prisma.rider.upsert({
       where: { userId },
-      data,
+      update: data,
+      create: {
+        userId,
+        ...data,
+      },
       include: {
         user: {
           include: { role: true },
@@ -113,7 +120,7 @@ export class PartnerRepository {
   }
 
   /**
-   * Update basic user details (name, email, avatar, etc.)
+   * Update basic user details (name, email, avatar)
    */
   async updateUser(userId, data) {
     return await prisma.user.update({
@@ -136,6 +143,7 @@ export class PartnerRepository {
             phone: true,
             email: true,
             avatar: true,
+            walletBalance: true,
             status: true,
             isActive: true,
             createdAt: true,
@@ -157,6 +165,22 @@ export class PartnerRepository {
       },
     });
   }
+
+  /**
+   * Count total completed deliveries for a rider
+   */
+  async countCompletedDeliveries(userId) {
+    try {
+      return await prisma.deliveryAssignment.count({
+        where: {
+          partnerId: userId,
+          status: "DELIVERED",
+        },
+      });
+    } catch {
+      return 0;
+    }
+  }
 }
 
-export const partnerRepository = new PartnerRepository();
+export const registerRepository = new RegisterRepository();

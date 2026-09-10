@@ -419,10 +419,13 @@ export class AuthService {
   }
 
   async registerCustomerDirect({ phone, name, dob, referralCode }) {
-    if (!phone || !name || !dob) {
-      throw new AppError("Phone, Name, and DOB are required", 400);
+    if (!phone || !name) {
+      throw new AppError("Phone number and full name are required", 400);
     }
-    const cleanPhone = String(phone).trim();
+    const cleanPhone = String(phone).replace(/\D/g, "");
+    if (cleanPhone.length !== 10) {
+      throw new AppError("Please provide a valid 10-digit mobile number", 400);
+    }
 
     // Verify user doesn't already exist or merge if POS customer
     const existing = await authRepository.findUserByPhone(cleanPhone);
@@ -432,7 +435,7 @@ export class AuthService {
       // Update the existing profile-incomplete record
       activeUser = await authRepository.updateUser(existing.id, {
         name: name.trim(),
-        dob: dob.trim(),
+        dob: dob ? String(dob).trim() : null,
         referralCode: referralCode ? referralCode.trim() : null,
         status: "active",
         role: {
@@ -448,7 +451,7 @@ export class AuthService {
         {
           phone: cleanPhone,
           name: name.trim(),
-          dob: dob.trim(),
+          dob: dob ? String(dob).trim() : null,
           referralCode: referralCode ? referralCode.trim() : null,
           status: "active",
         },

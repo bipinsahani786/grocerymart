@@ -15,6 +15,11 @@ export interface RiderProfile {
   tier: 'Silver' | 'Gold' | 'Platinum Pro';
   joinedDate: string;
   currentHub: string;
+  walletBalance?: number;
+  subscriptionPlan?: string | null;
+  subscriptionExpiry?: string | null;
+  subscriptionStatus?: string | null;
+  hasSubscription?: boolean;
 }
 
 export interface OrderItem {
@@ -73,7 +78,7 @@ export const MOCK_RIDER: RiderProfile = {
   id: 'PRT-88492',
   name: 'Rajesh Kumar Verma',
   phone: '+91 98765 43210',
-  email: 'rajesh.partner@grocerymart.com',
+  email: '',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
   vehicleType: 'EV_BIKE',
   vehicleNumber: 'KA 01 EK 9281',

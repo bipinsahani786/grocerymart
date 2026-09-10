@@ -2,7 +2,6 @@ import { z } from "zod";
 
 const sanitizePhone = (val) => {
   if (typeof val !== "string") return val;
-  // Remove country code (+91 or 91) if 12-13 digits, or non-digits
   let clean = val.replace(/\D/g, "");
   if (clean.length === 12 && clean.startsWith("91")) {
     clean = clean.slice(2);
@@ -13,6 +12,15 @@ const sanitizePhone = (val) => {
 const sanitizeAadhaar = (val) => {
   if (typeof val !== "string") return val;
   return val.replace(/\D/g, "");
+};
+
+const sanitizeOptionalString = (val) => {
+  if (val === undefined || val === null) return undefined;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    return trimmed === "" ? undefined : trimmed;
+  }
+  return val;
 };
 
 /**
@@ -32,9 +40,12 @@ export const sendPartnerOtpSchema = z.object({
           message: "Please enter a valid Indian mobile number starting with 6, 7, 8, or 9",
         })
     ),
-    authMode: z.enum(["LOGIN", "REGISTER"], {
-      invalid_type_error: "Auth mode must be either LOGIN or REGISTER",
-    }).optional().default("LOGIN"),
+    authMode: z
+      .enum(["LOGIN", "REGISTER"], {
+        invalid_type_error: "Auth mode must be either LOGIN or REGISTER",
+      })
+      .optional()
+      .default("LOGIN"),
   }),
 });
 
@@ -65,28 +76,18 @@ export const verifyPartnerOtpSchema = z.object({
         })
     ),
     authMode: z.enum(["LOGIN", "REGISTER"]).optional().default("LOGIN"),
-    vehicleType: z.enum(["EV_BIKE", "PETROL_BIKE", "SCOOTER", "CYCLE"], {
-      invalid_type_error: "Vehicle type must be EV_BIKE, PETROL_BIKE, SCOOTER, or CYCLE",
-    }).optional().default("EV_BIKE"),
-    name: z
-      .string()
-      .trim()
-      .max(60, "Name cannot exceed 60 characters")
-      .optional(),
+    vehicleType: z
+      .enum(["EV_BIKE", "PETROL_BIKE", "SCOOTER", "CYCLE"], {
+        invalid_type_error: "Vehicle type must be EV_BIKE, PETROL_BIKE, SCOOTER, or CYCLE",
+      })
+      .optional()
+      .default("EV_BIKE"),
+    name: z.string().trim().max(60, "Name cannot exceed 60 characters").optional(),
   }),
 });
 
-const sanitizeOptionalString = (val) => {
-  if (val === undefined || val === null) return undefined;
-  if (typeof val === "string") {
-    const trimmed = val.trim();
-    return trimmed === "" ? undefined : trimmed;
-  }
-  return val;
-};
-
 /**
- * Zod validation schema for updating partner profile (Personal, Address, Vehicle, Bank)
+ * Zod validation schema for updating partner profile (Personal, Address, Vehicle, Bank KYC)
  */
 export const updatePartnerProfileSchema = z.object({
   body: z.object({
@@ -187,12 +188,9 @@ export const updatePartnerProfileSchema = z.object({
       sanitizeOptionalString,
       z
         .string()
-        .refine(
-          (val) => !val || /^(0[1-9]|1[0-2])\/\d{4}$/.test(val),
-          {
-            message: "DL Expiry must be in MM/YYYY format (e.g. 12/2028)",
-          }
-        )
+        .refine((val) => !val || /^(0[1-9]|1[0-2])\/\d{4}$/.test(val), {
+          message: "DL Expiry must be in MM/YYYY format (e.g. 12/2028)",
+        })
         .optional()
         .nullable()
     ),
@@ -203,12 +201,9 @@ export const updatePartnerProfileSchema = z.object({
       },
       z
         .string()
-        .refine(
-          (val) => !val || (val.length >= 6 && val.length <= 15 && /^[A-Z0-9]{6,15}$/.test(val)),
-          {
-            message: "Vehicle RC number must be between 6 and 15 alphanumeric characters (e.g. KA01EQ4921)",
-          }
-        )
+        .refine((val) => !val || (val.length >= 6 && val.length <= 15 && /^[A-Z0-9]{6,15}$/.test(val)), {
+          message: "Vehicle RC number must be between 6 and 15 alphanumeric characters (e.g. KA01EQ4921)",
+        })
         .optional()
         .nullable()
     ),
@@ -261,6 +256,7 @@ export const updatePartnerProfileSchema = z.object({
         .nullable()
     ),
     allocatedHub: z.preprocess(sanitizeOptionalString, z.string().optional().nullable()),
+    riderId: z.preprocess(sanitizeOptionalString, z.string().optional().nullable()),
     isOnline: z.boolean().optional(),
     currentLat: z.number().optional().nullable(),
     currentLong: z.number().optional().nullable(),

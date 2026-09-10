@@ -25,6 +25,9 @@ import {
   validateDlExpiry,
   validateRcNumber,
   validateVehicleModel,
+  validatePan,
+  validateIfsc,
+  validateBankAccount,
   formatExpiryDate,
   formatDlNumber,
   formatRcNumber,
@@ -42,14 +45,20 @@ export default function OnboardingScreen() {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
 
   // Step 1: Personal, Profile Photo, Blood Group & Address
-  const [fullName, setFullName] = useState(user?.name || '');
+  const [fullName, setFullName] = useState(
+    user?.name && !['Delivery Captain', 'Delivery Partner', 'New Captain', 'Rajesh Kumar Verma'].includes(user.name)
+      ? user.name
+      : ''
+  );
   const [address, setAddress] = useState('');
   const [pincode, setPincode] = useState('');
   const [city, setCity] = useState('');
   const [aadhaar, setAadhaar] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
-  const [riderPhotoUri, setRiderPhotoUri] = useState<string>(user?.avatar || '');
+  const [riderPhotoUri, setRiderPhotoUri] = useState<string>(
+    user?.avatar && !user.avatar.includes('unsplash') ? user.avatar : ''
+  );
   const [showPhotoPickerModal, setShowPhotoPickerModal] = useState(false);
   const [photoPickerTarget, setPhotoPickerTarget] = useState<'RIDER' | 'VEHICLE'>('RIDER');
 
@@ -68,7 +77,11 @@ export default function OnboardingScreen() {
   });
 
   // Step 3: Bank Account & Payouts
-  const [accountHolder, setAccountHolder] = useState(user?.name || '');
+  const [accountHolder, setAccountHolder] = useState(
+    user?.name && !['Delivery Captain', 'Delivery Partner', 'New Captain', 'Rajesh Kumar Verma'].includes(user.name)
+      ? user.name
+      : ''
+  );
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
   const [panNumber, setPanNumber] = useState('');
@@ -153,15 +166,11 @@ export default function OnboardingScreen() {
       }
     } catch (err) {
       console.error('Error with photo picker:', err);
-      if (photoPickerTarget === 'RIDER') {
-        setRiderPhotoUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400');
-      } else {
-        setVehiclePhotoUri('https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600');
-      }
+      setErrorMsg('Could not load photo. Please try again.');
     }
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     setErrorMsg('');
     if (currentStep === 1) {
       if (!riderPhotoUri) {
@@ -229,8 +238,19 @@ export default function OnboardingScreen() {
       }
       setCurrentStep(3);
     } else if (currentStep === 3) {
-      if (!accountNumber.trim() || !ifscCode.trim() || !panNumber.trim()) {
-        setErrorMsg('Please complete bank payout & PAN details');
+      const bankVal = validateBankAccount(accountNumber);
+      if (!bankVal.isValid) {
+        setErrorMsg(bankVal.error || 'Please enter a valid bank account number (9 to 18 digits)');
+        return;
+      }
+      const ifscVal = validateIfsc(ifscCode);
+      if (!ifscVal.isValid) {
+        setErrorMsg(ifscVal.error || 'Please enter a valid 11-character IFSC code (e.g. HDFC0001248)');
+        return;
+      }
+      const panVal = validatePan(panNumber);
+      if (!panVal.isValid) {
+        setErrorMsg(panVal.error || 'Please enter a valid 10-character PAN number (e.g. ABCDE1234F)');
         return;
       }
       setIsVerifying(true);
@@ -250,13 +270,12 @@ export default function OnboardingScreen() {
           vehicleModel: vehicleModel.trim(),
           vehicleType,
           bankHolderName: (accountHolder || fullName).trim(),
-          bankAccountNumber: accountNumber.trim(),
-          bankIfsc: ifscCode.trim().toUpperCase(),
-          panNumber: panNumber.trim().toUpperCase(),
+          bankAccountNumber: bankVal.cleanValue,
+          bankIfsc: ifscVal.cleanValue,
+          panNumber: panVal.cleanValue,
           profilePhotoUri: riderPhotoUri,
           vehiclePhotoUri: vehiclePhotoUri,
-          allocatedHub: 'Koramangala Express Hub #04',
-          riderId: 'RID-88421',
+          allocatedHub: city.trim() ? `${city.trim()} Central Hub` : 'Central Hub',
         });
         setCurrentStep(4);
       } catch (err: any) {
@@ -274,6 +293,18 @@ export default function OnboardingScreen() {
     { num: 4, label: 'Approval' },
   ];
 
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep((prev) => (prev - 1) as OnboardingStep);
+    } else {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/login');
+      }
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -285,33 +316,50 @@ export default function OnboardingScreen() {
       {/* Native App Top Bar */}
       <View
         style={[
-          tw`px-4 pb-3 border-b`,
+          tw`px-4 pb-2.5 border-b`,
           {
             backgroundColor: Colors.surface,
             borderBottomColor: Colors.border,
-            paddingTop: insets.top + 8,
+            paddingTop: Platform.OS === 'ios' ? Math.max(insets.top - 12, 8) : 8,
           },
         ]}
       >
         <View style={tw`flex-row items-center justify-between`}>
-          {currentStep > 1 && currentStep < 4 ? (
-            <TouchableOpacity
-              onPress={() => setCurrentStep((prev) => (prev - 1) as OnboardingStep)}
-              style={tw`p-1 -ml-1`}
-            >
-              <Ionicons name="chevron-back" size={24} color={Colors.text} />
-            </TouchableOpacity>
-          ) : (
-            <View style={tw`w-6`} />
-          )}
+          <TouchableOpacity
+            onPress={handleBack}
+            style={tw`p-1 -ml-1`}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="chevron-back" size={24} color={Colors.text} />
+          </TouchableOpacity>
 
           <Text style={[tw`text-base font-extrabold`, { color: Colors.text }]}>
             Partner Registration
           </Text>
 
-          <Text style={[tw`text-xs font-bold`, { color: Colors.primaryDark }]}>
-            {currentStep}/4
-          </Text>
+          <View style={tw`flex-row items-center gap-2`}>
+            <Text style={[tw`text-xs font-bold`, { color: Colors.primaryDark }]}>
+              {currentStep}/4
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (user) {
+                  router.replace('/home');
+                } else {
+                  router.replace('/login');
+                }
+              }}
+              style={[
+                tw`px-2.5 py-1 rounded-full`,
+                { backgroundColor: Colors.surfaceLight, borderColor: Colors.border, borderWidth: 1 },
+              ]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[tw`text-[11px] font-bold`, { color: Colors.textSecondary }]}>
+                {user ? 'Home' : 'Main'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Native Segmented Progress Bar */}
@@ -943,9 +991,11 @@ export default function OnboardingScreen() {
                   <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: Colors.textSecondary }]}>
                     IFSC Code
                   </Text>
-                  <Text style={[tw`text-[10px] font-bold`, { color: Colors.blue }]}>
-                    HDFC Bank • Koramangala
-                  </Text>
+                  {ifscCode.length >= 4 && (
+                    <Text style={[tw`text-[10px] font-bold`, { color: Colors.blue }]}>
+                      {ifscCode.slice(0, 4).toUpperCase()} Bank
+                    </Text>
+                  )}
                 </View>
                 <TextInput
                   value={ifscCode}
@@ -1002,7 +1052,7 @@ export default function OnboardingScreen() {
                 Verification Approved!
               </Text>
               <Text style={[tw`text-xs text-center mt-1 max-w-[270px]`, { color: Colors.textSecondary }]}>
-                Welcome to GroceryMart fleet, {user?.name || 'Partner'}! You are ready to start delivering.
+                Welcome to GroceryMart fleet{fullName.trim() ? `, ${fullName.trim()}` : ''}! You are ready to start delivering.
               </Text>
             </View>
 
@@ -1010,15 +1060,19 @@ export default function OnboardingScreen() {
             <View style={[tw`border-t border-b py-2 mb-4`, { borderColor: Colors.border }]}>
               <View style={tw`flex-row justify-between py-2`}>
                 <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>Assigned Dark Store</Text>
-                <Text style={[tw`text-xs font-extrabold`, { color: Colors.text }]}>Koramangala Hub #04</Text>
+                <Text style={[tw`text-xs font-extrabold`, { color: Colors.text }]}>
+                  {city.trim() ? `${city.trim()} Central Hub` : 'Central Hub'}
+                </Text>
               </View>
               <View style={tw`flex-row justify-between py-2`}>
                 <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>Rider Partner ID</Text>
-                <Text style={[tw`text-xs font-extrabold`, { color: Colors.primaryDark }]}>RID-88421</Text>
+                <Text style={[tw`text-xs font-extrabold`, { color: Colors.primaryDark }]}>
+                  {user?.id ? `RID-${user.id.slice(-6).toUpperCase()}` : 'RID-PARTNER'}
+                </Text>
               </View>
               <View style={tw`flex-row justify-between py-2`}>
                 <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>Blood Group</Text>
-                <Text style={[tw`text-xs font-extrabold`, { color: Colors.danger }]}>{bloodGroup}</Text>
+                <Text style={[tw`text-xs font-extrabold`, { color: Colors.danger }]}>{bloodGroup || 'Not Specified'}</Text>
               </View>
               <View style={tw`flex-row justify-between py-2`}>
                 <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>Vehicle</Text>
@@ -1028,7 +1082,9 @@ export default function OnboardingScreen() {
               </View>
               <View style={tw`flex-row justify-between py-2`}>
                 <Text style={[tw`text-xs`, { color: Colors.textSecondary }]}>Payout Account</Text>
-                <Text style={[tw`text-xs font-extrabold`, { color: Colors.text }]}>HDFC Bank (****8841)</Text>
+                <Text style={[tw`text-xs font-extrabold`, { color: Colors.text }]}>
+                  {ifscCode ? `${ifscCode.slice(0, 4)} Bank (****${accountNumber.slice(-4)})` : accountNumber ? `Account (****${accountNumber.slice(-4)})` : 'Verified'}
+                </Text>
               </View>
             </View>
           </View>
@@ -1155,8 +1211,8 @@ export default function OnboardingScreen() {
               {isVerifying
                 ? 'VERIFYING WITH DIGILOCKER...'
                 : currentStep === 3
-                ? 'SUBMIT & GET APPROVED'
-                : 'CONTINUE'}
+                  ? 'SUBMIT & GET APPROVED'
+                  : 'CONTINUE'}
             </Text>
             <Ionicons name="arrow-forward" size={18} color={Colors.white} />
           </TouchableOpacity>
