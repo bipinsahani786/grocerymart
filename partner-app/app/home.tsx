@@ -27,7 +27,7 @@ import { useRouter } from 'expo-router';
 export default function PartnerHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { logout } = useAuthContext();
+  const { logout, refreshProfile } = useAuthContext();
   const {
     activeOrder,
     incomingOrder,
@@ -53,6 +53,7 @@ export default function PartnerHomeScreen() {
     await Promise.all([
       refreshDeliveries(),
       refreshEarnings(),
+      refreshProfile(),
     ]);
     setRefreshing(false);
   };
@@ -121,6 +122,7 @@ export default function PartnerHomeScreen() {
                 onOpenDeposit={() => setShowDepositModal(true)}
                 onOpenSOS={() => setShowSOSModal(true)}
                 onLogout={handleLogout}
+                onOpenWallet={() => setActiveTab('earnings')}
               />
             )}
           </ScrollView>

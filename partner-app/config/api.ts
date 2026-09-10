@@ -17,6 +17,9 @@ export const API_CONFIG = {
     PARTNER: {
       SEND_OTP: '/api/partner/auth/send-otp',
       VERIFY_OTP: '/api/partner/auth/verify-otp',
+      LOGIN_CHECK: '/api/partner/login/check',
+      LOGIN_SEND_OTP: '/api/partner/login/send-otp',
+      LOGIN_VERIFY_OTP: '/api/partner/login/verify-otp',
       PROFILE: '/api/partner/profile',
       DUTY: '/api/partner/duty',
       UPLOAD: '/api/partner/upload',

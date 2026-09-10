@@ -33,17 +33,43 @@ export interface VerifyOtpResponseData {
     rcNumber?: string | null;
     dlNumber?: string | null;
     allocatedHub?: string | null;
+    subscriptionPlan?: string | null;
+    subscriptionExpiry?: string | null;
+    subscriptionStatus?: string | null;
+    hasSubscription?: boolean;
     stores?: any[];
   };
 }
 
 export class PartnerAuthService {
   /**
-   * Request a 4-digit OTP for the given mobile number
+   * Check whether partner user exists, is active, and can log in
+   */
+  async checkUser(phone: string): Promise<ApiResponse<{
+    exists: boolean;
+    canLogin: boolean;
+    name?: string;
+    kycStatus?: string;
+    isKycCompleted?: boolean;
+    message: string;
+    suggestion?: string;
+  }>> {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return await apiClient.post(API_CONFIG.ENDPOINTS.PARTNER.LOGIN_CHECK, {
+      phone: cleanPhone,
+    });
+  }
+
+  /**
+   * Request a 4-digit OTP for the given mobile number (Login vs Register)
    */
   async sendOtp(phone: string, authMode: 'LOGIN' | 'REGISTER' = 'LOGIN'): Promise<ApiResponse> {
     const cleanPhone = phone.replace(/\D/g, '');
-    return await apiClient.post(API_CONFIG.ENDPOINTS.PARTNER.SEND_OTP, {
+    const endpoint = authMode === 'LOGIN'
+      ? API_CONFIG.ENDPOINTS.PARTNER.LOGIN_SEND_OTP
+      : API_CONFIG.ENDPOINTS.PARTNER.SEND_OTP;
+
+    return await apiClient.post(endpoint, {
       phone: cleanPhone,
       authMode,
     });
@@ -61,8 +87,11 @@ export class PartnerAuthService {
   }): Promise<ApiResponse<VerifyOtpResponseData>> {
     const cleanPhone = params.phone.replace(/\D/g, '');
     const cleanOtp = params.otp.trim();
+    const endpoint = params.authMode === 'LOGIN'
+      ? API_CONFIG.ENDPOINTS.PARTNER.LOGIN_VERIFY_OTP
+      : API_CONFIG.ENDPOINTS.PARTNER.VERIFY_OTP;
 
-    return await apiClient.post<VerifyOtpResponseData>(API_CONFIG.ENDPOINTS.PARTNER.VERIFY_OTP, {
+    return await apiClient.post<VerifyOtpResponseData>(endpoint, {
       phone: cleanPhone,
       otp: cleanOtp,
       authMode: params.authMode || 'LOGIN',
@@ -139,6 +168,20 @@ export class PartnerAuthService {
       console.warn('Image upload to R2 error, using local fallback:', err);
       return uri;
     }
+  }
+
+  /**
+   * Buy / Activate rider subscription pass later from the app
+   */
+  async buySubscription(planKey: string, token: string): Promise<ApiResponse> {
+    return await apiClient.post('/api/partner/subscription/buy', { planKey }, { token });
+  }
+
+  /**
+   * Cancel rider subscription
+   */
+  async cancelSubscription(token: string): Promise<ApiResponse> {
+    return await apiClient.post('/api/partner/subscription/cancel', {}, { token });
   }
 }
 

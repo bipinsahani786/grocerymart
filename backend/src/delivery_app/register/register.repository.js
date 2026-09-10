@@ -45,6 +45,7 @@ export class RegisterRepository {
       data: {
         phone,
         name: name || null,
+        email: null, // explicit: rider email starts as null, must be filled manually
         status: "active",
         isActive: true,
         role: {
@@ -61,6 +62,9 @@ export class RegisterRepository {
             rating: 5.0,
             totalDeliveries: 0,
             totalEarnings: 0.0,
+            subscriptionStatus: "NONE",
+            subscriptionPlan: null,
+            subscriptionExpiry: null,
           },
         },
       },
@@ -139,6 +143,7 @@ export class RegisterRepository {
             phone: true,
             email: true,
             avatar: true,
+            walletBalance: true,
             status: true,
             isActive: true,
             createdAt: true,
@@ -159,6 +164,22 @@ export class RegisterRepository {
         },
       },
     });
+  }
+
+  /**
+   * Count total completed deliveries for a rider
+   */
+  async countCompletedDeliveries(userId) {
+    try {
+      return await prisma.deliveryAssignment.count({
+        where: {
+          partnerId: userId,
+          status: "DELIVERED",
+        },
+      });
+    } catch {
+      return 0;
+    }
   }
 }
 

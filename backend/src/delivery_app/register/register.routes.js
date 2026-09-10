@@ -51,4 +51,10 @@ router.put(
  */
 router.put("/duty", verifyToken, registerController.updateDuty);
 
+/**
+ * Rider Subscription Plans (Bought later by rider)
+ */
+router.post("/subscription/buy", verifyToken, registerController.buySubscription);
+router.post("/subscription/cancel", verifyToken, registerController.cancelSubscription);
+
 export default router;

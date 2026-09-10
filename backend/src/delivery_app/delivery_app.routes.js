@@ -1,19 +1,24 @@
 import express from "express";
 import registerRoutes from "./register/register.routes.js";
+import loginRoutes from "./login/login.routes.js";
 import earningsRoutes from "./earnings/earnings.routes.js";
 
 const router = express.Router();
 
 /**
- * 1. Register & Auth Module
- * Supports both /auth/* and /register/* prefixes, as well as direct root actions
+ * 1. Dedicated Login Module
  */
-router.use("/auth", registerRoutes);
+router.use("/login", loginRoutes);
+
+/**
+ * 2. Dedicated Register & Onboarding Module
+ */
 router.use("/register", registerRoutes);
+router.use("/auth", registerRoutes);
 router.use("/", registerRoutes);
 
 /**
- * 2. Earnings & Payouts Module
+ * 3. Dedicated Earnings & Payouts Module
  */
 router.use("/earnings", earningsRoutes);
 

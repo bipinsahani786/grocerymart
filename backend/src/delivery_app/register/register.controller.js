@@ -79,6 +79,30 @@ export class RegisterController {
       data: { url, public_url: url },
     });
   });
+
+  /**
+   * Buy / Activate rider subscription pass later from the app
+   */
+  buySubscription = catchAsync(async (req, res) => {
+    const updated = await registerService.buySubscription(req.user.id, req.body);
+    res.status(200).json({
+      success: true,
+      message: `Rider subscription (${updated.subscriptionPlan}) activated successfully!`,
+      data: updated,
+    });
+  });
+
+  /**
+   * Cancel rider subscription
+   */
+  cancelSubscription = catchAsync(async (req, res) => {
+    const updated = await registerService.cancelSubscription(req.user.id);
+    res.status(200).json({
+      success: true,
+      message: "Rider subscription cancelled successfully",
+      data: updated,
+    });
+  });
 }
 
 export const registerController = new RegisterController();

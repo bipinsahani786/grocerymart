@@ -35,6 +35,7 @@ interface AuthContextType {
   isLoading: boolean;
   isKycCompleted: boolean;
   sendOtp: (phone: string, authMode?: 'LOGIN' | 'REGISTER') => Promise<ApiResponse>;
+  checkUser: (phone: string) => Promise<ApiResponse<any>>;
   loginWithPhone: (
     phone: string,
     otp: string,
@@ -45,6 +46,9 @@ interface AuthContextType {
   completeKyc: (kycData: Partial<PartnerKycData>) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<RiderProfile>) => void;
+  refreshProfile: () => Promise<void>;
+  buySubscription: (planKey: string) => Promise<{ success: boolean; message?: string }>;
+  cancelSubscription: () => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,6 +94,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       if (storedToken) {
         setToken(storedToken);
+        // Silently sync real profile and wallet data from DB
+        partnerAuthService.getProfile(storedToken).then((res) => {
+          if (res.success && res.data) {
+            const pData = res.data;
+            setDeliveryPartner(pData);
+            AsyncStorage.setItem(PARTNER_STORAGE_KEY, JSON.stringify(pData));
+
+            setUser((prev) => {
+              const base = prev || {
+                id: pData.user?.id || '',
+                name: '',
+                phone: pData.user?.phone || '',
+                email: '',
+                avatar: '',
+                vehicleType: 'EV_BIKE',
+                vehicleNumber: '',
+                rating: 5.0,
+                totalTrips: 0,
+                totalDeliveries: 0,
+                acceptanceRate: 100,
+                onTimeRate: 100,
+                tier: 'Silver',
+                joinedDate: 'Recently',
+                currentHub: '',
+              };
+              const fresh: RiderProfile = {
+                ...base,
+                id: pData.user?.id || base.id,
+                name: pData.user?.name || base.name,
+                phone: pData.user?.phone || base.phone,
+                email: pData.user?.email || base.email,
+                avatar: pData.user?.avatar || base.avatar,
+                walletBalance: pData.walletBalance ?? pData.user?.walletBalance ?? 0,
+                vehicleType: pData.vehicleType || base.vehicleType,
+                vehicleNumber: pData.rcNumber || base.vehicleNumber,
+                rating: pData.rating || base.rating,
+                totalTrips: pData.totalDeliveries || base.totalTrips,
+                totalDeliveries: pData.totalDeliveries || base.totalDeliveries,
+                currentHub: pData.allocatedHub || base.currentHub,
+                subscriptionPlan: pData.subscriptionPlan ?? null,
+                subscriptionExpiry: pData.subscriptionExpiry ?? null,
+                subscriptionStatus: pData.subscriptionStatus ?? 'NONE',
+                hasSubscription: Boolean(pData.hasSubscription),
+              };
+              AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(fresh));
+              return fresh;
+            });
+          }
+        }).catch(() => {});
       }
       if (storedPartner) {
         setDeliveryPartner(JSON.parse(storedPartner));
@@ -110,6 +163,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    */
   const sendOtp = async (phone: string, authMode: 'LOGIN' | 'REGISTER' = 'LOGIN'): Promise<ApiResponse> => {
     return await partnerAuthService.sendOtp(phone, authMode);
+  };
+
+  /**
+   * Check if partner account exists and is eligible for login
+   */
+  const checkUser = async (phone: string): Promise<ApiResponse<any>> => {
+    return await partnerAuthService.checkUser(phone);
   };
 
   /**
@@ -270,6 +330,101 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
   };
 
+  const refreshProfile = async () => {
+    let activeToken = token;
+    if (!activeToken) {
+      activeToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+      if (activeToken) setToken(activeToken);
+    }
+    if (!activeToken) return;
+
+    try {
+      const res = await partnerAuthService.getProfile(activeToken);
+      if (res.success && res.data) {
+        const pData = res.data;
+        setDeliveryPartner(pData);
+        await AsyncStorage.setItem(PARTNER_STORAGE_KEY, JSON.stringify(pData));
+
+        const updatedUser: RiderProfile = {
+          id: pData.user?.id || pData.userId || user?.id || '',
+          name: pData.user?.name || user?.name || '',
+          phone: pData.user?.phone || user?.phone || '',
+          email: pData.user?.email || user?.email || '',
+          avatar: pData.user?.avatar || user?.avatar || '',
+          walletBalance: pData.walletBalance ?? pData.user?.walletBalance ?? 0,
+          vehicleType: pData.vehicleType || user?.vehicleType || 'EV_BIKE',
+          vehicleNumber: pData.rcNumber || user?.vehicleNumber || '',
+          status: pData.isOnline ? 'ON_DUTY' : 'OFF_DUTY',
+          rating: pData.rating || 5.0,
+          totalTrips: pData.totalDeliveries || 0,
+          totalDeliveries: pData.totalDeliveries || 0,
+          acceptanceRate: 100,
+          onTimeRate: 100,
+          tier: (pData.totalDeliveries || 0) >= 50 ? 'Platinum Pro' : (pData.totalDeliveries || 0) >= 20 ? 'Gold' : 'Silver',
+          joinedDate: pData.user?.createdAt
+            ? new Date(pData.user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+            : user?.joinedDate || 'Recently',
+          currentHub: pData.allocatedHub || user?.currentHub || '',
+          subscriptionPlan: pData.subscriptionPlan ?? null,
+          subscriptionExpiry: pData.subscriptionExpiry ?? null,
+          subscriptionStatus: pData.subscriptionStatus ?? 'NONE',
+          hasSubscription: Boolean(pData.hasSubscription),
+        };
+
+        setUser(updatedUser);
+        await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
+        setIsKycCompleted(Boolean(pData.isKycCompleted));
+        await AsyncStorage.setItem(KYC_STORAGE_KEY, pData.isKycCompleted ? 'true' : 'false');
+      }
+    } catch (err) {
+      console.warn('Failed to refresh partner profile from server:', err);
+    }
+  };
+
+  const buySubscription = async (planKey: string): Promise<{ success: boolean; message?: string }> => {
+    let activeToken = token;
+    if (!activeToken) {
+      activeToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+      if (activeToken) setToken(activeToken);
+    }
+    if (!activeToken) {
+      return { success: false, message: 'Authentication required' };
+    }
+
+    try {
+      const res = await partnerAuthService.buySubscription(planKey, activeToken);
+      if (res.success) {
+        await refreshProfile();
+        return { success: true, message: res.message || 'Subscription activated successfully' };
+      }
+      return { success: false, message: res.error || res.message || 'Failed to activate subscription' };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Network error while buying subscription' };
+    }
+  };
+
+  const cancelSubscription = async (): Promise<{ success: boolean; message?: string }> => {
+    let activeToken = token;
+    if (!activeToken) {
+      activeToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+      if (activeToken) setToken(activeToken);
+    }
+    if (!activeToken) {
+      return { success: false, message: 'Authentication required' };
+    }
+
+    try {
+      const res = await partnerAuthService.cancelSubscription(activeToken);
+      if (res.success) {
+        await refreshProfile();
+        return { success: true, message: 'Subscription cancelled successfully' };
+      }
+      return { success: false, message: res.error || res.message || 'Failed to cancel subscription' };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Network error while cancelling subscription' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -279,10 +434,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isKycCompleted,
         sendOtp,
+        checkUser,
         loginWithPhone,
         completeKyc,
         logout,
         updateProfile,
+        refreshProfile,
+        buySubscription,
+        cancelSubscription,
       }}
     >
       {children}

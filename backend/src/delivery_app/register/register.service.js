@@ -39,6 +39,49 @@ export class RegisterService {
       throw new AppError("Please enter a valid 10-digit Indian mobile number", 400);
     }
 
+    const existingUser = await registerRepository.findUserByPhone(cleanPhone);
+
+    // Production check: When trying to LOGIN, user must exist and be active
+    if (authMode === "LOGIN") {
+      if (!existingUser) {
+        throw new AppError(
+          `No delivery partner account found with +91 ${cleanPhone}. Please switch to Sign Up to register.`,
+          404
+        );
+      }
+      if (
+        existingUser.status === "banned" ||
+        existingUser.status === "suspended" ||
+        !existingUser.isActive
+      ) {
+        throw new AppError(
+          "Your delivery partner account has been suspended or deactivated. Please contact support.",
+          403
+        );
+      }
+    }
+
+    // Production check: When trying to REGISTER, verify if partner account already exists
+    if (authMode === "REGISTER") {
+      if (existingUser && existingUser.deliveryProfile) {
+        throw new AppError(
+          `This mobile number (+91 ${cleanPhone}) is already registered as a delivery partner. Please sign in to your account.`,
+          409
+        );
+      }
+      if (
+        existingUser &&
+        (existingUser.status === "banned" ||
+          existingUser.status === "suspended" ||
+          !existingUser.isActive)
+      ) {
+        throw new AppError(
+          "This account has been suspended or deactivated. Please contact support.",
+          403
+        );
+      }
+    }
+
     const purpose = authMode === "REGISTER" ? "Partner Registration" : "Partner Login";
     await otpService.sendOtp({ phone: cleanPhone, purpose });
 
@@ -46,6 +89,8 @@ export class RegisterService {
       success: true,
       message: `OTP sent successfully to +91 ${cleanPhone}`,
       phone: cleanPhone,
+      userExists: Boolean(existingUser),
+      isRegistered: Boolean(existingUser?.deliveryProfile),
     };
   }
 
@@ -70,15 +115,30 @@ export class RegisterService {
     let user = await registerRepository.findUserByPhone(cleanPhone);
     let isNewUser = false;
 
-    if (!user) {
-      user = await registerRepository.createPartnerUser({
-        phone: cleanPhone,
-        name: name || "Delivery Partner",
-        vehicleType,
-      });
-      isNewUser = true;
+    if (authMode === "LOGIN") {
+      if (!user) {
+        throw new AppError(
+          `No delivery partner account found with +91 ${cleanPhone}. Please register first.`,
+          404
+        );
+      }
+      if (user.status === "banned" || user.status === "suspended" || !user.isActive) {
+        throw new AppError(
+          "Your delivery partner account has been suspended or deactivated. Please contact support.",
+          403
+        );
+      }
     } else {
-      await registerRepository.ensurePartnerProfile(user.id, vehicleType);
+      if (!user) {
+        user = await registerRepository.createPartnerUser({
+          phone: cleanPhone,
+          name: name || "Delivery Partner",
+          vehicleType,
+        });
+        isNewUser = true;
+      } else {
+        await registerRepository.ensurePartnerProfile(user.id, vehicleType);
+      }
     }
 
     // Fetch full profile from database
@@ -143,14 +203,81 @@ export class RegisterService {
       throw new AppError("Delivery partner profile not found", 404);
     }
 
+    const completedDeliveries = await registerRepository.countCompletedDeliveries(userId);
+
     const isKycCompleted =
       partnerProfile.kycStatus === "APPROVED" ||
       Boolean(partnerProfile.aadhaarNumber && partnerProfile.dlNumber && partnerProfile.rcNumber);
 
+    // Dynamic subscription check (NONE by default, only active if bought)
+    let subscriptionStatus = partnerProfile.subscriptionStatus || "NONE";
+    let isSubscribed = false;
+    if (subscriptionStatus === "ACTIVE" && partnerProfile.subscriptionExpiry) {
+      if (new Date(partnerProfile.subscriptionExpiry) > new Date()) {
+        isSubscribed = true;
+      } else {
+        subscriptionStatus = "EXPIRED";
+      }
+    }
+
     return {
       ...partnerProfile,
+      walletBalance: partnerProfile.user?.walletBalance ?? 0,
+      totalDeliveries: completedDeliveries > 0 ? completedDeliveries : (partnerProfile.totalDeliveries || 0),
       isKycCompleted,
+      subscriptionPlan: isSubscribed ? partnerProfile.subscriptionPlan : null,
+      subscriptionExpiry: isSubscribed ? partnerProfile.subscriptionExpiry : null,
+      subscriptionStatus,
+      hasSubscription: isSubscribed,
     };
+  }
+
+  /**
+   * Buy / Activate rider subscription pass later from the app
+   */
+  async buySubscription(userId, { planKey = "MONTHLY_PRO" } = {}) {
+    const PLANS = {
+      WEEKLY_BOOST: {
+        name: "Weekly Captain Boost",
+        durationDays: 7,
+        price: 49,
+      },
+      MONTHLY_PRO: {
+        name: "Monthly Captain Pro",
+        durationDays: 30,
+        price: 149,
+      },
+      ANNUAL_ELITE: {
+        name: "Annual Elite Pass",
+        durationDays: 365,
+        price: 999,
+      },
+    };
+
+    const selected = PLANS[planKey] || PLANS.MONTHLY_PRO;
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + selected.durationDays);
+
+    await registerRepository.updatePartner(userId, {
+      subscriptionPlan: selected.name,
+      subscriptionExpiry: expiry,
+      subscriptionStatus: "ACTIVE",
+    });
+
+    return await this.getProfile(userId);
+  }
+
+  /**
+   * Cancel rider subscription
+   */
+  async cancelSubscription(userId) {
+    await registerRepository.updatePartner(userId, {
+      subscriptionStatus: "NONE",
+      subscriptionPlan: null,
+      subscriptionExpiry: null,
+    });
+
+    return await this.getProfile(userId);
   }
 
   /**
