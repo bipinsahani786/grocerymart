@@ -138,19 +138,18 @@ export const ActiveTaskCard: React.FC<ActiveTaskCardProps> = ({ onOpenActiveTask
           </View>
         </View>
 
-        {/* Action Trigger */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={triggerIncomingOrderSimulation}
+        {/* Live Radar Pulse Indicator */}
+        <View
           style={[
-            tw`px-3 py-1.5 rounded-lg border`,
-            { backgroundColor: Colors.surfaceLight, borderColor: Colors.border },
+            tw`px-2.5 py-1 rounded-full border flex-row items-center`,
+            { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
           ]}
         >
-          <Text style={[tw`text-[11px] font-bold`, { color: Colors.primaryDark }]}>
-            Test Order
+          <View style={tw`w-2 h-2 rounded-full bg-emerald-500 mr-1.5`} />
+          <Text style={[tw`text-[10px] font-bold`, { color: '#047857' }]}>
+            Live Radar
           </Text>
-        </TouchableOpacity>
+        </View>
       </View>
     </View>
   );

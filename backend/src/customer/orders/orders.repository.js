@@ -99,6 +99,7 @@ export class CustomerOrdersRepository {
     } = orderData;
 
     const orderNumber = this.generateOrderNumber(type);
+    const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
     return await prisma.$transaction(async (tx) => {
       // 1. Create Main Order Record
@@ -116,6 +117,8 @@ export class CustomerOrdersRepository {
           taxAmount: parseFloat(taxAmount) || 0,
           deliveryFee: parseFloat(deliveryFee) || 0,
           totalAmount: parseFloat(totalAmount) || 0,
+          deliveryOtp: type === "CLICK_COLLECT" ? null : deliveryOtp,
+          pickupPin: type === "CLICK_COLLECT" ? deliveryOtp : null,
           customerNote: customerNote || null,
           items: {
             create: (items || []).map((item) => ({
@@ -207,6 +210,19 @@ export class CustomerOrdersRepository {
           select: { id: true, name: true, address: true, phone: true },
         },
         address: true,
+        deliveryAssignment: {
+          include: {
+            partner: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                avatar: true,
+                deliveryProfile: true,
+              },
+            },
+          },
+        },
         statusHistory: {
           orderBy: { createdAt: "asc" },
         },
@@ -228,6 +244,19 @@ export class CustomerOrdersRepository {
           select: { id: true, name: true, address: true, phone: true },
         },
         address: true,
+        deliveryAssignment: {
+          include: {
+            partner: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                avatar: true,
+                deliveryProfile: true,
+              },
+            },
+          },
+        },
         statusHistory: {
           orderBy: { createdAt: "asc" },
         },

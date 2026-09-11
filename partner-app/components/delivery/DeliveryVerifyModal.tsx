@@ -28,13 +28,13 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
 
   const isCod = order.paymentMode === 'CASH_ON_DELIVERY';
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (isCod && !cashCollectedCheck) {
       setErrorMsg('Please confirm you collected ₹' + order.totalAmount + ' in cash.');
       return;
     }
 
-    const res = completeDelivery(otp);
+    const res = await completeDelivery(otp);
     if (res.success) {
       setErrorMsg('');
       setOtp('');

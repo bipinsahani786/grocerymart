@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, RefreshControl, StyleSheet, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { NavigationBar } from 'expo-navigation-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthContext } from '../context/AuthContext';
 import { useDeliveryContext } from '../context/DeliveryContext';
@@ -69,6 +70,7 @@ export default function PartnerHomeScreen() {
       {/* Native StatusBar Matched with Emerald Green Header */}
       <RNStatusBar backgroundColor="#047857" barStyle="light-content" />
       <StatusBar style="light" />
+      <NavigationBar style="light" />
 
       {/* RENDER ACTIVE TAB WITH SAFE AREA COMPLIANCE */}
       {activeTab === 'home' ? (
@@ -156,7 +158,7 @@ export default function PartnerHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#047857',
   },
   tabContainer: {
     flex: 1,
