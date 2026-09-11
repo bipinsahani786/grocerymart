@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { LogBox } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { NavigationBar } from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../context/AuthContext';
 import { DutyProvider } from '../context/DutyContext';
@@ -14,8 +15,9 @@ import React from 'react';
 LogBox.ignoreLogs([
   'Unable to activate keep awake',
   'tracking-X relative letter spacing classes require font-size to be set',
+  "Can't perform a React state update on a component that hasn't mounted yet",
+  "Can't perform a React state update on an unmounted component",
 ]);
-
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,8 +31,14 @@ const queryClient = new QueryClient({
 function InitialLayout() {
   return (
     <>
+      <NavigationBar style="light" />
       <SettingsToast />
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: '#047857' },
+        }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="onboarding" />
@@ -42,7 +50,7 @@ function InitialLayout() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#047857' }}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <DutyProvider>

@@ -32,14 +32,14 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
   return (
     <View
       style={[
-        tw`px-4 pb-2 bg-[#047857] shadow-md z-30`,
+        tw`px-4 pb-1.5 bg-[#047857] shadow-md z-30`,
         {
-          paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 12, 8) : 8,
+          paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 18, 4) : 2,
         },
       ]}
     >
       {/* Centered Brand Header (Clean Professional Design) */}
-      <View style={tw`flex-row items-center justify-center mb-2.5`}>
+      <View style={tw`flex-row items-center justify-center mb-1`}>
         <Image
           source={require('../../assets/images/zytrixon.png')}
           style={[tw`w-6 h-6 mr-2`, { tintColor: '#FFFFFF' }]}

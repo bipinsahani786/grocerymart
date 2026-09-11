@@ -107,6 +107,17 @@ export const CustomPartnerNavBar: React.FC<CustomPartnerNavBarProps> = ({
           </Defs>
           <Path d={pathData} fill="url(#emeraldBarGrad)" />
         </Svg>
+        {/* Solid green extension for Android navigation bar / gesture pill area */}
+        <View
+          style={{
+            position: 'absolute',
+            bottom: -100,
+            left: 0,
+            right: 0,
+            height: 100,
+            backgroundColor: '#064E3B',
+          }}
+        />
       </View>
 
       {/* Floating Center Action Button */}

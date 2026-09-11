@@ -2,21 +2,15 @@ import React, { createContext, useContext, useState, useRef, useEffect, useCallb
 import {
   DeliveryOrder,
   EarningSummary,
-  MOCK_INCOMING_ORDER,
-  MOCK_PAST_TRIPS,
 } from '../constants/mockData';
 import {
   partnerEarningsService,
   EarningsSummaryData,
 } from '../services/partnerEarnings.service';
+import { partnerOrdersService } from '../services/partnerOrders.service';
 import { useAuthContext } from './AuthContext';
+import { useDutyContext } from './DutyContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export interface AreaRider {
-  id: string;
-  name: string;
-  distanceKm: number;
-}
 
 export interface DispatchInfo {
   currentRiderIndex: number;
@@ -36,10 +30,10 @@ export interface DeliveryContextType {
   isLoadingEarnings: boolean;
   dispatchInfo: DispatchInfo;
   acceptIncomingOrder: () => void;
-  rejectIncomingOrder: () => void;
+  rejectIncomingOrder: (overrideId?: string, reason?: string) => void;
   updateActiveOrderStatus: (status: DeliveryOrder['status']) => void;
   toggleItemScanned: (itemId: string) => void;
-  completeDelivery: (enteredOtp: string) => { success: boolean; message: string };
+  completeDelivery: (enteredOtp: string) => Promise<{ success: boolean; message: string }>;
   completeActiveDelivery: () => void;
   triggerIncomingOrderSimulation: () => void;
   withdrawEarnings: (amount: number) => Promise<{ success: boolean; message: string; data?: any }>;
@@ -62,28 +56,31 @@ const DEFAULT_ZERO_EARNINGS: EarningSummary = {
   pendingWithdrawal: 0,
 };
 
-const MOCK_AREA_RIDERS: AreaRider[] = [
-  { id: 'r1', name: 'Captain Sahil (You - Nearest)', distanceKm: 0.5 },
-  { id: 'r2', name: 'Captain Rahul (Nearby Partner)', distanceKm: 1.2 },
-  { id: 'r3', name: 'Captain Amit (Nearby Partner)', distanceKm: 2.1 },
-];
-
 const DeliveryContext = createContext<DeliveryContextType | undefined>(undefined);
 
 export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { token } = useAuthContext();
+  const { token, user } = useAuthContext();
+  const { isOnline } = useDutyContext();
+
   const [incomingOrder, setIncomingOrder] = useState<DeliveryOrder | null>(null);
   const [activeOrder, setActiveOrder] = useState<DeliveryOrder | null>(null);
-  const [orderHistory, setOrderHistory] = useState<DeliveryOrder[]>(MOCK_PAST_TRIPS);
+  const [completedOrders, setCompletedOrders] = useState<DeliveryOrder[]>([]);
   const [earningsSummary, setEarningsSummary] = useState<EarningSummary>(DEFAULT_ZERO_EARNINGS);
   const [earningsData, setEarningsData] = useState<EarningsSummaryData | null>(null);
   const [isLoadingEarnings, setIsLoadingEarnings] = useState<boolean>(false);
 
-  // Sequential Rider Dispatch State
-  const [currentRiderIndex, setCurrentRiderIndex] = useState(0);
-  const [countdownSeconds, setCountdownSeconds] = useState(20);
+  // Countdown timer for incoming order dispatch offer (30s)
+  const [countdownSeconds, setCountdownSeconds] = useState(30);
   const timerRef = useRef<any>(null);
+  const isMountedRef = useRef(true);
 
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      stopDispatchTimer();
+    };
+  }, []);
 
   const stopDispatchTimer = () => {
     if (timerRef.current) {
@@ -92,74 +89,81 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const startDispatchTimer = (nextIndex: number) => {
+  const startDispatchTimer = (orderId: string) => {
     stopDispatchTimer();
-    setCountdownSeconds(20);
+    setCountdownSeconds(30);
 
     timerRef.current = setInterval(() => {
       setCountdownSeconds((prev) => {
         if (prev <= 1) {
           stopDispatchTimer();
-          // Timeout -> Pass order to next rider in area queue
-          advanceDispatchQueue(nextIndex + 1);
-          return 20;
+          // Timeout -> Automatically reject and pass order to next rider
+          rejectIncomingOrder(orderId, 'Offer timed out');
+          return 30;
         }
         return prev - 1;
       });
     }, 1000);
   };
 
-  const advanceDispatchQueue = (nextIdx: number) => {
-    if (nextIdx < MOCK_AREA_RIDERS.length) {
-      setCurrentRiderIndex(nextIdx);
-      const currentRider = MOCK_AREA_RIDERS[nextIdx];
-      setIncomingOrder({
-        ...MOCK_INCOMING_ORDER,
-        id: `ord_live_${Date.now()}`,
-        orderNumber: `GM-${Math.floor(10000 + Math.random() * 90000)}`,
-        createdAt: 'Just now',
-        storeDistanceKm: currentRider.distanceKm,
-      });
-      startDispatchTimer(nextIdx);
-    } else {
-      // All riders in area declined or timed out
-      stopDispatchTimer();
-      setIncomingOrder(null);
-      setCurrentRiderIndex(0);
+  /**
+   * Reject / Pass incoming order to next online rider
+   */
+  const rejectIncomingOrder = async (overrideId?: string, reason = 'Rider passed order') => {
+    stopDispatchTimer();
+    const targetOrderId = overrideId || incomingOrder?.id;
+    setIncomingOrder(null);
+
+    if (targetOrderId) {
+      try {
+        const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+        await partnerOrdersService.rejectOrder(targetOrderId, reason, activeToken);
+      } catch (err) {
+        console.error('Failed to reject order on backend:', err);
+      }
     }
   };
 
-  const triggerIncomingOrderSimulation = () => {
-    setCurrentRiderIndex(0);
-    const firstRider = MOCK_AREA_RIDERS[0];
-    setIncomingOrder({
-      ...MOCK_INCOMING_ORDER,
-      id: `ord_live_${Date.now()}`,
-      orderNumber: `GM-${Math.floor(10000 + Math.random() * 90000)}`,
-      createdAt: 'Just now',
-      storeDistanceKm: firstRider.distanceKm,
-    });
-    startDispatchTimer(0);
-  };
-
-  const acceptIncomingOrder = () => {
+  /**
+   * Accept incoming order
+   */
+  const acceptIncomingOrder = async () => {
     stopDispatchTimer();
     if (!incomingOrder) return;
-    const accepted: DeliveryOrder = {
-      ...incomingOrder,
-      status: 'ACCEPTED',
-    };
-    setActiveOrder(accepted);
-    setIncomingOrder(null);
+    const targetOrderId = incomingOrder.id;
+
+    try {
+      const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+      const res = await partnerOrdersService.acceptOrder(targetOrderId, activeToken);
+      if (res.success && res.data) {
+        setActiveOrder(res.data);
+      } else {
+        setActiveOrder({ ...incomingOrder, status: 'ACCEPTED' });
+      }
+    } catch (err) {
+      console.error('Failed to accept order on backend:', err);
+      setActiveOrder({ ...incomingOrder, status: 'ACCEPTED' });
+    } finally {
+      setIncomingOrder(null);
+    }
   };
 
-  const rejectIncomingOrder = () => {
-    advanceDispatchQueue(currentRiderIndex + 1);
-  };
-
-  const updateActiveOrderStatus = (status: DeliveryOrder['status']) => {
+  /**
+   * Update active order status
+   */
+  const updateActiveOrderStatus = async (status: DeliveryOrder['status']) => {
     if (!activeOrder) return;
     setActiveOrder((prev) => (prev ? { ...prev, status } : null));
+
+    try {
+      const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+      const res = await partnerOrdersService.updateOrderStatus(activeOrder.id, status, activeToken);
+      if (res.success && res.data) {
+        setActiveOrder(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to sync status to backend:', err);
+    }
   };
 
   const toggleItemScanned = (itemId: string) => {
@@ -173,94 +177,117 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
-  const completeDelivery = (enteredOtp: string): { success: boolean; message: string } => {
+  /**
+   * Verify delivery OTP and complete order
+   */
+  const completeDelivery = async (
+    enteredOtp: string
+  ): Promise<{ success: boolean; message: string }> => {
     if (!activeOrder) {
       return { success: false, message: 'No active delivery order found' };
     }
 
-    if (enteredOtp.trim() !== activeOrder.otp && enteredOtp.trim() !== '1234') {
-      return { success: false, message: 'Invalid OTP! Please check with customer.' };
+    try {
+      const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+      const res = await partnerOrdersService.completeDelivery(
+        activeOrder.id,
+        enteredOtp,
+        activeToken
+      );
+
+      if (res.success && res.data) {
+        const delivered = res.data;
+        setCompletedOrders((prev) => [delivered, ...prev.filter((o) => o.id !== delivered.id)]);
+        setActiveOrder(null);
+        await fetchEarnings();
+        return { success: true, message: 'Order delivered successfully!' };
+      } else {
+        return {
+          success: false,
+          message: res.error || res.message || 'Invalid OTP! Please check with customer.',
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.message || 'Verification error',
+      };
+    }
+  };
+
+  const completeActiveDelivery = async () => {
+    if (!activeOrder) return;
+    await completeDelivery(activeOrder.otp || '1234');
+  };
+
+  /**
+   * Fetch active orders and completed trips from backend
+   */
+  const refreshDeliveries = useCallback(async (): Promise<void> => {
+    try {
+      const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+      if (!activeToken) return;
+
+      // 1. Fetch active ongoing order
+      const activeRes = await partnerOrdersService.getActiveOrder(activeToken);
+      if (isMountedRef.current && activeRes.success) {
+        setActiveOrder(activeRes.data || null);
+      }
+
+      // 2. Fetch completed trips history
+      const tripsRes = await partnerOrdersService.getCompletedTrips(activeToken);
+      if (isMountedRef.current && tripsRes.success && tripsRes.data) {
+        setCompletedOrders(tripsRes.data);
+      }
+    } catch (err) {
+      console.error('Failed to refresh deliveries:', err);
+    }
+  }, [token]);
+
+  /**
+   * Real-Time Incoming Order Polling:
+   * When rider is online, not on an active delivery, and no popup is active,
+   * poll backend for incoming orders.
+   */
+  useEffect(() => {
+    if (!isOnline || activeOrder || incomingOrder) {
+      return;
     }
 
-    const completed: DeliveryOrder = {
-      ...activeOrder,
-      status: 'DELIVERED',
-      deliveredAt: 'Just now (' + (activeOrder.customerEstimatedMins + activeOrder.storeEstimatedMins + 4) + ' mins)',
+    let isSubscribed = true;
+
+    const pollIncoming = async () => {
+      try {
+        const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
+        if (!activeToken) return;
+
+        const res = await partnerOrdersService.getIncomingOrder(activeToken);
+        if (isSubscribed && isMountedRef.current && res.success && res.data) {
+          setIncomingOrder(res.data);
+          startDispatchTimer(res.data.id);
+        }
+      } catch (err) {
+        // Silent catch for background polling
+      }
     };
 
-    setOrderHistory((prev) => [completed, ...prev]);
+    // Immediate check
+    pollIncoming();
 
-    // Asynchronously record delivery earnings in backend database
-    (async () => {
-      try {
-        let activeToken = token;
-        if (!activeToken) {
-          activeToken = await AsyncStorage.getItem('@grocerymart_partner_token');
-        }
-        await partnerEarningsService.recordDeliveryEarnings(
-          {
-            orderId: completed.id,
-            orderNumber: completed.orderNumber,
-            payoutEarnings: completed.payoutEarnings,
-            tipAmount: completed.tipAmount,
-            surgeBonus: completed.surgeBonus,
-            isCod: completed.paymentMode === 'CASH_ON_DELIVERY',
-            codAmount: completed.paymentMode === 'CASH_ON_DELIVERY' ? completed.totalAmount : 0,
-          },
-          activeToken
-        );
-        await fetchEarnings();
-      } catch (err) {
-        console.error('Failed to record delivery in backend:', err);
-      }
-    })();
-
-    setActiveOrder(null);
-    return { success: true, message: 'Order delivered successfully!' };
-  };
-
-  const completeActiveDelivery = () => {
-    if (!activeOrder) return;
-    const completed: DeliveryOrder = {
-      ...activeOrder,
-      status: 'DELIVERED',
-      deliveredAt: 'Just now',
+    // Poll every 5 seconds
+    const interval = setInterval(pollIncoming, 5000);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
     };
-    setOrderHistory((prev) => [completed, ...prev]);
-
-    (async () => {
-      try {
-        let activeToken = token;
-        if (!activeToken) {
-          activeToken = await AsyncStorage.getItem('@grocerymart_partner_token');
-        }
-        await partnerEarningsService.recordDeliveryEarnings(
-          {
-            orderId: completed.id,
-            orderNumber: completed.orderNumber,
-            payoutEarnings: completed.payoutEarnings,
-            tipAmount: completed.tipAmount,
-            surgeBonus: completed.surgeBonus,
-            isCod: completed.paymentMode === 'CASH_ON_DELIVERY',
-            codAmount: completed.paymentMode === 'CASH_ON_DELIVERY' ? completed.totalAmount : 0,
-          },
-          activeToken
-        );
-        await fetchEarnings();
-      } catch (err) {
-        console.error('Failed to record delivery in backend:', err);
-      }
-    })();
-
-    setActiveOrder(null);
-  };
+  }, [isOnline, activeOrder, incomingOrder, token]);
 
   /**
    * Fetch real earnings data from backend
    */
   const fetchEarnings = useCallback(
     async (range: 'TODAY' | 'WEEK' | 'MONTH' = 'TODAY') => {
-      setIsLoadingEarnings(true);
+      if (isMountedRef.current) setIsLoadingEarnings(true);
       try {
         let activeToken = token;
         if (!activeToken) {
@@ -268,7 +295,7 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
 
         const res = await partnerEarningsService.getEarningsSummary(range, activeToken);
-        if (res.success && res.data) {
+        if (isMountedRef.current && res.success && res.data) {
           setEarningsData(res.data);
           setEarningsSummary({
             todayTotal: res.data.periodMetrics.totalEarned,
@@ -292,14 +319,14 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } catch (err) {
         console.error('Failed to fetch earnings summary:', err);
       } finally {
-        setIsLoadingEarnings(false);
+        if (isMountedRef.current) setIsLoadingEarnings(false);
       }
     },
     [token]
   );
 
   /**
-   * Live Instant Withdrawal to verified KYC bank account
+   * Instant Withdrawal
    */
   const withdrawEarnings = async (
     amount: number
@@ -366,13 +393,15 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const refreshDeliveries = async (): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, 800));
+  // Immediate poll trigger (replaces mock simulation trigger)
+  const triggerIncomingOrderSimulation = () => {
+    refreshDeliveries();
   };
 
   useEffect(() => {
     fetchEarnings('TODAY');
-  }, [fetchEarnings]);
+    refreshDeliveries();
+  }, [fetchEarnings, refreshDeliveries]);
 
   useEffect(() => {
     return () => {
@@ -380,24 +409,22 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  const currentRider = MOCK_AREA_RIDERS[currentRiderIndex] || MOCK_AREA_RIDERS[0];
-
   return (
     <DeliveryContext.Provider
       value={{
         incomingOrder,
         activeOrder,
-        orderHistory,
-        completedOrders: orderHistory,
+        orderHistory: completedOrders,
+        completedOrders,
         earningsSummary,
         earningsData,
         isLoadingEarnings,
         dispatchInfo: {
-          currentRiderIndex,
-          totalAreaRiders: MOCK_AREA_RIDERS.length,
-          currentRiderName: currentRider.name,
+          currentRiderIndex: 0,
+          totalAreaRiders: 1,
+          currentRiderName: user?.name ? `Captain ${user.name} (You)` : 'You (Nearest Captain)',
           countdownSeconds,
-          riderDistanceKm: currentRider.distanceKm,
+          riderDistanceKm: incomingOrder?.storeDistanceKm || 0.8,
         },
         acceptIncomingOrder,
         rejectIncomingOrder,
@@ -424,4 +451,3 @@ export const useDeliveryContext = () => {
   }
   return context;
 };
-

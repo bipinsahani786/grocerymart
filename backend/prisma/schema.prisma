@@ -503,6 +503,7 @@ model Order {
   taxAmount       Float         @default(0)
   deliveryFee     Float         @default(0)
   totalAmount     Float
+  deliveryOtp     String?       @default("1234") @map("delivery_otp")
   notes           String?
   customerNote    String?
   createdAt       DateTime      @default(now())
@@ -514,6 +515,7 @@ model Order {
   deliveryAssignment DeliveryAssignment?
   statusHistory   OrderStatusHistory[]
   supportTickets  SupportTicket[]
+  rejections      DeliveryRejection[]
 
   @@map("orders")
   @@index([storeId])
@@ -559,14 +561,28 @@ model OrderStatusHistory {
 }
 
 model DeliveryAssignment {
-  id          String   @id @default(uuid())
-  orderId     String   @unique
-  order       Order    @relation(fields: [orderId], references: [id])
+  id          String    @id @default(uuid())
+  orderId     String    @unique
+  order       Order     @relation(fields: [orderId], references: [id])
   partnerId   String
-  partner     User     @relation("DeliveryPartnerAssignments", fields: [partnerId], references: [id])
-  status      String   @default("ASSIGNED")
-  createdAt   DateTime @default(now())
+  partner     User      @relation("DeliveryPartnerAssignments", fields: [partnerId], references: [id])
+  status      String    @default("ASSIGNED")
+  acceptedAt  DateTime? @map("accepted_at")
+  deliveredAt DateTime? @map("delivered_at")
+  createdAt   DateTime  @default(now())
   @@map("delivery_assignments")
+}
+
+model DeliveryRejection {
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  riderId   String   @map("rider_id")
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([orderId, riderId])
+  @@map("delivery_rejections")
 }
 
 model Payment {

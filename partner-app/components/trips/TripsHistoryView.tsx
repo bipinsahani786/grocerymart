@@ -22,7 +22,7 @@ export const TripsHistoryView: React.FC = () => {
     return true;
   });
 
-  const totalEarnings = filteredOrders.reduce((sum, o) => sum + (o.totalPayout || 110), 0);
+  const totalEarnings = filteredOrders.reduce((sum, o) => sum + (o.totalPayout || 0), 0);
 
   return (
     <View style={[tw`px-5 pt-3 pb-36 bg-white flex-1`, { minHeight: windowHeight }]}>
@@ -74,7 +74,7 @@ export const TripsHistoryView: React.FC = () => {
               {t.totalEarned}
             </Text>
             <Text style={[Typography.amountLarge, { color: '#047857', fontSize: 14, marginTop: 1 }]}>
-              ₹{totalEarnings || 1600}
+              ₹{totalEarnings}
             </Text>
           </View>
 
@@ -85,7 +85,7 @@ export const TripsHistoryView: React.FC = () => {
               {t.tripsDelivered}
             </Text>
             <Text style={[Typography.amountLarge, { color: '#0F172A', fontSize: 14, marginTop: 1 }]}>
-              {filteredOrders.length || 14}
+              {filteredOrders.length}
             </Text>
           </View>
 
@@ -96,7 +96,7 @@ export const TripsHistoryView: React.FC = () => {
               {t.avgPerOrder}
             </Text>
             <Text style={[Typography.amountLarge, { color: '#0F172A', fontSize: 14, marginTop: 1 }]}>
-              ₹{Math.round(totalEarnings / Math.max(filteredOrders.length, 1)) || 114}
+              ₹{filteredOrders.length > 0 ? Math.round(totalEarnings / filteredOrders.length) : 0}
             </Text>
           </View>
         </View>

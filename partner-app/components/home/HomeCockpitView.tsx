@@ -121,14 +121,14 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
       {/* ================= 1. EMERALD TOP APP BAR WITH LIVE LOCATION ================= */}
       <View
         style={[
-          tw`px-4 pb-2 bg-[#047857] z-30 shadow-md`,
+          tw`px-4 pb-1.5 bg-[#047857] z-30 shadow-md`,
           {
-            paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 12, 8) : 8,
+            paddingTop: Platform.OS === 'ios' ? Math.max(safeTop - 18, 4) : 2,
           },
         ]}
       >
         {/* Centered Brand Header (Clean Professional Design) */}
-        <View style={tw`flex-row items-center justify-center mb-2.5`}>
+        <View style={tw`flex-row items-center justify-center mb-1`}>
           <Image
             source={require('../../assets/images/zytrixon.png')}
             style={[tw`w-6 h-6 mr-2`, { tintColor: '#FFFFFF' }]}
@@ -419,18 +419,6 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
                 <Ionicons name="wallet-outline" size={12} color="#047857" />
                 <Text style={[Typography.caption, { color: '#334155', fontSize: 8, fontWeight: '700', marginTop: 0.5 }]}>
                   {t.wallet}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Test Order */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={triggerIncomingOrderSimulation}
-                style={tw`flex-1 py-1.5 rounded-xl bg-emerald-600 border border-emerald-500 items-center justify-center shadow-sm`}
-              >
-                <Ionicons name="flash" size={12} color="#FFFFFF" />
-                <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 8, fontWeight: '800', marginTop: 0.5 }]}>
-                  {t.testOrder}
                 </Text>
               </TouchableOpacity>
             </View>

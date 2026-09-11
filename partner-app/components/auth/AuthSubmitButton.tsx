@@ -26,41 +26,47 @@ export const AuthSubmitButton: React.FC<AuthSubmitButtonProps> = ({
   };
 
   return (
-    <View
-      style={[
-        tw`absolute bottom-0 left-0 right-0 px-5 pt-3 border-t`,
-        {
-          backgroundColor: Colors.surface,
-          borderTopColor: Colors.border,
-          paddingBottom: Math.max(insets.bottom, 12) + 6,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        activeOpacity={0.85}
-        disabled={loading}
-        onPress={onSubmit}
+    <View style={tw`absolute bottom-0 left-0 right-0`}>
+      <View
         style={[
-          tw`rounded-2xl py-4 flex-row justify-center items-center shadow-md`,
-          { backgroundColor: loading ? Colors.primaryLight : Colors.primary },
+          tw`px-5 pt-3 border-t`,
+          {
+            backgroundColor: Colors.surface,
+            borderTopColor: Colors.border,
+            paddingBottom: 14,
+          },
         ]}
       >
-        {loading ? (
-          <ActivityIndicator size="small" color={Colors.white} style={tw`mr-2`} />
-        ) : (
-          <>
-            <Text
-              style={[
-                tw`text-sm font-black mr-2 tracking-wide`,
-                { color: Colors.white },
-              ]}
-            >
-              {getButtonLabel()}
-            </Text>
-            <Ionicons name="arrow-forward" size={18} color={Colors.white} />
-          </>
-        )}
-      </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          disabled={loading}
+          onPress={onSubmit}
+          style={[
+            tw`rounded-2xl py-4 flex-row justify-center items-center shadow-md`,
+            { backgroundColor: loading ? Colors.primaryLight : Colors.primary },
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={Colors.white} style={tw`mr-2`} />
+          ) : (
+            <>
+              <Text
+                style={[
+                  tw`text-sm font-black mr-2 tracking-wide`,
+                  { color: Colors.white },
+                ]}
+              >
+                {getButtonLabel()}
+              </Text>
+              <Ionicons name="arrow-forward" size={18} color={Colors.white} />
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+      {/* Phone system navigation bar area */}
+      {insets.bottom > 0 && (
+        <View style={{ height: insets.bottom, backgroundColor: '#047857' }} />
+      )}
     </View>
   );
 };

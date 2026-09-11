@@ -205,11 +205,11 @@ export const IncomingOrderModal: React.FC<IncomingOrderModalProps> = ({
             {/* Decline Button */}
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={rejectIncomingOrder}
+              onPress={() => rejectIncomingOrder()}
               style={tw`flex-1 py-3 rounded-2xl bg-slate-100 border border-slate-200 items-center justify-center`}
             >
               <Text style={[Typography.buttonText, { color: '#64748B', fontSize: 11 }]}>
-                Pass (Next Rider)
+                Pass
               </Text>
 
             </TouchableOpacity>
