@@ -141,7 +141,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   return (
     <View style={tw`flex-1 bg-[#F8FAFC]`}>
-      <StatusBar style="light" backgroundColor="#047857" translucent />
+      <StatusBar style="light" />
 
       {/* 1. Header with Search Input & 10-15 Min ETA */}
       <SearchHeader

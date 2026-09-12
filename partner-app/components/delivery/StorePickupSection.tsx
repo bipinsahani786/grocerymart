@@ -12,8 +12,9 @@ interface StorePickupSectionProps {
 export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order }) => {
   const { updateActiveOrderStatus, toggleItemScanned } = useDeliveryContext();
 
+  const orderItems = order?.items || [];
   const isAtStore = order.status === 'AT_STORE';
-  const allScanned = order.items.every((it) => it.scanned);
+  const allScanned = orderItems.length > 0 ? orderItems.every((it) => it.scanned) : true;
 
   const handleArrivedAtStore = () => {
     updateActiveOrderStatus('AT_STORE');
@@ -24,7 +25,7 @@ export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order })
   };
 
   const handleScanAll = () => {
-    order.items.forEach((item) => {
+    orderItems.forEach((item) => {
       if (!item.scanned) {
         toggleItemScanned(item.id);
       }
@@ -157,7 +158,7 @@ export const StorePickupSection: React.FC<StorePickupSectionProps> = ({ order })
 
           {/* Items list */}
           <View style={{ gap: 8, marginBottom: 16 }}>
-            {order.items.map((item) => (
+            {orderItems.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 activeOpacity={0.7}

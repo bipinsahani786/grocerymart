@@ -52,7 +52,7 @@ export const ProfileSavedItemsModal: React.FC<ProfileSavedItemsModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={tw`flex-1 bg-[#F8FAFC]`}>
-        <StatusBar style="light" backgroundColor={theme.colors.primary} translucent />
+        <StatusBar style="light" />
 
         {/* ── 1. Full Screen Top Header with Matching Brand Gradient ── */}
         <LinearGradient

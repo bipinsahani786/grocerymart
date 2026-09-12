@@ -35,6 +35,7 @@ export interface DeliveryContextType {
   toggleItemScanned: (itemId: string) => void;
   completeDelivery: (enteredOtp: string) => Promise<{ success: boolean; message: string }>;
   completeActiveDelivery: () => void;
+  clearActiveDelivery: () => void;
   triggerIncomingOrderSimulation: () => void;
   withdrawEarnings: (amount: number) => Promise<{ success: boolean; message: string; data?: any }>;
   depositCash: (amount: number, method?: 'UPI' | 'QR' | 'STORE') => Promise<{ success: boolean; message: string }>;
@@ -60,7 +61,7 @@ const DeliveryContext = createContext<DeliveryContextType | undefined>(undefined
 
 export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token, user } = useAuthContext();
-  const { isOnline } = useDutyContext();
+  const { isOnline, liveCoords } = useDutyContext();
 
   const [incomingOrder, setIncomingOrder] = useState<DeliveryOrder | null>(null);
   const [activeOrder, setActiveOrder] = useState<DeliveryOrder | null>(null);
@@ -129,20 +130,25 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
    */
   const acceptIncomingOrder = async () => {
     stopDispatchTimer();
-    if (!incomingOrder) return;
+    if (!incomingOrder || !incomingOrder.id) {
+      setIncomingOrder(null);
+      return;
+    }
     const targetOrderId = incomingOrder.id;
 
     try {
       const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
       const res = await partnerOrdersService.acceptOrder(targetOrderId, activeToken);
-      if (res.success && res.data) {
-        setActiveOrder(res.data);
+      if (res.success && res.data && res.data.id) {
+        const orderData = res.data;
+        orderData.items = orderData.items || [];
+        setActiveOrder(orderData);
       } else {
-        setActiveOrder({ ...incomingOrder, status: 'ACCEPTED' });
+        setIncomingOrder(null);
       }
     } catch (err) {
       console.error('Failed to accept order on backend:', err);
-      setActiveOrder({ ...incomingOrder, status: 'ACCEPTED' });
+      setIncomingOrder(null);
     } finally {
       setIncomingOrder(null);
     }
@@ -170,7 +176,8 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!activeOrder) return;
     setActiveOrder((prev) => {
       if (!prev) return null;
-      const updatedItems = prev.items.map((item) =>
+      const currentItems = prev.items || [];
+      const updatedItems = currentItems.map((item) =>
         item.id === itemId ? { ...item, scanned: !item.scanned } : item
       );
       return { ...prev, items: updatedItems };
@@ -202,15 +209,25 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await fetchEarnings();
         return { success: true, message: 'Order delivered successfully!' };
       } else {
+        const errMsg = String(res.error || res.message || '');
+        if (errMsg.toLowerCase().includes('not found') || errMsg.toLowerCase().includes('already')) {
+          setActiveOrder(null);
+          return { success: true, message: 'Order cleared from dashboard.' };
+        }
         return {
           success: false,
-          message: res.error || res.message || 'Invalid OTP! Please check with customer.',
+          message: errMsg || 'Invalid OTP! Please check with customer.',
         };
       }
     } catch (err: any) {
+      const errMsg = String(err.message || '');
+      if (errMsg.toLowerCase().includes('not found') || errMsg.toLowerCase().includes('already')) {
+        setActiveOrder(null);
+        return { success: true, message: 'Order cleared from dashboard.' };
+      }
       return {
         success: false,
-        message: err.message || 'Verification error',
+        message: errMsg || 'Verification error',
       };
     }
   };
@@ -218,6 +235,10 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const completeActiveDelivery = async () => {
     if (!activeOrder) return;
     await completeDelivery(activeOrder.otp || '1234');
+  };
+
+  const clearActiveDelivery = () => {
+    setActiveOrder(null);
   };
 
   /**
@@ -230,8 +251,14 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       // 1. Fetch active ongoing order
       const activeRes = await partnerOrdersService.getActiveOrder(activeToken);
-      if (isMountedRef.current && activeRes.success) {
-        setActiveOrder(activeRes.data || null);
+      if (isMountedRef.current) {
+        if (activeRes.success && activeRes.data && activeRes.data.id) {
+          const orderData = activeRes.data;
+          orderData.items = orderData.items || [];
+          setActiveOrder(orderData);
+        } else {
+          setActiveOrder(null);
+        }
       }
 
       // 2. Fetch completed trips history
@@ -247,7 +274,7 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   /**
    * Real-Time Incoming Order Polling:
    * When rider is online, not on an active delivery, and no popup is active,
-   * poll backend for incoming orders.
+   * poll backend for incoming orders matching rider's location.
    */
   useEffect(() => {
     if (!isOnline || activeOrder || incomingOrder) {
@@ -261,10 +288,12 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const activeToken = token || (await AsyncStorage.getItem('@grocerymart_partner_token'));
         if (!activeToken) return;
 
-        const res = await partnerOrdersService.getIncomingOrder(activeToken);
-        if (isSubscribed && isMountedRef.current && res.success && res.data) {
+        const res = await partnerOrdersService.getIncomingOrder(liveCoords, activeToken);
+        if (isSubscribed && isMountedRef.current && res.success && res.data && res.data.id) {
           setIncomingOrder(res.data);
           startDispatchTimer(res.data.id);
+        } else if (isSubscribed && isMountedRef.current) {
+          setIncomingOrder(null);
         }
       } catch (err) {
         // Silent catch for background polling
@@ -280,7 +309,7 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       isSubscribed = false;
       clearInterval(interval);
     };
-  }, [isOnline, activeOrder, incomingOrder, token]);
+  }, [isOnline, activeOrder, incomingOrder, token, liveCoords?.lat, liveCoords?.lng]);
 
   /**
    * Fetch real earnings data from backend
@@ -432,6 +461,7 @@ export const DeliveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         toggleItemScanned,
         completeDelivery,
         completeActiveDelivery,
+        clearActiveDelivery,
         triggerIncomingOrderSimulation,
         withdrawEarnings,
         depositCash,

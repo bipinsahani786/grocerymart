@@ -241,11 +241,13 @@ export default function StoreStaffPage() {
 
     const upper = String(roleStr).toUpperCase().replace(/[-\s]+/g, '_');
     let rawRole = 'CASHIER';
-    if (upper.includes('PICKER')) rawRole = 'PICKER';
-    else if (upper.includes('DELIVERY') || upper.includes('RIDER')) rawRole = 'DELIVERY_PARTNER';
-    else if (upper.includes('STORE_MANAGER') || upper.includes('MANAGER')) rawRole = 'STORE_MANAGER';
-    else if (upper.includes('CASHIER')) rawRole = 'CASHIER';
-    else rawRole = 'CASHIER';
+    if (upper.includes('PICKER')) {
+      rawRole = 'PICKER';
+    } else if (upper.includes('DELIVERY') || upper.includes('RIDER')) {
+      rawRole = 'DELIVERY_PARTNER';
+    } else if (upper.includes('STORE_MANAGER') || upper.includes('MANAGER')) {
+      rawRole = 'STORE_MANAGER';
+    }
 
     let shiftStr = member.shift || (member.shifts?.[0]?.shiftName ? member.shifts[0].shiftName : 'Morning');
     if (!shiftStr || shiftStr === 'General') shiftStr = 'Morning';

@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Modal,
+  Vibration,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 import { useDeliveryContext } from '../../context/DeliveryContext';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { Typography } from '../../constants/typography';
@@ -33,21 +36,101 @@ export const IncomingOrderModal: React.FC<IncomingOrderModalProps> = ({
   const acceptIncomingOrder = propOnAccept ?? context.acceptIncomingOrder;
   const rejectIncomingOrder = propOnReject ?? context.rejectIncomingOrder;
 
-  if (!incomingOrder || visible === false) return null;
+  useEffect(() => {
+    if (incomingOrder?.id && visible !== false) {
+      // Continuous rhythmic vibration (0ms wait, 500ms vibrate, 300ms pause, 500ms vibrate)
+      Vibration.vibrate([0, 500, 300, 500], true);
+    } else {
+      Vibration.cancel();
+    }
+
+    return () => {
+      Vibration.cancel();
+    };
+  }, [incomingOrder?.id, visible]);
+
+  if (!incomingOrder || !incomingOrder.id || visible === false) return null;
 
   const totalDistance = (
     (incomingOrder.storeDistanceKm || 0.8) + (incomingOrder.customerDistanceKm || 2.4)
   ).toFixed(1);
 
   const handleAcceptWithSettings = () => {
+    Vibration.cancel();
     if (settings.autoNavigate) {
       showToast(`🚀 Auto-Navigating via ${getNavAppName()}`);
     }
     acceptIncomingOrder();
   };
 
+  const handleReject = () => {
+    Vibration.cancel();
+    rejectIncomingOrder();
+  };
+
   return (
     <Modal visible={!!incomingOrder} transparent animationType="slide" statusBarTranslucent>
+      {/* 100% Reliable Cross-Platform Alert Sound Chime */}
+      {settings.soundAlerts !== false && (
+        <View style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}>
+          <WebView
+            originWhitelist={['*']}
+            source={{
+              html: `
+                <!DOCTYPE html>
+                <html>
+                  <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+                  <body>
+                    <script>
+                      try {
+                        var AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContext) {
+                          var ctx = new AudioContext();
+                          function chime() {
+                            if (ctx.state === 'suspended') {
+                              ctx.resume();
+                            }
+                            var t = ctx.currentTime;
+                            // High-pitched pleasant dual-tone chime
+                            var o1 = ctx.createOscillator();
+                            var g1 = ctx.createGain();
+                            o1.type = 'sine';
+                            o1.frequency.setValueAtTime(784, t);
+                            g1.gain.setValueAtTime(0.7, t);
+                            g1.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                            o1.connect(g1);
+                            g1.connect(ctx.destination);
+                            o1.start(t);
+                            o1.stop(t + 0.3);
+
+                            var o2 = ctx.createOscillator();
+                            var g2 = ctx.createGain();
+                            o2.type = 'sine';
+                            o2.frequency.setValueAtTime(1046.5, t + 0.15);
+                            g2.gain.setValueAtTime(0.8, t + 0.15);
+                            g2.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+                            o2.connect(g2);
+                            g2.connect(ctx.destination);
+                            o2.start(t + 0.15);
+                            o2.stop(t + 0.55);
+                          }
+                          chime();
+                          setInterval(chime, 1500);
+                        }
+                      } catch (e) {}
+                    </script>
+                  </body>
+                </html>
+              `,
+            }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+          />
+        </View>
+      )}
+
       <View style={[tw`flex-1 justify-end`, { backgroundColor: 'rgba(15, 23, 42, 0.68)' }]}>
         <View
           style={[
@@ -205,7 +288,7 @@ export const IncomingOrderModal: React.FC<IncomingOrderModalProps> = ({
             {/* Decline Button */}
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => rejectIncomingOrder()}
+              onPress={handleReject}
               style={tw`flex-1 py-3 rounded-2xl bg-slate-100 border border-slate-200 items-center justify-center`}
             >
               <Text style={[Typography.buttonText, { color: '#64748B', fontSize: 11 }]}>

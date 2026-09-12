@@ -241,7 +241,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
 
     return (
       <View style={tw`flex-1 bg-slate-100/60`}>
-        <StatusBar style="light" translucent />
+        <StatusBar style="light" />
         <CartHeader totalItems={totalItems} onClear={clearCart} onBack={onBack} />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={tw`pb-72`}>
@@ -298,7 +298,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
   if (checkoutStep === 'address') {
     return (
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="light" translucent />
+        <StatusBar style="light" />
         {renderCheckoutHeader('Select Store / Address', 'Choose delivery location or pickup outlet', true, 'cart')}
         <CheckoutAddressSection
           fulfillmentMode={fulfillmentMode}
@@ -320,7 +320,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
   if (checkoutStep === 'payment') {
     return (
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="light" translucent />
+        <StatusBar style="light" />
         {renderCheckoutHeader('Choose Payment', 'Select your preferred payment method', true, 'address')}
         <CheckoutPaymentSection
           fulfillmentMode={fulfillmentMode}
@@ -340,7 +340,7 @@ export const CartView: React.FC<CartViewProps> = ({ onShopMore, onBack }) => {
   if (checkoutStep === 'success' && finalSummary) {
     return (
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="light" translucent />
+        <StatusBar style="light" />
         {renderCheckoutHeader('Order Confirmed!', 'Receipt & delivery tracking', false)}
         <CheckoutSuccessSection
           orderId={orderId}

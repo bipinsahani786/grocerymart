@@ -39,6 +39,7 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
     updateActiveOrderStatus,
     toggleItemScanned,
     completeActiveDelivery,
+    clearActiveDelivery,
   } = useDeliveryContext();
 
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -141,9 +142,10 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
   }
 
 
+  const orderItems = activeOrder.items || [];
   const isAtStore = activeOrder.status === 'AT_STORE';
   const isEnRoute = activeOrder.status === 'EN_ROUTE';
-  const allScanned = activeOrder.items.every((it) => it.scanned);
+  const allScanned = orderItems.length > 0 ? orderItems.every((it) => it.scanned) : true;
 
   const handleCall = (phoneNumber: string = '+919876543210') => {
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {});
@@ -161,7 +163,7 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
   };
 
   const handleScanAll = () => {
-    activeOrder.items.forEach((item) => {
+    orderItems.forEach((item) => {
       if (!item.scanned) {
         toggleItemScanned(item.id);
       }
@@ -230,17 +232,33 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
             </View>
           </View>
 
-          {/* Quick Support Trigger */}
-          <TouchableOpacity
-            activeOpacity={0.88}
-            onPress={onContactSupport}
-            style={tw`px-3 py-1.5 rounded-full bg-emerald-900 border border-emerald-600 flex-row items-center shadow-sm`}
-          >
-            <Ionicons name="help-buoy-outline" size={13} color="#A7F3D0" style={tw`mr-1`} />
-            <Text style={[Typography.buttonText, { color: '#A7F3D0', fontSize: 10.5, fontWeight: '800' }]}>
-              Support
-            </Text>
-          </TouchableOpacity>
+          {/* Header Actions: Dismiss & Support */}
+          <View style={tw`flex-row items-center gap-1.5`}>
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => {
+                clearActiveDelivery();
+                onFindNewOrders();
+              }}
+              style={tw`px-2.5 py-1.5 rounded-full bg-rose-900/80 border border-rose-600 flex-row items-center shadow-sm`}
+            >
+              <Ionicons name="trash-outline" size={12} color="#FECDD3" style={tw`mr-1`} />
+              <Text style={[Typography.buttonText, { color: '#FECDD3', fontSize: 10, fontWeight: '800' }]}>
+                Dismiss
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={onContactSupport}
+              style={tw`px-2.5 py-1.5 rounded-full bg-emerald-900 border border-emerald-600 flex-row items-center shadow-sm`}
+            >
+              <Ionicons name="help-buoy-outline" size={12} color="#A7F3D0" style={tw`mr-1`} />
+              <Text style={[Typography.buttonText, { color: '#A7F3D0', fontSize: 10, fontWeight: '800' }]}>
+                Support
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -308,7 +326,7 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
                 </Text>
               </View>
               <Text style={[Typography.cardTitle, { color: '#0F172A', fontSize: 12 }]} numberOfLines={1}>
-                Order #{activeOrder.orderNumber} • {activeOrder.items.length} Items
+                Order #{activeOrder.orderNumber} • {orderItems.length} Items
               </Text>
             </View>
 
@@ -367,7 +385,7 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
                 <View style={tw`pt-2 border-t border-slate-100`}>
                   <View style={tw`flex-row justify-between items-center mb-1.5`}>
                     <Text style={[Typography.cardTitle, { color: '#0F172A', fontSize: 11 }]}>
-                      Items Checklist ({activeOrder.items.filter((i) => i.scanned).length}/{activeOrder.items.length})
+                      Items Checklist ({orderItems.filter((i) => i.scanned).length}/{orderItems.length})
                     </Text>
                     <TouchableOpacity
                       onPress={handleScanAll}
@@ -380,7 +398,7 @@ export const ActiveDeliveryView: React.FC<ActiveDeliveryViewProps> = ({
                   </View>
 
                   <View style={tw`gap-1.5`}>
-                    {activeOrder.items.map((item) => (
+                    {orderItems.map((item) => (
                       <TouchableOpacity
                         key={item.id}
                         activeOpacity={0.7}

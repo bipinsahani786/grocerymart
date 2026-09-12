@@ -28,7 +28,7 @@ interface LiveDriverRadarMapProps {
   isOnline: boolean;
   activeOrder: any;
   currentHub: string;
-  onSimulateOrder: () => void;
+  onSimulateOrder?: () => void;
   onRecenter?: () => void;
 }
 
@@ -311,20 +311,6 @@ export const LiveDriverRadarMap: React.FC<LiveDriverRadarMapProps> = ({
       >
         <Ionicons name="locate" size={20} color="#10B981" />
       </TouchableOpacity>
-
-      {/* Quick Simulate Order Button (When online) */}
-      {isOnline && !activeOrder && (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onSimulateOrder}
-          style={tw`absolute bottom-20 left-4 px-4 py-2 rounded-full bg-emerald-600 border border-emerald-400/50 flex-row items-center shadow-lg`}
-        >
-          <Ionicons name="flash" size={14} color="#FFFFFF" style={tw`mr-1.5`} />
-          <Text style={tw`text-xs font-black text-white`}>
-            + Test Delivery
-          </Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };

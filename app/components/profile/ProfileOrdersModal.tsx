@@ -65,7 +65,7 @@ export const ProfileOrdersModal: React.FC<ProfileOrdersModalProps> = ({ visible,
   });
 
   const handleCopy = (orderNum: string) => {
-    Clipboard.setString(orderNum);
+    Clipboard.setStringAsync(orderNum);
     setCopiedId(orderNum);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -197,7 +197,7 @@ export const ProfileOrdersModal: React.FC<ProfileOrdersModalProps> = ({ visible,
       onRequestClose={onClose}
     >
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="light" translucent backgroundColor="transparent" />
+        <StatusBar style="light" />
         {Platform.OS === 'android' && (
           <RNStatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
         )}

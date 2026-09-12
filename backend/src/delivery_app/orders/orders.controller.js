@@ -4,10 +4,17 @@ export class DeliveryOrdersController {
   async getIncomingOrder(req, res) {
     try {
       const userId = req.user.id;
-      const order = await deliveryOrdersService.getIncomingOrder(userId);
+      const lat = req.query.lat ? parseFloat(req.query.lat) : undefined;
+      const lng = req.query.lng ? parseFloat(req.query.lng) : undefined;
+      const coords =
+        lat !== undefined && !isNaN(lat) && lng !== undefined && !isNaN(lng)
+          ? { lat, lng }
+          : null;
+
+      const order = await deliveryOrdersService.getIncomingOrder(userId, coords);
       return res.status(200).json({
         success: true,
-        data: order,
+        data: order || null,
       });
     } catch (err) {
       console.error("[OrdersController] getIncomingOrder error:", err);

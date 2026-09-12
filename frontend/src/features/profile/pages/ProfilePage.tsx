@@ -88,7 +88,7 @@ export default function ProfilePage() {
         canvas.width = 160;
         canvas.height = 160;
         const ctx = canvas.getContext('2d');
-        let compressedDataUrl = '';
+        let compressedDataUrl: string;
         if (ctx) {
           ctx.drawImage(img, 0, 0, 160, 160);
           compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);

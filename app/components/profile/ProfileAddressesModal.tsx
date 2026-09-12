@@ -292,7 +292,7 @@ export const ProfileAddressesModal: React.FC<ProfileAddressesModalProps> = ({ vi
       onRequestClose={onClose}
     >
       <View style={tw`flex-1 bg-slate-50`}>
-        <StatusBar style="light" translucent backgroundColor="transparent" />
+        <StatusBar style="light" />
         {Platform.OS === 'android' && (
           <RNStatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
         )}

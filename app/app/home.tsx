@@ -248,7 +248,7 @@ function MainApp() {
 
   return (
     <View style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" translucent />
+      <StatusBar style="light" />
       <View style={[tw`flex-1 relative`, { backgroundColor: theme.colors.background }]}>
 
         {/* ── Active Tab View Rendering (Instant zero-flash switching with LIFO history stack) ── */}

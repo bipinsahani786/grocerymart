@@ -69,7 +69,7 @@ api.interceptors.response.use(
               error.config.headers.Authorization = `Bearer ${accessToken}`;
               return api(error.config);
             }
-          } catch (_refreshError) {
+          } catch {
             // Refresh failed — force logout
             console.warn('[API] Token refresh failed. Logging out.');
           }

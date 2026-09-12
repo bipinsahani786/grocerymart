@@ -104,8 +104,7 @@ export const ContactSupportModal: React.FC<ContactSupportModalProps> = ({
     if (visible) {
       if (Platform.OS === 'android') {
         try {
-          NavigationBar.setBackgroundColorAsync('#FFFFFF').catch(() => { });
-          NavigationBar.setButtonStyleAsync('dark').catch(() => { });
+          NavigationBar.setStyle?.('dark');
         } catch { }
       }
       loadTickets();
@@ -167,7 +166,7 @@ export const ContactSupportModal: React.FC<ContactSupportModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={tw`flex-1 bg-[#F8FAFC]`}>
-        <StatusBar style="light" backgroundColor="#047857" translucent />
+        <StatusBar style="light" />
 
         {/* Full Screen Top Header with Safe Area Insets (Matching Profile Gradient) */}
         <LinearGradient

@@ -13,12 +13,14 @@ interface PartnerHeaderProps {
   onOpenSOS?: () => void;
   onOpenNotifications?: () => void;
   onOpenWallet?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
   onOpenSOS,
   onOpenNotifications,
   onOpenWallet,
+  onOpenProfile,
 }) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuthContext();
@@ -38,8 +40,12 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
         },
       ]}
     >
-      {/* Centered Brand Header (Clean Professional Design) */}
-      <View style={tw`flex-row items-center justify-center mb-1`}>
+      {/* Centered Brand Header (Clean Professional Design - Tap to navigate to Profile) */}
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={onOpenProfile}
+        style={tw`flex-row items-center justify-center mb-1`}
+      >
         <Image
           source={require('../../assets/images/zytrixon.png')}
           style={[tw`w-6 h-6 mr-2`, { tintColor: '#FFFFFF' }]}
@@ -49,7 +55,7 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
         <Text style={[Typography.cardTitle, { color: '#FFFFFF', fontSize: 15, fontWeight: '900', letterSpacing: 0.5 }]}>
           GroceryMart <Text style={{ color: '#FDE68A', fontWeight: '800' }}>Delivery</Text>
         </Text>
-      </View>
+      </TouchableOpacity>
 
 
 
@@ -57,7 +63,11 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
       <View style={tw`flex-row items-center justify-between`}>
 
         {/* Left: Driver Avatar & Info */}
-        <View style={tw`flex-row items-center flex-1 mr-2`}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onOpenProfile}
+          style={tw`flex-row items-center flex-1 mr-2`}
+        >
           <View style={tw`relative mr-2.5`}>
             <Image
               source={{
@@ -101,7 +111,7 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
                 : 'Offline • Duty paused'}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Right: Wallet pill & SOS */}
         <View style={tw`flex-row items-center gap-1.5`}>

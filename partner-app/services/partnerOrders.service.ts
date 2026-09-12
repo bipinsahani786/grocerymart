@@ -6,10 +6,18 @@ class PartnerOrdersService {
   /**
    * Poll/Fetch available incoming delivery order for this online rider
    */
-  async getIncomingOrder(token?: string | null): Promise<ApiResponse<DeliveryOrder | null>> {
+  async getIncomingOrder(
+    coords?: { lat: number; lng: number } | null,
+    token?: string | null
+  ): Promise<ApiResponse<DeliveryOrder | null>> {
+    const params: Record<string, any> = {};
+    if (coords?.lat && coords?.lng) {
+      params.lat = coords.lat;
+      params.lng = coords.lng;
+    }
     return await apiClient.get<DeliveryOrder | null>(
       API_CONFIG.ENDPOINTS.PARTNER.ORDERS_INCOMING,
-      { token }
+      { params, token }
     );
   }
 

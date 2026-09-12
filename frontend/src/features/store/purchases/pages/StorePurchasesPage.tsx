@@ -82,7 +82,7 @@ export default function StorePurchasesPage() {
     notes: '',
   });
 
-  const [poItems, setPoItems] = useState<CreatePurchaseOrderItemPayload[]>([
+  const [poItems, setPoItems] = useState<CreatePurchaseOrderItemPayload[]>(() => [
     {
       productId: '',
       batchNumber: `B-${Date.now().toString().slice(-6)}`,

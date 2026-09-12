@@ -38,7 +38,7 @@ export function useSupportTickets(filters: TicketFilterParams) {
       if (res.data?.status === 'success') {
         setTickets(res.data.data || []);
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to load support tickets');
     } finally {
       setIsLoading(false);
@@ -101,7 +101,7 @@ export function useSupportTickets(filters: TicketFilterParams) {
         refreshAll();
         return true;
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to update ticket status');
     }
     return false;
