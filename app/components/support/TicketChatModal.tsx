@@ -64,8 +64,7 @@ export const TicketChatModal: React.FC<TicketChatModalProps> = ({
     if (visible) {
       if (Platform.OS === 'android') {
         try {
-          NavigationBar.setBackgroundColorAsync('#FFFFFF').catch(() => {});
-          NavigationBar.setButtonStyleAsync('dark').catch(() => {});
+          NavigationBar.setStyle?.('dark');
         } catch {}
       }
       if (ticketId) {
@@ -116,7 +115,7 @@ export const TicketChatModal: React.FC<TicketChatModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={tw`flex-1 bg-[#F8FAFC]`}
       >
-        <StatusBar style="light" backgroundColor={theme.colors.primary} translucent />
+        <StatusBar style="light" />
 
         {/* Full-Screen Top Header with Safe Insets (Matching Profile Gradient) */}
         <LinearGradient

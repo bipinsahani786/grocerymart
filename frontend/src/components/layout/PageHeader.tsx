@@ -15,5 +15,6 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader(_props: PageHeaderProps) {
+  void _props;
   return null;
 }

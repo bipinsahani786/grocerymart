@@ -35,6 +35,19 @@ interface TicketConversationDrawerProps {
   ) => Promise<boolean>;
 }
 
+const formatTimeAgo = (dateStr: string) => {
+  const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return new Date(dateStr).toLocaleDateString('en-IN', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 export const TicketConversationDrawer: React.FC<TicketConversationDrawerProps> = ({
   ticket,
   onClose,
@@ -81,19 +94,6 @@ export const TicketConversationDrawer: React.FC<TicketConversationDrawerProps> =
     setCopiedTicketId(true);
     toast.success(`Ticket #${ticket.ticketNumber} copied`);
     setTimeout(() => setCopiedTicketId(false), 2000);
-  };
-
-  const formatTimeAgo = (dateStr: string) => {
-    const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return new Date(dateStr).toLocaleDateString('en-IN', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   return createPortal(

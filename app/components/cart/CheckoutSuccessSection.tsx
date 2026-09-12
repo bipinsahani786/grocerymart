@@ -41,7 +41,7 @@ export const CheckoutSuccessSection: React.FC<CheckoutSuccessSectionProps> = ({
 
           {/* Copyable Order ID Badge */}
           <TouchableOpacity
-            onPress={() => Clipboard.setString(orderId)}
+            onPress={() => Clipboard.setStringAsync(orderId)}
             activeOpacity={0.7}
             style={tw`flex-row items-center bg-slate-50 border border-slate-100 rounded-full px-4 py-1.5 mt-4 gap-1`}
           >

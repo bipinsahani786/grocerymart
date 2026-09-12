@@ -21,7 +21,7 @@ export function AppLayout() {
     const checkSessionStatus = async () => {
       try {
         await api.get('/auth/profile');
-      } catch (error) {
+      } catch {
         // Handled automatically by api.ts response interceptor
       }
     };

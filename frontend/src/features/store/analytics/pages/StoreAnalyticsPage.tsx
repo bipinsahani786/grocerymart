@@ -130,7 +130,7 @@ export default function StoreAnalyticsPage() {
   const basketSizeTrendData = useMemo(() => {
     return (hourly || []).slice(0, 8).map((_: any, idx: number) => ({
       name: `Slot ${idx + 1}`,
-      'Avg Items': Math.round(3.5 + Math.random() * 2),
+      'Avg Items': Math.round(3.5 + ((idx * 7) % 3)),
       'Target Basket': 5
     }));
   }, [hourly]);

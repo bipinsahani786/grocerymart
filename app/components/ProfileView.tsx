@@ -62,7 +62,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBack }) => {
   return (
     <View style={tw`flex-1 bg-slate-50`}>
       {/* ── Fixed Status Bar Color (Pure White Icons on Green, Never changes on scroll) ── */}
-      <StatusBar style="light" backgroundColor={theme.colors.primary} translucent />
+      <StatusBar style="light" />
 
       {/* ── Fixed Thin Gradient Top Header Bar ── */}
       <LinearGradient
