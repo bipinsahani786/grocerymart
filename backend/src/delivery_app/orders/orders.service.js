@@ -25,21 +25,33 @@ export class DeliveryOrdersService {
   /**
    * Format DB Order object into exact DeliveryOrder interface expected by partner mobile app
    */
-  formatDeliveryOrder(order, rider = null) {
+  formatDeliveryOrder(order, rider = null, calculatedDistanceKm = null) {
     if (!order) return null;
 
-    const riderLat = rider?.currentLat || 25.6003;
-    const riderLng = rider?.currentLong || 85.1872;
+    const riderLat = rider?.currentLat;
+    const riderLng = rider?.currentLong;
     const storeLat = order.store?.lat;
     const storeLng = order.store?.long;
 
-    const storeDistanceKm =
-      storeLat && storeLng
-        ? this.calculateDistanceKm(riderLat, riderLng, storeLat, storeLng)
-        : 0.8;
+    let storeDistanceKm = 1.2;
+    if (calculatedDistanceKm !== null && calculatedDistanceKm !== undefined) {
+      storeDistanceKm = calculatedDistanceKm;
+    } else if (
+      riderLat !== undefined &&
+      riderLat !== null &&
+      riderLng !== undefined &&
+      riderLng !== null &&
+      storeLat !== undefined &&
+      storeLat !== null &&
+      storeLng !== undefined &&
+      storeLng !== null &&
+      !(storeLat === 0 && storeLng === 0)
+    ) {
+      storeDistanceKm = this.calculateDistanceKm(riderLat, riderLng, storeLat, storeLng);
+    }
 
     const customerDistanceKm = 2.1;
-    const storeEstimatedMins = Math.max(3, Math.round(storeDistanceKm * 4));
+    const storeEstimatedMins = Math.max(3, Math.round(storeDistanceKm * 3.5));
     const customerEstimatedMins = Math.max(6, Math.round(customerDistanceKm * 4));
 
     const isCod = order.payment?.method === "COD";
@@ -126,9 +138,9 @@ export class DeliveryOrdersService {
   }
 
   /**
-   * Get incoming order dispatched to this online rider
+   * Get incoming order dispatched to this online rider with strict geographical matching
    */
-  async getIncomingOrder(userId) {
+  async getIncomingOrder(userId, coords = null) {
     const rider = await deliveryOrdersRepository.findRiderByUserId(userId);
     if (!rider) {
       throw new AppError("Delivery partner profile not found", 404);
@@ -145,23 +157,99 @@ export class DeliveryOrdersService {
       return null;
     }
 
+    // Resolve rider's effective coordinates
+    let riderLat =
+      coords?.lat !== undefined && !isNaN(coords.lat) ? coords.lat : rider.currentLat;
+    let riderLng =
+      coords?.lng !== undefined && !isNaN(coords.lng) ? coords.lng : rider.currentLong;
+
+    // Asynchronously update rider live location in database if new coords are provided
+    if (
+      coords?.lat !== undefined &&
+      coords?.lng !== undefined &&
+      !isNaN(coords.lat) &&
+      !isNaN(coords.lng)
+    ) {
+      deliveryOrdersRepository
+        .updateRiderLocation(rider.id, coords.lat, coords.lng)
+        .catch(() => {});
+    }
+
     // Resolve store IDs associated with this rider
     const storeIds = (rider.stores || []).map((s) => s.storeId);
     if (rider.user?.storeId && !storeIds.includes(rider.user.storeId)) {
       storeIds.push(rider.user.storeId);
     }
 
-    const pendingOrder = await deliveryOrdersRepository.findPendingIncomingOrder(
+    // If rider has no known coordinates and no specific store assigned, DO NOT dispatch blind nationwide orders
+    if (
+      (riderLat === null || riderLat === undefined || riderLng === null || riderLng === undefined) &&
+      storeIds.length === 0
+    ) {
+      return null;
+    }
+
+    const candidateOrders = await deliveryOrdersRepository.findPendingIncomingOrders(
       rider.id,
       userId,
       storeIds
     );
 
-    if (!pendingOrder) {
+    if (!candidateOrders || candidateOrders.length === 0) {
       return null;
     }
 
-    return this.formatDeliveryOrder(pendingOrder, rider);
+    // Strict geographical distance limit: max 15 km (or store's delivery radius)
+    const MAX_DISPATCH_RADIUS_KM = 15;
+    let bestMatchedOrder = null;
+    let shortestDistanceKm = Infinity;
+
+    for (const order of candidateOrders) {
+      const store = order.store;
+      const storeLat = store?.lat;
+      const storeLng = store?.long;
+      const isAssignedToStore = storeIds.includes(order.storeId);
+
+      // Check distance between rider and store
+      if (
+        storeLat !== undefined &&
+        storeLat !== null &&
+        storeLng !== undefined &&
+        storeLng !== null &&
+        !(storeLat === 0 && storeLng === 0) &&
+        riderLat !== undefined &&
+        riderLat !== null &&
+        riderLng !== undefined &&
+        riderLng !== null
+      ) {
+        const distanceKm = this.calculateDistanceKm(riderLat, riderLng, storeLat, storeLng);
+        const maxAllowedRadius = Math.max(store.radiusKm || 5, MAX_DISPATCH_RADIUS_KM);
+
+        // Strict rejection if rider is outside the dispatch zone (e.g. Noida vs Bihar ~850km)
+        if (distanceKm <= maxAllowedRadius) {
+          if (distanceKm < shortestDistanceKm) {
+            shortestDistanceKm = distanceKm;
+            bestMatchedOrder = order;
+          }
+        }
+      } else if (isAssignedToStore) {
+        // Rider explicitly assigned to this store through store staff/partnership
+        bestMatchedOrder = order;
+        shortestDistanceKm = 1.5;
+        break;
+      }
+    }
+
+    if (!bestMatchedOrder) {
+      return null;
+    }
+
+    const updatedRider = { ...rider, currentLat: riderLat, currentLong: riderLng };
+    return this.formatDeliveryOrder(
+      bestMatchedOrder,
+      updatedRider,
+      shortestDistanceKm !== Infinity ? shortestDistanceKm : null
+    );
   }
 
   /**

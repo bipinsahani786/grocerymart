@@ -21,7 +21,7 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
   onSuccess,
 }) => {
   const insets = useSafeAreaInsets();
-  const { completeDelivery } = useDeliveryContext();
+  const { completeDelivery, clearActiveDelivery } = useDeliveryContext();
   const [otp, setOtp] = useState('');
   const [cashCollectedCheck, setCashCollectedCheck] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -123,9 +123,24 @@ export const DeliveryVerifyModal: React.FC<DeliveryVerifyModalProps> = ({
             </View>
 
             {errorMsg ? (
-              <Text style={[Typography.caption, { color: '#DC2626', fontSize: 10, fontWeight: '700', marginTop: 2 }]}>
-                {errorMsg}
-              </Text>
+              <View style={tw`items-center mt-2.5 w-full`}>
+                <Text style={[Typography.caption, { color: '#DC2626', fontSize: 10, fontWeight: '700', textAlign: 'center' }]}>
+                  {errorMsg}
+                </Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    clearActiveDelivery();
+                    onClose();
+                  }}
+                  style={tw`mt-2 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 flex-row items-center`}
+                >
+                  <Ionicons name="trash-outline" size={12} color="#BE123C" style={tw`mr-1`} />
+                  <Text style={[Typography.buttonText, { color: '#BE123C', fontSize: 10.5, fontWeight: '800' }]}>
+                    Force Remove Order
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ) : null}
           </View>
 

@@ -75,9 +75,9 @@ class ApiClient {
 
       return {
         success: true,
-        data: data.data || data,
-        message: data.message,
-        phone: data.phone,
+        data: data && typeof data === 'object' && 'data' in data ? data.data : data,
+        message: data?.message,
+        phone: data?.phone,
       };
     } catch (networkError: any) {
       console.warn('[API Client Network Error]', networkError.message);

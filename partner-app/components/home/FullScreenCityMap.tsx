@@ -26,7 +26,7 @@ interface FullScreenCityMapProps {
   isOnline: boolean;
   activeOrder: any;
   currentHub: string;
-  onSimulateOrder: () => void;
+  onSimulateOrder?: () => void;
   onSelectHub?: (hubName: string) => void;
 }
 

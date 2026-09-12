@@ -79,6 +79,7 @@ export default function PartnerHomeScreen() {
           onOpenActiveTask={() => setActiveTab('active')}
           onDepositCash={() => setShowDepositModal(true)}
           onOpenSupport={() => setShowSOSModal(true)}
+          onOpenProfile={() => setActiveTab('profile')}
         />
       ) : activeTab === 'active' ? (
         <View style={styles.tabContainer}>
@@ -93,6 +94,7 @@ export default function PartnerHomeScreen() {
           <PartnerHeader
             onOpenSOS={() => setShowSOSModal(true)}
             onOpenWallet={() => setActiveTab('earnings')}
+            onOpenProfile={() => setActiveTab('profile')}
           />
 
           {/* Scrollable Sub-Tab Content with Safe Refresh Control Offset */}

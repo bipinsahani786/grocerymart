@@ -26,6 +26,7 @@ interface HomeCockpitViewProps {
   onOpenActiveTask: () => void;
   onDepositCash: () => void;
   onOpenSupport: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
@@ -33,6 +34,7 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
   onOpenActiveTask,
   onDepositCash,
   onOpenSupport,
+  onOpenProfile,
 }) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuthContext();
@@ -92,10 +94,10 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
     })
   ).current;
 
-  // Interpolated Map & Sheet heights
+  // Interpolated Map & Sheet heights (Polished gentle balance - subtle light shift)
   const animatedMapHeight = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [Math.round(screenHeight * 0.67), Math.round(screenHeight * 0.50)],
+    outputRange: [Math.round(screenHeight * 0.64), Math.round(screenHeight * 0.47)],
   });
 
 
@@ -127,8 +129,12 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
           },
         ]}
       >
-        {/* Centered Brand Header (Clean Professional Design) */}
-        <View style={tw`flex-row items-center justify-center mb-1`}>
+        {/* Centered Brand Header (Clean Professional Design - Tap to navigate to Profile) */}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={onOpenProfile}
+          style={tw`flex-row items-center justify-center mb-1`}
+        >
           <Image
             source={require('../../assets/images/zytrixon.png')}
             style={[tw`w-6 h-6 mr-2`, { tintColor: '#FFFFFF' }]}
@@ -138,7 +144,7 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
           <Text style={[Typography.cardTitle, { color: '#FFFFFF', fontSize: 15, fontWeight: '900', letterSpacing: 0.5 }]}>
             GroceryMart <Text style={{ color: '#FDE68A', fontWeight: '800' }}>Delivery</Text>
           </Text>
-        </View>
+        </TouchableOpacity>
 
 
 
@@ -146,7 +152,11 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
         {/* Row 1: Driver Avatar, Info & Duty Switch */}
         <View style={tw`flex-row items-center justify-between`}>
 
-          <View style={tw`flex-row items-center flex-1 mr-2`}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onOpenProfile}
+            style={tw`flex-row items-center flex-1 mr-2`}
+          >
             <View style={tw`relative mr-2.5`}>
               <Image
                 source={{
@@ -179,7 +189,7 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
                 {isOnline ? 'Online • Ready for drops' : 'Offline • Duty paused'}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Online / Offline Duty Switch */}
           <TouchableOpacity
@@ -267,7 +277,7 @@ export const HomeCockpitView: React.FC<HomeCockpitViewProps> = ({
       {/* ================= 3. INTERACTIVE SLIDING BOTTOM SHEET DASHBOARD ================= */}
       <Animated.View
         style={[
-          tw`bg-white rounded-t-3xl border-t border-slate-200 -mt-4 shadow-2xl px-3.5 pt-1.5 z-20 justify-start gap-2 flex-1`,
+          tw`bg-white rounded-t-3xl border-t border-slate-200 -mt-4.5 shadow-2xl px-3.5 pt-1.5 z-20 justify-start gap-2 flex-1`,
           {
             paddingBottom: 72 + Math.max(insets.bottom, 8),
           },

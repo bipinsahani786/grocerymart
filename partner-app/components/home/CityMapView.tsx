@@ -28,7 +28,7 @@ interface CityMapViewProps {
   isOnline: boolean;
   activeOrder: any;
   currentHub: string;
-  onSimulateOrder: () => void;
+  onSimulateOrder?: () => void;
   onSelectHub?: (hubName: string) => void;
 }
 
@@ -341,20 +341,6 @@ export const CityMapView: React.FC<CityMapViewProps> = ({
       >
         <Ionicons name="locate" size={16} color="#047857" />
       </TouchableOpacity>
-
-      {/* Bottom Left Quick Test Order Trigger */}
-      {isOnline && !activeOrder && (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onSimulateOrder}
-          style={tw`absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-full bg-emerald-600 border border-emerald-500 shadow-sm flex-row items-center`}
-        >
-          <Ionicons name="flash" size={11} color="#FFFFFF" style={tw`mr-1`} />
-          <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 10 }]}>
-            + Test Order
-          </Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };

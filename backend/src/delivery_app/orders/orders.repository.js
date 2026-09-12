@@ -15,14 +15,27 @@ export class DeliveryOrdersRepository {
   }
 
   /**
-   * Find an available incoming delivery order for an online rider
+   * Update rider live GPS coordinates
+   */
+  async updateRiderLocation(riderId, lat, long) {
+    return await prisma.rider.update({
+      where: { id: riderId },
+      data: {
+        currentLat: lat,
+        currentLong: long,
+      },
+    });
+  }
+
+  /**
+   * Find available incoming delivery orders for an online rider
    * - Order type is DELIVERY
    * - Status is PLACED, PACKED, or READY_FOR_PICKUP
-   * - No deliveryAssignment, or assignment status is ASSIGNED but unconfirmed
+   * - No deliveryAssignment
    * - Has NOT been rejected by this rider (either rider.id or user.id)
-   * - Matches rider's store location (or active store if no restriction)
+   * - Includes store geolocation (lat, long, radiusKm) for distance filtering
    */
-  async findPendingIncomingOrder(riderId, userId, storeIds = []) {
+  async findPendingIncomingOrders(riderId, userId, storeIds = []) {
     // 1. Fetch all orders already rejected by this rider
     const rejections = await prisma.deliveryRejection.findMany({
       where: {
@@ -32,14 +45,14 @@ export class DeliveryOrdersRepository {
     });
     const rejectedOrderIds = rejections.map((r) => r.orderId);
 
-    // 2. Build store filter
+    // 2. Build store filter if explicitly assigned
     const storeFilter =
       storeIds.length > 0
         ? { storeId: { in: storeIds } }
         : {};
 
-    // 3. Find the oldest available delivery order
-    return await prisma.order.findFirst({
+    // 3. Find candidate delivery orders (FIFO: oldest placed orders first)
+    return await prisma.order.findMany({
       where: {
         type: "DELIVERY",
         status: { in: ["PLACED", "PACKED", "READY_FOR_PICKUP"] },
@@ -57,6 +70,7 @@ export class DeliveryOrdersRepository {
             phone: true,
             lat: true,
             long: true,
+            radiusKm: true,
           },
         },
         address: true,
@@ -69,8 +83,17 @@ export class DeliveryOrdersRepository {
         },
         payment: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
+      take: 20,
     });
+  }
+
+  /**
+   * Single order fallback for backward compatibility
+   */
+  async findPendingIncomingOrder(riderId, userId, storeIds = []) {
+    const orders = await this.findPendingIncomingOrders(riderId, userId, storeIds);
+    return orders.length > 0 ? orders[0] : null;
   }
 
   /**
@@ -288,14 +311,19 @@ export class DeliveryOrdersRepository {
         },
       });
 
-      // Update DeliveryAssignment
-      await tx.deliveryAssignment.update({
+      // Update DeliveryAssignment if present
+      const existingAssignment = await tx.deliveryAssignment.findUnique({
         where: { orderId },
-        data: {
-          status: "DELIVERED",
-          deliveredAt: new Date(),
-        },
       });
+      if (existingAssignment) {
+        await tx.deliveryAssignment.update({
+          where: { orderId },
+          data: {
+            status: "DELIVERED",
+            deliveredAt: new Date(),
+          },
+        });
+      }
 
       // Log in history
       await tx.orderStatusHistory.create({

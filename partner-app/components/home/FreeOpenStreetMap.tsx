@@ -12,7 +12,7 @@ interface FreeOpenStreetMapProps {
   isOnline: boolean;
   activeOrder: any;
   currentHub: string;
-  onSimulateOrder: () => void;
+  onSimulateOrder?: () => void;
   onSelectHub?: (hubName: string) => void;
   onMapMoveEnd?: (coords: { lat: number; lng: number }) => void;
 }
@@ -397,18 +397,6 @@ export const FreeOpenStreetMap: React.FC<FreeOpenStreetMapProps> = ({
         ) : (
           <Ionicons name="locate" size={18} color="#047857" />
         )}
-      </TouchableOpacity>
-
-      {/* Floating Quick Test Order Button (Bottom Left) */}
-      <TouchableOpacity
-        activeOpacity={0.88}
-        onPress={onSimulateOrder}
-        style={tw`absolute bottom-3 left-3 px-3 py-1.5 rounded-full bg-emerald-600 border border-emerald-500 shadow-md flex-row items-center z-20`}
-      >
-        <Ionicons name="flash" size={12} color="#FFFFFF" style={tw`mr-1`} />
-        <Text style={[Typography.buttonText, { color: '#FFFFFF', fontSize: 10.5 }]}>
-          + Test Order
-        </Text>
       </TouchableOpacity>
     </View>
   );
